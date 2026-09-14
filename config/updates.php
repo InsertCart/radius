@@ -152,4 +152,76 @@ return [
     | update is in progress. Also on the private disk.
     */
     'workspace' => 'updates',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Building a release (php artisan cms:release)
+    |--------------------------------------------------------------------------
+    | What goes into the ZIP that buyers download and the updater installs.
+    |
+    | A checkout from version control is NOT a release: vendor/ and
+    | public/build are both ignored by git, so an archive made from the repo
+    | cannot even boot. This list is what turns a working tree into something
+    | somebody else can extract and run.
+    */
+
+    'package' => [
+
+        /*
+         * Never included. Each of these is either specific to this machine, or
+         * would actively break the buyer's install.
+         *
+         * storage/installed is the one that matters most: it is the lock that
+         * tells the CMS setup is finished. Ship it and the buyer's setup wizard
+         * never opens, which looks exactly like a broken product.
+         */
+        'exclude' => [
+            '.git',
+            '.github',
+            '.env',
+            '.env.backup',
+            '.env.production',
+            '.phpunit.result.cache',
+            'node_modules',
+            'tests',
+            'phpunit.xml',
+            'public/hot',
+            'public/storage',
+            'storage/installed',
+            'storage/app/shipped-checksums.json',
+            'storage/app/update-pending.json',
+            'storage/app/update-last.json',
+        ],
+
+        /*
+         * Directories shipped as empty scaffolding. The folder and its
+         * .gitignore/.htaccess are kept - the buyer needs the structure and the
+         * Apache rules - but the contents are this site's data, not the
+         * product's.
+         */
+        'empty' => [
+            'bootstrap/cache',
+            'public/themes',
+            'storage/app/private',
+            'storage/app/public',
+            'storage/framework/cache/data',
+            'storage/framework/sessions',
+            'storage/framework/testing',
+            'storage/framework/views',
+            'storage/logs',
+        ],
+
+        /*
+         * Must exist, or the archive is not a working release. vendor/ and
+         * public/build are both absent from a fresh checkout, and a buyer
+         * cannot produce either without Composer and npm.
+         */
+        'required' => [
+            'vendor/autoload.php',
+            'public/build/manifest.json',
+            'public/index.php',
+            'config/cms.php',
+            'artisan',
+        ],
+    ],
 ];

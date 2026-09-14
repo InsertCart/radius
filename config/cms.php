@@ -9,7 +9,7 @@ return [
     | Shown in the admin footer and the installer. Buyers may rebrand freely.
     */
 
-    'name' => 'Custom CMS',
+    'name' => 'Radius',
     'version' => '1.0.0',
 
     /*

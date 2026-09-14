@@ -19,7 +19,11 @@ class HandleSeoRedirects
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (modules()->disabled('seo')) {
+        // Nothing to redirect to before the site is set up, and the tables this
+        // reads do not exist yet. Without this the setup wizard's own first
+        // request dies querying seo_redirects in a database the buyer has not
+        // created - which is a confusing way to be told to create one.
+        if (! cms_installed() || modules()->disabled('seo')) {
             return $next($request);
         }
 
@@ -29,23 +33,32 @@ class HandleSeoRedirects
             return $next($request);
         }
 
-        $map = Cache::remember(
-            'cms.seo.redirects',
-            3600,
-            fn () => SeoRedirect::active()->pluck('id', 'source')->all()
-        );
+        try {
+            $map = Cache::remember(
+                'cms.seo.redirects',
+                3600,
+                fn () => SeoRedirect::active()->pluck('id', 'source')->all()
+            );
 
-        if (! isset($map[$path])) {
+            if (! isset($map[$path])) {
+                return $next($request);
+            }
+
+            $redirect = SeoRedirect::find($map[$path]);
+
+            if (! $redirect || ! $redirect->is_active) {
+                return $next($request);
+            }
+
+            $redirect->recordHit();
+        } catch (\Throwable $e) {
+            // A redirect map is a convenience. If the database is unreachable
+            // or mid-migration, serve the page rather than turning every single
+            // request on the site into a 500.
+            report($e);
+
             return $next($request);
         }
-
-        $redirect = SeoRedirect::find($map[$path]);
-
-        if (! $redirect || ! $redirect->is_active) {
-            return $next($request);
-        }
-
-        $redirect->recordHit();
 
         $destination = str_starts_with($redirect->destination, 'http')
             ? $redirect->destination

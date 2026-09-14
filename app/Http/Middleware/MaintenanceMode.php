@@ -16,7 +16,9 @@ class MaintenanceMode
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! setting('maintenance_mode', false)) {
+        // A site that has not been set up cannot be in maintenance mode, and
+        // the settings table it would be read from does not exist yet.
+        if (! cms_installed() || ! setting('maintenance_mode', false)) {
             return $next($request);
         }
 

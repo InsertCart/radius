@@ -1,4 +1,4 @@
-# Custom CMS
+# Radius
 
 A modular, self-hosted CMS and eCommerce platform built on Laravel 12.
 
@@ -459,11 +459,11 @@ ever applied automatically.
   "min_version": "1.0.0",
   "min_php": "8.2.0",
   "requires_extensions": ["gd", "zip"],
-  "download": "https://example.com/releases/myfile.zip",
+  "download": "https://www.insertcart.com/releases/myfile.zip",
   "sha256": "9f2c…",
   "size": 48210432,
   "notes": "Shown to the site owner before they install.",
-  "changelog_url": "https://example.com/changelog"
+  "changelog_url": "https://www.insertcart.com/changelog"
 }
 ```
 
@@ -502,12 +502,49 @@ invisibly and it would otherwise make a perfectly correct file unreadable.
 
 ### Building a release ZIP
 
-A release is the whole project folder, `vendor/` included, so buyers never need
-Composer or npm. Exclude `.env`, `storage/`, `node_modules/` and `.git/`. A
-single wrapping folder inside the ZIP is fine and is detected automatically.
+```bash
+composer install --no-dev --optimize-autoloader
+npm install && npm run build
+php artisan cms:release
+```
+
+That writes the ZIP and a starter `manifest.json` (with the SHA-256 already
+filled in) to `storage/app/private/releases/`. Upload both, set the `download`
+address in the manifest to wherever the ZIP now lives, and point
+`CMS_UPDATE_URL` at the manifest.
+
+**Do not publish a ZIP downloaded from version control.** It cannot work:
+
+| Missing from a git archive | What the buyer sees |
+| --- | --- |
+| `vendor/` | A fatal error on `require .../vendor/autoload.php` — Laravel never boots |
+| `public/build/` | The site loads with no CSS or JavaScript |
+
+And one thing a git archive can wrongly *include*: `storage/installed`, the lock
+file that says setup is finished. Ship it and the buyer's setup wizard never
+opens. It is in `.gitignore` for that reason — if it was committed before,
+remove it from the index with `git rm --cached storage/installed`.
+
+`cms:release` handles all three, refuses to build when `vendor/` or
+`public/build/` is missing, and ships the `.htaccess` files that keep uploads and
+paid downloads from being served directly.
 
 The ZIP must contain `config/cms.php` declaring the same version the manifest
 promises; if the two disagree the update stops before touching anything.
+
+### What a buyer's first request does
+
+A fresh extract has no `.env`, and Laravel cannot start without an `APP_KEY` —
+so the first request would die before reaching the wizard that writes one. The
+CMS breaks that loop itself: on the first request it copies `.env.example` to
+`.env` and generates an `APP_KEY` unique to that installation.
+
+The key is generated on the buyer's server, never shipped. A key baked into the
+download would be identical on every site that bought the product, and anyone
+holding it could forge session cookies for all of them.
+
+Sessions and cache default to **files**, not the database: the wizard needs
+somewhere to keep a session before there is a database to keep one in.
 
 ### What an update does and does not touch
 

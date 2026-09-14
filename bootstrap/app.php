@@ -1,9 +1,16 @@
 <?php
 
+use App\Cms\Support\FirstRun;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
+
+// Before anything else: a freshly extracted copy has no .env, and without one
+// Laravel cannot build an encrypter, so it dies while booting and the setup
+// wizard is never reached. This writes a starter .env with a key unique to this
+// installation. It does nothing at all once .env exists.
+FirstRun::ensureEnvironmentFile(dirname(__DIR__));
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(

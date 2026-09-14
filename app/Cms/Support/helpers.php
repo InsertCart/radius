@@ -154,6 +154,20 @@ if (! function_exists('cms_version')) {
     }
 }
 
+if (! function_exists('cms_installed')) {
+    /**
+     * Whether setup has been completed.
+     *
+     * Deliberately a file check and not a database one: it is consulted on
+     * requests that run before any database exists, which is precisely when
+     * asking the database would fail.
+     */
+    function cms_installed(): bool
+    {
+        return file_exists(config('cms.install_lock'));
+    }
+}
+
 if (! function_exists('admin_url')) {
     function admin_url(string $path = ''): string
     {

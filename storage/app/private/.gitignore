@@ -1,2 +1,6 @@
 *
 !.gitignore
+# The Apache deny rule that keeps paid downloads unreachable by URL. It must
+# ship with the code: without it a buyer whose document root is the project
+# folder serves the downloads folder straight off the web server.
+!.htaccess

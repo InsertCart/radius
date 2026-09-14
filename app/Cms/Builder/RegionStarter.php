@@ -164,7 +164,7 @@ class RegionStarter
             : [
                 $this->widget('heading', ['text' => 'Get in touch', 'tag' => 'h3']),
                 $this->widget('text', [
-                    'content' => '<p>'.e((string) setting('site_email', 'hello@example.com')).'</p>',
+                    'content' => '<p>'.e((string) setting('site_email', 'hello@insertcart.com')).'</p>',
                 ]),
             ];
 

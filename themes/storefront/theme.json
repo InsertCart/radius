@@ -2,8 +2,8 @@
     "name": "Storefront",
     "slug": "storefront",
     "version": "1.0.1",
-    "author": "Custom CMS",
-    "author_url": "",
+    "author": "Radius",
+    "author_url": "https://www.insertcart.com",
     "description": "A high-street retail template built for catalogues with a lot of products: a sticky yellow masthead with a category mega-menu and search, scrolling product rails on the homepage, a rich product page with gallery, offer callouts and accordions, and a saved-items drawer. Ships its own stylesheet, so it needs no asset build.",
     "screenshot": "screenshot.svg",
     "supports": [

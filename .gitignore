@@ -18,6 +18,13 @@
 /public/storage
 /storage/*.key
 /storage/pail
+# The install lock. Committing it ships a CMS that believes it is already set
+# up, so the buyer never sees the setup wizard and cannot get past it.
+/storage/installed
+# Written by the updater; describes this machine, not the product.
+/storage/app/shipped-checksums.json
+/storage/app/update-pending.json
+/storage/app/update-last.json
 /vendor
 Homestead.json
 Homestead.yaml

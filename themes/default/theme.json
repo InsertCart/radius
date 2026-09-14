@@ -2,7 +2,8 @@
     "name": "Default",
     "slug": "default",
     "version": "1.0.0",
-    "author": "Custom CMS",
+    "author": "Radius",
+    "author_url": "https://www.insertcart.com",
     "description": "The bundled starter theme. Clean, fast and responsive, with every page a shop or blog needs. Copy this folder as the starting point for your own template.",
     "screenshot": "screenshot.png",
     "supports": [
