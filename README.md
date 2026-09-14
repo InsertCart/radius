@@ -1,0 +1,657 @@
+# Custom CMS
+
+A modular, self-hosted CMS and eCommerce platform built on Laravel 12.
+
+Every optional feature is a **module** that can be switched off from the admin
+panel. A disabled module registers no routes and runs no queries, so a
+blog-only site carries none of the shop's weight.
+
+---
+
+## Requirements
+
+| Requirement | Minimum |
+| --- | --- |
+| PHP | 8.2 or newer |
+| MySQL / MariaDB | 5.7+ / 10.3+ |
+| PHP extensions | `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `json`, `curl`, `fileinfo`, `zip`, `gd`, `xml`, `ctype` |
+| Writable | `storage/`, `bootstrap/cache/`, `themes/`, `public/`, `.env` |
+
+The setup wizard checks all of this for you before it will continue.
+
+---
+
+## Installation
+
+1. Upload the files and point your domain at the **`public/`** directory.
+2. Create an empty MySQL database.
+3. Open your site in a browser. The setup wizard starts automatically.
+4. Follow the four steps: server check → database → site details → admin account.
+
+The wizard writes `.env`, runs the migrations, seeds the defaults and creates
+your admin account. When it finishes it drops a `storage/installed` lock file,
+which permanently closes the wizard so nobody can re-point your site at another
+database.
+
+### Installing from the command line instead
+
+```bash
+cp .env.example .env          # then fill in your DB_ credentials
+php artisan key:generate
+php artisan migrate --force
+php artisan db:seed --force
+php artisan cms:admin         # creates your admin account
+php artisan storage:link
+echo "{}" > storage/installed
+```
+
+---
+
+## After installing
+
+Work through these in order:
+
+1. **Turn on two-factor authentication** for your account (profile menu → Two-factor auth).
+2. **Switch off modules you do not need** under System → Modules.
+3. **Set your email provider** under Settings → Email, then send a test message.
+4. **Configure a payment gateway** under Shop → Payment gateways, if you are selling.
+5. **Move the admin panel** off the default path by setting `CMS_ADMIN_PREFIX` in `.env`.
+6. Set `APP_DEBUG=false` and `APP_ENV=production` in `.env` before going live.
+
+System → System shows a checklist of anything still misconfigured.
+
+---
+
+## Modules
+
+| Module | What it adds | Required |
+| --- | --- | --- |
+| Pages | Static pages, templates, homepage selection | Yes |
+| Media | Uploads, thumbnails, file manager | Yes |
+| Themes | Upload and activate front-end templates | Yes |
+| Users | Accounts, roles, two-factor auth | Yes |
+| Blog | Posts, categories, tags, comments | No |
+| eCommerce | Products, cart, checkout, orders, coupons | No |
+| Payments | PayPal, Stripe, Razorpay, PayU, Cashfree, Wise, COD, bank transfer | No |
+| SMS | Transactional SMS and OTP via MSG91 or Twilio | No |
+| Firebase | Web push notifications | No |
+| SEO | Meta tags, sitemap.xml, robots.txt, schema.org, redirects | No |
+| Contact forms | Front-end form and submission inbox | No |
+| Newsletter | Subscriber capture and CSV export | No |
+
+Modules with dependencies are handled for you: switching off **Payments** also
+switches off **eCommerce**, because a shop with no way to take money is not a
+working shop. Nothing is ever deleted — switching a module back on restores it
+exactly as it was.
+
+> After toggling modules, clear the caches (System → Maintenance) if you have
+> previously run "Optimise for production". Caching routes freezes which ones exist.
+
+---
+
+## Payment gateways
+
+| Gateway | Flow | Refunds from admin | Webhooks |
+| --- | --- | --- | --- |
+| Stripe | Hosted Checkout redirect | Yes | Yes |
+| PayPal | Orders v2 redirect | Yes | Yes |
+| Razorpay | Checkout modal | Yes | Yes |
+| PayU | Signed form POST | Yes | No |
+| Cashfree | Hosted checkout | Yes | Yes |
+| Wise | Bank transfer, with optional transfer matching | No | No |
+| Cash on delivery | Offline | No | No |
+| Bank transfer | Offline | No | No |
+
+Credentials are **encrypted at rest** with your `APP_KEY` and are never sent
+back to the browser once saved. A gateway refuses to go live until every
+credential it needs is filled in.
+
+Gateways talk to their providers over REST rather than through vendor SDKs.
+That keeps `vendor/` small, avoids six sets of transitive dependencies fighting
+each other, and means a host only needs `curl` and `openssl`.
+
+**Webhooks.** Each gateway's settings screen shows the URL to paste into the
+provider's dashboard. Signatures are verified on every call, so an unsigned or
+replayed request is rejected. Webhooks are what confirm a payment when the
+customer closes the tab before returning to your site.
+
+---
+
+## Email
+
+SMTP settings live in the admin panel. API-key providers read their keys from
+`.env` instead, because those are high-value credentials that should not sit in
+a database backup:
+
+| Provider | `.env` keys | Package to install |
+| --- | --- | --- |
+| SMTP | — | built in |
+| Resend | `RESEND_KEY` | `composer require resend/resend-laravel` |
+| Amazon SES | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` | `composer require aws/aws-sdk-php` |
+| Postmark | `POSTMARK_TOKEN` | `composer require symfony/postmark-mailer` |
+
+The Email settings screen shows which keys are present and which package is
+missing. If a provider is not installed, mail falls back to the log rather than
+failing silently.
+
+---
+
+## Visual builder
+
+A drag-and-drop editor for designing pages without writing HTML. It is built
+into the CMS rather than bolted on, and **it does not replace your theme**.
+
+### How it coexists with a theme
+
+Themes and the builder own different things. A theme keeps owning its chrome
+and marks the parts it is willing to hand over:
+
+```blade
+@region('header')
+    ... the theme's own header markup ...
+@endregion
+```
+
+With no layout built for that region, the markup inside simply renders exactly
+as it always has. Once an admin designs a header in the editor, that layout is
+rendered instead. **A theme with no `@region` markers is completely
+unaffected** — the builder is then limited to page content, which still works.
+
+Page bodies use the same idea from the other direction. A theme that already
+does `{!! $page->content !!}` transparently gets the built layout once one
+exists, and the stored HTML when it does not — so no theme changes are needed
+at all. Turning the builder off for a page brings its original content straight
+back; nothing is lost either way.
+
+Declare regions in `theme.json`:
+
+```json
+"regions": {
+    "header": "Site header",
+    "footer": "Site footer",
+    "before_content": "Before page content",
+    "after_content": "After page content"
+}
+```
+
+### The layout model
+
+A layout is a tree of **section → column → widget**. Sections hold columns,
+columns hold widgets, and each level has its own settings panel with Content,
+Style and Advanced tabs.
+
+Rendering is **server-side Blade**, so pages ship plain HTML with one
+stylesheet — fast, indexable, and no JavaScript required to read them.
+
+### Why the editor feels immediate
+
+Controls are split by what they affect:
+
+- **Style controls** (colour, spacing, typography, borders) declare a CSS
+  mapping, so the editor rewrites the preview's stylesheet in place. Dragging a
+  slider is instant, with no server round trip.
+- **Content controls** re-render just the element that changed.
+- Structural edits re-render the canvas, which is rare enough not to be felt.
+
+The server recompiles the authoritative stylesheet on publish.
+
+### Widgets
+
+27 built in, grouped by category:
+
+| Category | Widgets |
+| --- | --- |
+| Basic | Heading, Text, Button, Icon |
+| Media | Image, Video, Gallery, Map |
+| Layout | Spacer, Divider |
+| Content | Icon box, Post grid, Accordion, Tabs, Testimonial, Counter, Pricing table, Contact form, Newsletter, HTML |
+| Shop | Product grid |
+| Site parts | Site logo, Navigation menu, Cart icon, Search, Social icons, Page title |
+
+Widgets belonging to a disabled module never appear in the palette and render
+as nothing on the public site, so switching the shop off does not leave broken
+product grids behind.
+
+### Adding a widget
+
+One class and one Blade view. The settings panel is generated from the controls
+you declare, so the editor itself never needs touching:
+
+```php
+class QuoteBlock extends Block
+{
+    public static function type(): string { return 'quote'; }
+    public static function name(): string { return 'Quote'; }
+
+    public static function controls(): array
+    {
+        return [
+            Control::textarea('text', 'Quote')->default('Something worth saying.'),
+
+            Control::color('color', 'Colour')
+                ->tab(Control::TAB_STYLE)
+                ->selector('{{WRAPPER}} .cb-quote', 'color'),
+        ];
+    }
+}
+```
+
+Register it in `config/builder.php`, add `resources/views/blocks/quote.blade.php`,
+and it appears in the panel. A control with a `->selector()` is applied as CSS
+with no re-render; one without it re-renders the element.
+
+### Editing
+
+- **Drafts and publishing.** Work autosaves as a private draft. Nothing reaches
+  the public site until you press Publish.
+- **History.** Each publish stores a revision; the last 25 are kept and any can
+  be restored.
+- **Responsive.** Switch between desktop, tablet and mobile in the toolbar. Any
+  control marked responsive stores a separate value per breakpoint.
+- **Design tokens.** Colours picked from the palette are stored as
+  `var(--cb-color-primary)`, so changing a token later updates everything using
+  it instead of leaving one-off hex codes behind.
+- **Shortcuts.** Ctrl+Z / Ctrl+Shift+Z to undo and redo, Ctrl+S to publish,
+  Ctrl+D to duplicate.
+
+### Security
+
+The builder is admin-only, but its output still ends up in a stylesheet and in
+markup, so both are constrained:
+
+- Settings written into CSS are stripped of anything that could close a rule or
+  start a new one (`}`, `;`, comment markers, `expression()`, `@import`).
+- Element ids are validated before they become class names, so a crafted id
+  cannot escape its selector.
+- `href` values accept only `http`, `https`, `mailto` and `tel`, plus relative
+  paths — `javascript:` and `data:` URLs are dropped, including obfuscated
+  forms like `java\tscript:`.
+- Section wrapper tags come from a fixed allowlist; custom CSS ids and classes
+  are stripped to safe characters.
+- Incoming trees are capped at 2000 nodes and 6 levels deep, so a crafted
+  request cannot make the renderer walk an enormous structure.
+
+The HTML widget is the deliberate exception: outputting raw markup is its
+entire purpose, and the editor says so plainly.
+
+---
+
+## Themes
+
+Themes live in `themes/<slug>/` and are uploaded as a `.zip` from
+Appearance → Themes.
+
+```
+my-theme/
+├── theme.json          required: name, version
+├── screenshot.png
+├── assets/             copied to public/themes/<slug>/
+│   ├── css/
+│   └── js/
+└── views/              required
+    ├── layout.blade.php
+    ├── home.blade.php
+    ├── blog/
+    ├── shop/
+    ├── pages/
+    └── partials/
+```
+
+A theme only has to override the views it wants to change. Anything it leaves
+out falls back to the bundled default theme, so a partial theme still renders a
+complete site.
+
+### Theme security
+
+A theme is executable code, so uploads go through several checks before
+anything is written:
+
+- Archive entries are resolved against the target directory; anything escaping
+  it is rejected (the "zip slip" traversal bug).
+- Only allow-listed extensions are extracted. A `.php`, `.phtml`, `.htaccess`
+  or `.sh` file in the archive is dropped, never written to disk.
+- Blade templates are scanned for raw `<?php` tags, shell execution, `eval`,
+  filesystem writes, superglobal access and PHP `include`/`require`. A theme
+  using any of them is refused.
+- Entry count and uncompressed size are capped, so a zip bomb cannot fill
+  the disk.
+
+Extraction happens in a temporary directory and the theme is only moved into
+place once every check has passed.
+
+`@php` blocks are allowed — preparing a few view variables is ordinary template
+work — but they are reported as a warning, and anything dangerous inside one is
+still caught by the rules above.
+
+### Useful helpers in themes
+
+```blade
+{{ setting('site_name') }}          {{-- any admin setting --}}
+@seoHead                            {{-- title, meta, Open Graph, JSON-LD --}}
+@module('shop') ... @endmodule      {{-- only render when a module is on --}}
+@money($product->price)             {{-- format minor units as currency --}}
+{{ theme_asset('css/theme.css') }}  {{-- URL to a file in your assets folder --}}
+{{ format_date($post->published_at) }}
+$siteMenus['header']                {{-- menu items, module-filtered --}}
+```
+
+---
+
+## Uploads
+
+Everything uploaded — images, PDFs, documents — goes through the media library
+(Content → Media), whether it comes from that screen, the rich text editor, a
+settings field or the visual builder. Each file is checked before it is saved:
+
+- **The name and the contents must agree.** A file is stored only if its
+  extension is on the allowed list *and* its detected contents match that
+  extension. It is saved under the checked extension, never the name the
+  browser sent.
+- **Program code is refused**, including PHP hidden after real image data.
+- **Double extensions** such as `photo.php.jpg` are refused.
+- **SVGs are cleaned**: scripts, event handlers, external links and embedded
+  frames are removed, and SVGs with entity declarations are refused.
+- **Photos are re-encoded**, which strips EXIF metadata — including the GPS
+  location phones embed — and anything appended after the image data.
+
+Alt text is set per image in the media library, and asked for when an image is
+inserted into content. Images without it are flagged on the library screen.
+
+### The uploads folder never runs code
+
+`storage/app/public/.htaccess` (served at `/storage`) refuses every file type
+except the media formats the CMS accepts, and never hands anything to PHP.
+`public/themes/.htaccess` does the same for theme assets.
+
+**On nginx** `.htaccess` is ignored, so add the equivalent to your server block:
+
+```nginx
+location ^~ /storage/ {
+    location ~* \.(php\d?|phtml|phar|pht|cgi|pl|py|sh|shtml|html?)$ { deny all; }
+    add_header X-Content-Type-Options nosniff;
+}
+
+location ^~ /themes/ {
+    location ~* \.(php\d?|phtml|phar|pht|cgi|pl|py|sh|shtml|html?)$ { deny all; }
+    add_header X-Content-Type-Options nosniff;
+}
+```
+
+After changing `php.ini`, **restart the web server**, not just PHP on the command
+line — they can load separate configurations. System → System reports any
+extension the web server is missing.
+
+### Only `public/` belongs on the web
+
+Point your document root at `public/`. Nothing else in the project is meant to
+be reachable, and `.env` — the database password, the key that signs every
+session cookie, the payment gateway secrets — sits one level above it.
+
+In practice a lot of installs skip this: the ZIP gets extracted into
+`public_html/mysite/`, `mysite/public/` opens fine in a browser, and nothing
+gets changed. The project root then sits inside the web root, and
+`mysite/.env` is a URL anybody can request.
+
+The `.htaccess` in the project root refuses everything outside `public/` for
+exactly that case. **On nginx**, or on any host where `AllowOverride` is off,
+that file does nothing — set the document root correctly, or add:
+
+```nginx
+location ~ ^/(app|bootstrap|config|database|lang|resources|routes|storage|tests|themes|vendor)/ { deny all; }
+location ~ /\. { deny all; }
+```
+
+To check your own install, request `/.env` from the browser. Anything other
+than 403 or 404 means the site is exposed.
+
+---
+
+## Paid downloads
+
+Files sold as digital products are **not** stored in the media library. That
+folder is served straight off the web server, so the payment check would only
+be as good as the secrecy of a URL — and the URL appears in the page source of
+every order.
+
+Instead they go to `storage/app/private/downloads/`, on a disk with no public
+address at all, under a name with 24 random characters in it. The only way to
+one is `/account/orders/{order}/download/{item}`, which checks that the order
+belongs to the signed-in customer, that it has been paid for, that the line
+item belongs to that order, and that the customer is inside the download limit.
+Files are always sent as an attachment with an explicit
+`application/octet-stream`, so a browser can never render one on this site.
+
+- Upload the file on the product screen with **Type: Digital**. The path is
+  never typed or posted, so a tampered form cannot aim a product at another
+  file on the server.
+- **Source code is accepted.** A ZIP full of PHP is a normal thing to sell, so
+  downloads are not scanned for code the way media uploads are — nothing here
+  is ever executed or rendered. The name still has to match the contents.
+- Shop settings set **how many times** a customer may download a purchase
+  (default 5, `0` for unlimited) and **for how long** (default forever).
+- Replacing a product's file leaves the old one in place if anyone has bought
+  it; each order keeps the exact file it paid for.
+- `CMS_DOWNLOADS_DISK` in `.env` moves storage elsewhere. If you point it at
+  S3, **keep the bucket private** — the whole arrangement depends on it.
+
+Existing sites are migrated automatically: any digital file still sitting in
+the public uploads folder is moved to private storage and deleted from the
+public one the first time you run `php artisan migrate`.
+
+---
+
+## Updates
+
+The CMS can install new releases itself. Point `CMS_UPDATE_URL` in `.env` at a
+JSON file you host, and the site checks it once a day and offers the update
+under **System → Updates**. Installing is always a deliberate click; nothing is
+ever applied automatically.
+
+### The manifest
+
+```json
+{
+  "format": 1,
+  "version": "1.1.0",
+  "released_at": "2026-09-20",
+  "tags": ["security", "breaking"],
+  "requires_backup": true,
+  "min_version": "1.0.0",
+  "min_php": "8.2.0",
+  "requires_extensions": ["gd", "zip"],
+  "download": "https://example.com/releases/myfile.zip",
+  "sha256": "9f2c…",
+  "size": 48210432,
+  "notes": "Shown to the site owner before they install.",
+  "changelog_url": "https://example.com/changelog"
+}
+```
+
+Only `version` and `download` are required. The rest have sensible defaults —
+`requires_backup` defaults to **true**, on the grounds that silence should not
+mean "skip the backup".
+
+**`version` must be a string.** Written as a JSON number, `1.10` parses as
+`1.1`, and `1.9` compares as greater than `1.10`, so sites would stop seeing
+updates the moment your version numbers reach double digits. Versions are
+compared with PHP's `version_compare()`.
+
+**`sha256` is required by default.** The archive becomes program code running on
+your buyers' servers, so a download nobody verified is a very large hole.
+Produce it with `sha256sum myfile.zip` (or `Get-FileHash` on Windows), and
+publish the release over `https://` — plain `http` is refused.
+
+`tags` are free text and only ever displayed, so you can use whatever words you
+like. Anything the CMS actually *acts* on has its own field — that way a typo in
+a tag can never silently disable a backup.
+
+### Adding fields later
+
+The reader ignores keys it does not recognise, so you can add anything to this
+file at any time without breaking sites already in the field. Missing keys fall
+back to defaults, `tag` as a plain string works as well as `tags` as an array,
+and the release may sit at the top level or inside a `"latest"` object.
+
+`format` is the one field to leave alone: it tells an older install whether it
+understands the document at all. If you ever restructure the file, raise
+`format`, and installs too old to cope will say so plainly instead of guessing.
+
+Write the JSON as **UTF-8 without a byte-order mark** if you can — although the
+CMS strips one if it finds it, since Notepad and PowerShell both add one
+invisibly and it would otherwise make a perfectly correct file unreadable.
+
+### Building a release ZIP
+
+A release is the whole project folder, `vendor/` included, so buyers never need
+Composer or npm. Exclude `.env`, `storage/`, `node_modules/` and `.git/`. A
+single wrapping folder inside the ZIP is fine and is detected automatically.
+
+The ZIP must contain `config/cms.php` declaring the same version the manifest
+promises; if the two disagree the update stops before touching anything.
+
+### What an update does and does not touch
+
+**Replaced**: `app/`, `vendor/`, `resources/`, `routes/`,
+`database/migrations/`, `public/build/` and the bundled `themes/default`, plus
+root files like `artisan` and `composer.json`. The exact list is in
+`config/updates.php`, and it is an allowlist — a path not on it is never
+written, however the archive is constructed.
+
+**Never touched**: `.env`, everything under `storage/` (uploads, paid downloads,
+logs), `public/storage`, `public/themes/`, and any theme other than the bundled
+one. Your database is migrated, never reset.
+
+**Your edits to shipped files are preserved.** The CMS records a checksum of
+every file it ships; anything that no longer matches was changed on your site,
+and it is skipped and reported rather than overwritten. Tick the override on the
+update screen if you would rather take the new version.
+
+### If something goes wrong
+
+Before any file is replaced, the CMS takes a database dump and copies every file
+it is about to overwrite. **Roll back** restores both, removes files the release
+added, and drops tables its migrations created. The option stays available after
+a successful update too, because an update can complete cleanly and still turn
+out to have broken something.
+
+Backups live in `storage/app/private/backups/`, which has no public URL. The
+five most recent are kept.
+
+On a server with SSH, `php artisan cms:update` does the same thing with no
+request timeout to run into — the most reliable route for a large release.
+
+---
+
+## Security notes
+
+- **Two-factor authentication** (TOTP) works with any authenticator app.
+  Secrets and recovery codes are encrypted at rest. Authentication is two-step:
+  the password check establishes the session but marks it unconfirmed, and every
+  request is held at the challenge until a valid code is entered. Recovery codes
+  work exactly once each.
+- **Money is stored as integers** in the currency's minor unit, so repeated
+  addition never accumulates the rounding error floats would.
+- **Cart prices are snapshotted** when an item is added, and order totals are
+  recalculated server-side at checkout. The browser sees prices but never gets
+  to decide them.
+- **Stock is decremented inside the order transaction**, so two people racing
+  for the last item cannot both succeed.
+- **Order numbers are unguessable**, so a customer cannot enumerate other
+  people's orders.
+- **Paid downloads are never served by URL.** They live outside the web root
+  and leave only through a controller that has checked the order — see
+  "Paid downloads" above.
+- **Release archives are verified before they are trusted.** HTTPS only, a
+  SHA-256 that must match, a version inside the archive that must agree with the
+  manifest, and an allowlist of paths an update may write — so a release cannot
+  reach `.env`, the uploads, or a theme you bought.
+- **Payment returns are always verified against the provider's API.** A
+  redirect back from a gateway proves nothing on its own — the customer
+  controls it.
+- Login is rate limited per email *and* IP, so one attacker cannot lock out a
+  legitimate user.
+- `public/robots.txt` is deliberately absent: a static file there would shadow
+  the dynamic route the SEO module serves. Do not add one back.
+
+---
+
+## Command line
+
+```bash
+php artisan cms:admin              # create or promote an admin account
+php artisan cms:sync               # register new modules/gateways/settings after an upgrade
+php artisan cms:sync --themes      # re-scan the themes folder
+php artisan cms:demo               # install sample posts, pages and products
+php artisan cms:demo --remove      # delete that sample content again
+php artisan optimize:clear         # clear all caches
+```
+
+### Demo content
+
+`cms:demo` fills an install with something to look at and test against: 12
+blog posts, 9 pages and 15 products, plus the categories, tags, comments,
+reviews, variants and placeholder images that go with them. The images are
+drawn at run time rather than shipped, so nothing is added to the repository.
+
+The catalogue is chosen to cover the cases a real one has - a product on sale
+inside a date window, one out of stock, one on backorder, one digital, one
+still in draft, a scheduled post, an unapproved comment - because a set of
+fifteen identical in-stock products tests nothing.
+
+It is not part of `db:seed`, so a normal install never gets it. Re-running the
+command restores the demo records to their original state, which makes it a
+quick way to reset a database you have been experimenting with. `--remove`
+deletes exactly what the seeder created, keyed on slug, and leaves content you
+wrote yourself alone.
+
+---
+
+## Development
+
+```bash
+composer install
+npm install
+npm run dev      # Vite dev server with hot reload
+npm run build    # compile assets for production
+```
+
+Compiled assets are committed under `public/build/`, so a buyer never needs
+Node installed to run the site.
+
+---
+
+## Project layout
+
+```
+app/
+├── Cms/                    the CMS itself, kept apart from Laravel's skeleton
+│   ├── Settings/           database-backed settings with caching
+│   ├── Modules/            the module on/off switchboard
+│   ├── Themes/             theme discovery, activation and the ZIP installer
+│   ├── Payments/           gateway contract, result object and drivers
+│   ├── Sms/                SMS drivers and the one-time-code flow
+│   ├── Firebase/           FCM push and client config
+│   ├── Seo/                meta, schema.org and sitemap generation
+│   ├── Shop/               cart and order services
+│   ├── Builder/            the visual editor's engine
+│   │   └── Blocks/         one class per widget
+│   ├── Media/              uploads and thumbnails
+│   └── Support/            helpers, 2FA, admin navigation
+├── Http/Controllers/
+│   ├── Admin/              the admin panel
+│   ├── Front/              the storefront
+│   ├── Auth/               sign-in, registration, two-factor
+│   └── Installer/          the setup wizard
+└── Models/
+config/
+├── cms.php                 modules, themes, media, security
+├── settings.php            every admin setting, declared once
+├── payments.php            gateway definitions and endpoints
+└── builder.php             registered widgets, breakpoints, design tokens
+themes/default/             the bundled starter theme
+```
+
+Adding a setting means one array entry in `config/settings.php` — the admin
+form is generated from it. Adding a payment gateway means one driver class and
+one entry in `config/payments.php`. Adding a builder widget means one block
+class, one Blade view, and one entry in `config/builder.php`.

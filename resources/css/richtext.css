@@ -1,0 +1,377 @@
+/**
+ * The rich text editor's chrome.
+ *
+ * Kept plain CSS rather than Tailwind utilities so the same stylesheet serves
+ * the admin panel and the builder panel, which have different design systems.
+ */
+
+.rt {
+    border: 1px solid #cbd5e1;
+    border-radius: .625rem;
+    background: #fff;
+    overflow: hidden;
+}
+
+.rt:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgb(99 102 241 / .12);
+}
+
+/* Toolbar ----------------------------------------------------------------- */
+
+.rt__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.rt__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+}
+.rt__btn:hover { background: #e2e8f0; color: #0f172a; }
+.rt__btn.is-active { background: #e0e7ff; color: #4338ca; }
+.rt__btn:disabled { opacity: .4; cursor: default; }
+.rt__btn svg {
+    width: 16px; height: 16px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+.rt__letter { font-size: 14px; line-height: 1; font-family: Georgia, serif; }
+
+.rt__select {
+    height: 30px;
+    padding: 0 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    font: inherit;
+    font-size: 12px;
+    color: #334155;
+    cursor: pointer;
+}
+.rt__select:disabled { opacity: .4; }
+
+.rt__divider {
+    width: 1px;
+    height: 20px;
+    margin: 0 4px;
+    background: #e2e8f0;
+}
+
+/* Editing surface --------------------------------------------------------- */
+
+.rt__surface {
+    min-height: 320px;
+    max-height: 70vh;
+    padding: 16px 18px;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #1e293b;
+    outline: 0;
+}
+
+/* A placeholder without a wrapper element, so the editor stays empty when it
+   is empty rather than carrying dummy content. */
+.rt__surface:empty::before {
+    content: attr(aria-label) '…';
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.rt__surface > :first-child { margin-top: 0; }
+.rt__surface > :last-child { margin-bottom: 0; }
+
+.rt__surface h1 { font-size: 1.9rem; font-weight: 700; margin: 1.6rem 0 .6rem; }
+.rt__surface h2 { font-size: 1.5rem; font-weight: 700; margin: 1.5rem 0 .5rem; }
+.rt__surface h3 { font-size: 1.25rem; font-weight: 600; margin: 1.3rem 0 .4rem; }
+.rt__surface h4 { font-size: 1.1rem; font-weight: 600; margin: 1.2rem 0 .4rem; }
+.rt__surface p { margin: 0 0 .9rem; }
+.rt__surface ul { list-style: disc; padding-left: 1.5rem; margin: 0 0 .9rem; }
+.rt__surface ol { list-style: decimal; padding-left: 1.5rem; margin: 0 0 .9rem; }
+.rt__surface li { margin-bottom: .25rem; }
+.rt__surface a { color: #4f46e5; text-decoration: underline; }
+.rt__surface blockquote {
+    margin: 1.2rem 0;
+    padding: .2rem 0 .2rem 1rem;
+    border-left: 3px solid #cbd5e1;
+    color: #475569;
+    font-style: italic;
+}
+.rt__surface pre {
+    margin: 1.2rem 0;
+    padding: .9rem 1rem;
+    border-radius: .5rem;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+}
+.rt__surface code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; }
+.rt__surface hr { margin: 1.5rem 0; border: 0; border-top: 1px solid #e2e8f0; }
+.rt__surface img { max-width: 100%; height: auto; border-radius: .5rem; }
+
+.rt__surface figure { margin: 1.2rem 0; }
+.rt__surface figure img { display: block; }
+.rt__surface figcaption {
+    margin-top: .4rem;
+    font-size: .8125rem;
+    color: #64748b;
+    text-align: center;
+}
+
+.rt__surface table { width: 100%; border-collapse: collapse; margin: 1.2rem 0; font-size: .9375rem; }
+.rt__surface th, .rt__surface td { border: 1px solid #e2e8f0; padding: .5rem .7rem; text-align: left; }
+.rt__surface th { background: #f8fafc; font-weight: 600; }
+
+/* Alignment produced by the toolbar. */
+.rt__surface [style*="text-align: center"] figure,
+.rt__surface [style*="text-align:center"] figure { margin-inline: auto; }
+
+/* Source view ------------------------------------------------------------- */
+
+.rt__source {
+    display: block;
+    width: 100%;
+    min-height: 320px;
+    padding: 16px 18px;
+    border: 0;
+    outline: 0;
+    resize: vertical;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+/* Status line ------------------------------------------------------------- */
+
+.rt__status {
+    padding: 5px 10px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: right;
+}
+.rt__status.is-error { color: #e11d48; text-align: left; }
+
+/* Media picker ------------------------------------------------------------ */
+
+.rt-media {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: grid;
+    place-items: center;
+}
+.rt-media[hidden] { display: none !important; }
+.rt-media__backdrop { position: absolute; inset: 0; background: rgb(2 6 23 / .5); }
+.rt-media__panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 92vw);
+    max-height: 82vh;
+    border-radius: .75rem;
+    background: #fff;
+    box-shadow: 0 20px 60px rgb(15 23 42 / .3);
+    overflow: hidden;
+}
+.rt-media__head,
+.rt-media__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .8rem 1rem;
+}
+.rt-media__head { border-bottom: 1px solid #e2e8f0; font-weight: 600; }
+.rt-media__foot { border-top: 1px solid #e2e8f0; justify-content: flex-end; }
+.rt-media__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: .55rem;
+}
+.rt-media__cell {
+    aspect-ratio: 1;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: .5rem;
+    background: #f1f5f9;
+    cursor: pointer;
+}
+.rt-media__cell:hover { border-color: #6366f1; }
+.rt-media__cell img { width: 100%; height: 100%; object-fit: cover; }
+.rt-media__note { grid-column: 1 / -1; padding: 2rem; text-align: center; color: #94a3b8; font-size: .875rem; }
+
+/* Image settings panel ---------------------------------------------------- */
+
+.rt { position: relative; }
+
+.rt__surface img { cursor: pointer; }
+/* The selected image gets its outline from the resize overlay, which sits
+   exactly on top of it — a second outline here would double it up. */
+.rt__surface img.rt-selected { outline: none; }
+
+.rt-image-panel {
+    position: absolute;
+    z-index: 20;
+    width: min(360px, calc(100% - 16px));
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: .625rem;
+    background: #fff;
+    box-shadow: 0 12px 32px rgb(15 23 42 / .16);
+    font-size: 12px;
+    color: #334155;
+}
+.rt-image-panel__alt { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.rt-image-panel__alt span { font-weight: 600; color: #0f172a; }
+.rt-image-panel__alt input {
+    width: 100%; padding: 7px 9px;
+    border: 1px solid #cbd5e1; border-radius: 6px;
+    font: inherit; font-size: 13px;
+}
+.rt-image-panel__alt input:focus { outline: 2px solid #c7d2fe; border-color: #6366f1; }
+.rt-image-panel__row { display: flex; align-items: center; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.rt-image-panel__label { width: 44px; color: #64748b; }
+.rt-image-panel__check { display: flex; align-items: center; gap: 6px; margin-right: auto; }
+.rt-image-panel__remove { border: 0; background: none; color: #e11d48; cursor: pointer; font: inherit; }
+.rt-image-panel__done {
+    padding: 5px 12px; border: 0; border-radius: 6px;
+    background: #4f46e5; color: #fff; cursor: pointer; font: inherit; font-weight: 600;
+}
+.rt-image-panel__hint { margin: 8px 0 0; color: #b45309; }
+.rt-image-panel__width { display: flex; align-items: center; gap: 3px; }
+.rt-image-panel__width input {
+    width: 70px; padding: 4px 6px;
+    border: 1px solid #cbd5e1; border-radius: 6px;
+    font: inherit; font-size: 12px;
+}
+.rt-image-panel__width span { color: #94a3b8; }
+.rt-image-panel__size {
+    padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;
+    background: #fff; color: #475569; cursor: pointer; font: inherit; font-size: 11px;
+}
+.rt-image-panel__size:hover { background: #f1f5f9; }
+
+/* Resize handles ----------------------------------------------------------
+   Drawn in an overlay above the surface rather than inside the editable
+   content, so they can never be typed into or end up in the saved HTML. */
+
+.rt-resizer {
+    position: absolute;
+    z-index: 15;
+    pointer-events: none;           /* clicks still reach the image beneath */
+    outline: 2px solid #6366f1;
+    outline-offset: 1px;
+}
+.rt-resizer__handle {
+    position: absolute;
+    width: 12px; height: 12px;
+    border: 2px solid #fff; border-radius: 50%;
+    background: #4f46e5;
+    box-shadow: 0 1px 4px rgb(15 23 42 / .35);
+    pointer-events: auto;
+    touch-action: none;             /* pointermove must not be eaten by scroll */
+}
+.rt-resizer__handle--nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.rt-resizer__handle--ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.rt-resizer__handle--sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.rt-resizer__handle--se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+.rt-resizer__readout {
+    position: absolute;
+    bottom: 6px; left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgb(15 23 42 / .78);
+    color: #fff;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Image alignment, in the editor and on the live site --------------------
+   The classes live on the <figure>, so a theme can restyle them. */
+
+.prose-content figure { margin: 1.4rem 0; }
+.prose-content figure img { display: block; max-width: 100%; height: auto; border-radius: .5rem; }
+.prose-content figure.align-center { margin-inline: auto; text-align: center; width: fit-content; max-width: 100%; }
+.prose-content figure.align-center img { margin-inline: auto; }
+.prose-content figure.align-wide img { width: 100%; }
+.prose-content figure.align-left { float: left; max-width: 50%; margin: .3rem 1.4rem 1rem 0; }
+.prose-content figure.align-right { float: right; max-width: 50%; margin: .3rem 0 1rem 1.4rem; }
+.prose-content figcaption { margin-top: .45rem; font-size: .8125rem; color: #64748b; text-align: center; }
+.prose-content::after { content: ''; display: table; clear: both; }
+
+/* Floated images stack on narrow screens; a half-width photo beside a
+   one-word-wide column of text helps nobody. */
+@media (max-width: 640px) {
+    .prose-content figure.align-left,
+    .prose-content figure.align-right { float: none; max-width: 100%; margin: 1.2rem 0; }
+}
+
+/* Media picker detail pane ------------------------------------------------ */
+
+.rt-media__head-actions { display: flex; align-items: center; gap: .9rem; }
+.rt-media__upload { cursor: pointer; font-size: .875rem; font-weight: 500; color: #4f46e5; }
+.rt-media__x { border: 0; background: none; font-size: 1.4rem; line-height: 1; cursor: pointer; color: #64748b; }
+.rt-media__search { padding: .6rem 1rem 0; }
+.rt-media__search input {
+    width: 100%; padding: .5rem .75rem;
+    border: 1px solid #e2e8f0; border-radius: .5rem; font: inherit; font-size: .875rem;
+}
+.rt-media__notice { margin: .6rem 1rem 0; padding: .55rem .75rem; border-radius: .5rem; font-size: .8125rem; }
+.rt-media__notice.is-error { background: #fff1f2; color: #be123c; }
+.rt-media__notice.is-info { background: #eef2ff; color: #4338ca; }
+.rt-media__cell { position: relative; }
+.rt-media__cell.is-selected { border-color: #4f46e5; box-shadow: 0 0 0 3px rgb(79 70 229 / .2); }
+.rt-media__badge {
+    position: absolute; right: 4px; bottom: 4px;
+    padding: 1px 6px; border-radius: 999px;
+    background: rgb(180 83 9 / .9); color: #fff; font-size: 10px;
+}
+.rt-media__foot { flex-direction: column; align-items: stretch; gap: .75rem; }
+.rt-media__detail { display: grid; grid-template-columns: 64px 1fr; gap: .4rem .9rem; align-items: center; }
+.rt-media__detail img { grid-row: span 2; width: 64px; height: 64px; object-fit: cover; border-radius: .5rem; }
+.rt-media__alt { display: flex; flex-direction: column; gap: 3px; font-size: .8125rem; font-weight: 600; color: #0f172a; }
+.rt-media__alt small { font-weight: 400; color: #64748b; }
+.rt-media__alt input {
+    padding: .5rem .7rem; border: 1px solid #cbd5e1; border-radius: .45rem;
+    font: inherit; font-size: .875rem; font-weight: 400;
+}
+.rt-media__remember { display: flex; align-items: center; gap: .45rem; font-size: .8125rem; color: #475569; }
+.rt-media__actions { display: flex; justify-content: flex-end; gap: .5rem; }
+.rt-media__btn {
+    padding: .5rem 1rem; border: 1px solid #cbd5e1; border-radius: .5rem;
+    background: #fff; font: inherit; font-size: .875rem; cursor: pointer;
+}
+.rt-media__btn--primary { border-color: #4f46e5; background: #4f46e5; color: #fff; font-weight: 600; }
+.rt-media__btn--primary:disabled { opacity: .45; cursor: default; }

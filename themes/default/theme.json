@@ -1,0 +1,25 @@
+{
+    "name": "Default",
+    "slug": "default",
+    "version": "1.0.0",
+    "author": "Custom CMS",
+    "description": "The bundled starter theme. Clean, fast and responsive, with every page a shop or blog needs. Copy this folder as the starting point for your own template.",
+    "screenshot": "screenshot.png",
+    "supports": [
+        "blog",
+        "shop",
+        "pages",
+        "contact",
+        "newsletter"
+    ],
+    "menus": {
+        "header": "Main navigation",
+        "footer": "Footer links"
+    },
+    "regions": {
+        "header": "Site header",
+        "footer": "Site footer",
+        "before_content": "Before page content",
+        "after_content": "After page content"
+    }
+}

@@ -1,0 +1,35 @@
+{
+    "name": "Storefront",
+    "slug": "storefront",
+    "version": "1.0.1",
+    "author": "Custom CMS",
+    "author_url": "",
+    "description": "A high-street retail template built for catalogues with a lot of products: a sticky yellow masthead with a category mega-menu and search, scrolling product rails on the homepage, a rich product page with gallery, offer callouts and accordions, and a saved-items drawer. Ships its own stylesheet, so it needs no asset build.",
+    "screenshot": "screenshot.svg",
+    "supports": [
+        "blog",
+        "shop",
+        "pages",
+        "contact",
+        "newsletter"
+    ],
+    "menus": {
+        "header": "Main navigation",
+        "footer": "Footer links",
+        "footer_help": "Useful links",
+        "footer_about": "About us",
+        "footer_support": "Store & support"
+    },
+    "regions": {
+        "header": "Site header",
+        "footer": "Site footer",
+        "announcement": "Announcement bar",
+        "hero": "Homepage hero",
+        "home_bottom": "Homepage, below the rails",
+        "before_content": "Before page content",
+        "after_content": "After page content",
+        "shop_index": "Shop listing page",
+        "cart": "Cart page",
+        "checkout": "Checkout page"
+    }
+}

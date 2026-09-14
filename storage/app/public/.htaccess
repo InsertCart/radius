@@ -1,0 +1,50 @@
+# ---------------------------------------------------------------------------
+# Uploads folder (served at /storage via the public/storage link)
+# ---------------------------------------------------------------------------
+# Nothing in here is ever executed. Uploads are checked before they are saved,
+# but this is the second line of defence: if a script ever reached this folder
+# - through a bug, a misconfigured plugin, or a server change years from now -
+# the web server still refuses to run or serve it.
+#
+# Only file types on the list below can be downloaded at all.
+
+# Refuse everything by default...
+Require all denied
+
+# ...then allow only the media types the CMS accepts.
+<FilesMatch "\.(?i:jpe?g|png|gif|webp|avif|svg|ico|pdf|mp4|webm|zip|docx?|xlsx?)$">
+    Require all granted
+</FilesMatch>
+
+# No directory listings, no CGI, no server-side includes. XAMPP enables
+# ExecCGI and Includes for htdocs by default, so this has to be explicit.
+Options -Indexes -ExecCGI -Includes
+
+# Even if a PHP file were somehow granted above, never hand it to PHP.
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<FilesMatch "\.(?i:php\d?|phtml|phar|pht|phps|cgi|pl|py|sh|asp|aspx|jsp|shtml)$">
+    SetHandler none
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # Browsers must use the declared type, not guess one from the contents -
+    # guessing is how an image with HTML inside it gets rendered as a page.
+    Header set X-Content-Type-Options "nosniff"
+
+    # An SVG opened directly must not be able to run script, even if one
+    # slipped past the upload cleaner.
+    <FilesMatch "\.(?i:svg)$">
+        Header set Content-Security-Policy "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox"
+    </FilesMatch>
+
+    # Documents download rather than opening inside the site.
+    <FilesMatch "\.(?i:zip|docx?|xlsx?)$">
+        Header set Content-Disposition "attachment"
+    </FilesMatch>
+</IfModule>

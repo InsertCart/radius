@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+@import './richtext.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+@source '../../themes/**/*.blade.php';
+
+@theme {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+}
+
+/* Alpine sets x-cloak on elements that must stay hidden until it boots;
+   without this rule they flash on screen during page load. */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Long-form content rendered from the editor. Themes can override these. */
+.prose-content {
+    line-height: 1.75;
+}
+.prose-content h2 { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 0.75rem; }
+.prose-content h3 { font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+.prose-content p { margin-bottom: 1rem; }
+.prose-content ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+.prose-content ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+.prose-content a { color: var(--color-indigo-600); text-decoration: underline; }
+.prose-content img { border-radius: 0.75rem; margin: 1.5rem 0; }
+.prose-content blockquote {
+    border-left: 3px solid var(--color-slate-300);
+    padding-left: 1rem;
+    font-style: italic;
+    margin: 1.5rem 0;
+}
+.prose-content pre {
+    background: var(--color-slate-900);
+    color: var(--color-slate-100);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
