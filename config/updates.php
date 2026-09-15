@@ -89,6 +89,10 @@ return [
             'composer.json',
             'composer.lock',
             'config',
+            // The wrong-document-root guard. Reached only when a server is
+            // pointed at the project folder, where it explains the fix
+            // instead of leaving nginx to answer 403.
+            'index.php',
             'package.json',
             'public/.htaccess',
             'public/favicon',
