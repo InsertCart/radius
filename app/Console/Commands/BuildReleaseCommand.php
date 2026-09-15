@@ -75,6 +75,7 @@ class BuildReleaseCommand extends Command
         $hash = hash_file('sha256', $zipPath);
 
         $this->writeManifest($output, $version, $hash, $size);
+        $notesPath = $this->writeNotes($output, $version, $hash);
 
         $this->newLine();
         $this->info('Release built.');
@@ -83,40 +84,91 @@ class BuildReleaseCommand extends Command
         $this->line('  sha256    '.$hash);
         $this->line('  manifest  '.rtrim($output, '/\\').DIRECTORY_SEPARATOR.'manifest.json');
 
-        $this->publishingInstructions($version, $hash, $zipPath);
+        $this->publishingInstructions($version, $zipPath, $notesPath);
 
         return self::SUCCESS;
     }
 
     /**
-     * What to do with the two files that were just produced.
+     * Write the release notes GitHub will publish, with the metadata already
+     * filled in.
      *
-     * The metadata block is the part worth printing. A GitHub release carries
-     * no checksum of its own, so without it an update is refused - correctly,
-     * but confusingly, and long after the release went out. Handing it over
-     * ready to paste is the difference between that being a rule and being a
-     * trap.
+     * Printing the block to the terminal and expecting someone to build a file
+     * around it was asking them to do the assembly by hand every time - and the
+     * one part that must not be mistyped is a 64-character hash. Producing the
+     * finished file means the only thing left to write is the part a person is
+     * actually needed for.
      */
-    private function publishingInstructions(string $version, string $hash, string $zipPath): void
+    private function writeNotes(string $directory, string $version, string $hash): string
+    {
+        $path = rtrim($directory, "/".DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR."notes-{$version}.md";
+
+        // Notes already written by hand are kept - re-running the build to fix
+        // a packaging problem must not throw away what somebody wrote. But the
+        // archive has just been rebuilt, so its checksum has changed, and a
+        // stale one is worse than none: the notes would look complete and
+        // every site would refuse the update. So the text is preserved and the
+        // hash is refreshed.
+        if (is_file($path)) {
+            $existing = (string) File::get($path);
+            $updated = preg_replace('/^sha256:.*$/m', 'sha256: '.$hash, $existing, 1, $replaced);
+
+            if ($replaced) {
+                File::put($path, $updated);
+                $this->line('  <comment>notes kept, checksum refreshed</comment>');
+            } else {
+                $this->warn('  '.basename($path).' has no sha256 line - the update will be refused. Add: sha256: '.$hash);
+            }
+
+            return $path;
+        }
+
+        $lines = [
+            'Describe what changed in this release.',
+            '',
+            'The first paragraph is what site owners see in their admin panel, so put the',
+            'headline there. Everything below it appears on the GitHub release page.',
+            '',
+            '<!-- radius',
+            'sha256: '.$hash,
+            'tags:',
+            'requires_backup: true',
+            'min_version: 1.0.0',
+            'min_php: 8.2.0',
+            '-->',
+            '',
+        ];
+
+        File::put($path, implode("
+", $lines));
+
+        return $path;
+    }
+
+    /**
+     * What to do with the files that were just produced.
+     *
+     * The checksum is the part that matters. A GitHub release carries no
+     * checksum of its own, so without it every site refuses the update -
+     * correctly, but confusingly, and long after the release went out.
+     */
+    private function publishingInstructions(string $version, string $zipPath, string $notesPath): void
     {
         $this->newLine();
-        $this->line('<comment>Paste this into the GitHub release notes</comment> (it is an HTML comment,');
-        $this->line('so nobody reading the page will see it):');
+        $this->line('  notes     '.$notesPath);
         $this->newLine();
-        $this->line("<info><!-- radius</info>");
-        $this->line("<info>sha256: {$hash}</info>");
-        $this->line('<info>tags: </info>            <comment># e.g. security, breaking - free text, shown as badges</comment>');
-        $this->line('<info>requires_backup: true</info>');
-        $this->line("<info>min_version: 1.0.0</info>  <comment># oldest version that can upgrade straight to this one</comment>");
-        $this->line('<info>min_php: 8.2.0</info>');
-        $this->line('<info>--></info>');
+        $this->line('<comment>Two steps left:</comment>');
         $this->newLine();
-        $this->line('<comment>Then publish it:</comment>');
+        $this->line('  1. Open the notes file above and write what changed. The checksum and');
+        $this->line('     the settings the updater needs are already in it - leave the');
+        $this->line('     <!-- radius --> block alone, and set <info>tags:</info> if this is a');
+        $this->line('     security or breaking release.');
         $this->newLine();
-        $this->line("  gh release create v{$version} --title {$version} --notes-file notes.md {$zipPath}");
+        $this->line('  2. Publish it:');
         $this->newLine();
-        $this->line('Sites pointed at the releases API see it within a day, or immediately');
-        $this->line('via System -> Updates -> Check now.');
+        $this->line("     <info>gh release create v{$version} --title {$version} --notes-file \"{$notesPath}\" \"{$zipPath}\"</info>");
+        $this->newLine();
+        $this->line('Sites see it within a day, or immediately via System -> Updates -> Check now.');
     }
 
     /**

@@ -45,6 +45,14 @@ class PushController extends Controller
         $config = json_encode($this->firebase->clientConfig(), JSON_UNESCAPED_SLASHES);
         $siteName = json_encode(setting('site_name', config('app.name')));
 
+        // Built here rather than written as '/favicon.ico' in the script: the
+        // worker is served from the site root, but the site itself may sit in a
+        // sub-directory, where a root-absolute path points outside the install.
+        $icon = json_encode(
+            filled(setting('site_favicon')) ? site_favicon_url() : brand_asset('push_icon'),
+            JSON_UNESCAPED_SLASHES
+        );
+
         $script = <<<JS
         importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
         importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
@@ -58,7 +66,7 @@ class PushController extends Controller
 
             self.registration.showNotification(notification.title || {$siteName}, {
                 body: notification.body || '',
-                icon: notification.icon || '/favicon.ico',
+                icon: notification.icon || {$icon},
                 data: payload.data || {},
             });
         });

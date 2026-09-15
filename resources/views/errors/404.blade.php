@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Page not found &middot; {{ setting('site_name', config('app.name')) }}</title>
+    @include('partials.favicon')
+
     @vite('resources/css/app.css')
 </head>
 <body class="grid h-full place-items-center bg-white px-4 text-center">

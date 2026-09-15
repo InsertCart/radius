@@ -69,6 +69,70 @@ if (! function_exists('theme_asset')) {
     }
 }
 
+if (! function_exists('brand_asset')) {
+    /**
+     * URL for one of the default brand files shipped in public/.
+     *
+     * Goes through asset() rather than a hard-coded '/', so the address is
+     * right whether the document root points at public/ or at the project
+     * folder with the root .htaccess doing the rewriting.
+     */
+    function brand_asset(string $key): ?string
+    {
+        $path = config("cms.brand.{$key}");
+
+        return $path ? asset($path) : null;
+    }
+}
+
+if (! function_exists('site_logo_url')) {
+    /**
+     * The site logo: whatever the owner uploaded under Settings -> General,
+     * falling back to the logo this product ships with.
+     *
+     * Views should call this instead of reading setting('site_logo')
+     * themselves - that returns a media-disk path and is empty on a fresh
+     * install, which is how every header ended up with its own copy of the
+     * same "is it set?" branch.
+     */
+    function site_logo_url(bool $small = false): string
+    {
+        $uploaded = setting('site_logo');
+
+        if (filled($uploaded)) {
+            return str_starts_with($uploaded, 'http')
+                ? $uploaded
+                : \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url($uploaded);
+        }
+
+        return brand_asset($small ? 'logo_small' : 'logo') ?? '';
+    }
+}
+
+if (! function_exists('site_favicon_url')) {
+    /** The favicon the owner uploaded, or the one this product ships with. */
+    function site_favicon_url(): string
+    {
+        $uploaded = setting('site_favicon');
+
+        if (filled($uploaded)) {
+            return str_starts_with($uploaded, 'http')
+                ? $uploaded
+                : \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url($uploaded);
+        }
+
+        return brand_asset('favicon') ?? '';
+    }
+}
+
+if (! function_exists('site_logo_is_custom')) {
+    /** Whether the owner has replaced the shipped logo with their own. */
+    function site_logo_is_custom(): bool
+    {
+        return filled(setting('site_logo'));
+    }
+}
+
 if (! function_exists('seo')) {
     function seo(): SeoManager
     {

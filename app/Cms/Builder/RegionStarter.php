@@ -239,9 +239,10 @@ class RegionStarter
     private function logo(string $align = 'flex-start'): array
     {
         return $this->widget('site-logo', [
-            // Fall back to the site name when no logo image is configured, so
-            // the starter never renders as an empty box.
-            'source' => filled(setting('site_logo')) ? 'setting' : 'text',
+            // 'setting' is always safe now: site_logo_url() falls back to the
+            // logo the CMS ships with, so the starter never renders as an empty
+            // box even before anybody uploads one.
+            'source' => 'setting',
             'link_home' => true,
             'align' => ['desktop' => $align],
         ]);

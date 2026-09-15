@@ -309,10 +309,15 @@ class SeoManager
             'url' => url('/'),
         ];
 
-        if ($logo = setting('schema_org_logo') ?: setting('site_logo')) {
+        // An explicit schema logo wins; otherwise this is the site logo, which
+        // falls back to the one the CMS ships with. Search engines treat a
+        // missing logo as a missing organisation mark, so there is always one.
+        if ($logo = setting('schema_org_logo')) {
             $schema['logo'] = str_starts_with($logo, 'http')
                 ? $logo
                 : Storage::disk(config('cms.media.disk'))->url($logo);
+        } elseif ($logo = site_logo_url()) {
+            $schema['logo'] = $logo;
         }
 
         if ($description = setting('meta_description') ?: setting('site_tagline')) {

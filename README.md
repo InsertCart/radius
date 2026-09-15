@@ -1,8 +1,16 @@
+<div align="center">
+
+<img src=".github/assets/radius-logo.png" alt="Radius" width="220">
+
 # Radius
 
-A modular, self-hosted CMS and eCommerce platform built on Laravel 12.
+**A modular, self-hosted CMS and eCommerce platform built on Laravel 12.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PHP 8.2+](https://img.shields.io/badge/php-8.2%2B-777bb4.svg)](https://www.php.net/)
+[![Laravel 12](https://img.shields.io/badge/laravel-12-ff2d20.svg)](https://laravel.com/)
+
+</div>
 
 Open source under the [MIT licence](LICENSE): use it commercially, fork it,
 build closed-source themes and plugins on top of it. Security issues go through
@@ -11,6 +19,26 @@ build closed-source themes and plugins on top of it. Security issues go through
 Every optional feature is a **module** that can be switched off from the admin
 panel. A disabled module registers no routes and runs no queries, so a
 blog-only site carries none of the shop's weight.
+
+---
+
+## Screenshots
+
+> Drop image files into [`.github/assets/`](.github/assets/) and reference them
+> here. That folder is excluded from the release ZIP, so marketing images never
+> ship to buyers. See [`.github/assets/README.md`](.github/assets/README.md).
+
+<!-- Uncomment each row once the image exists.
+
+| Admin dashboard | Visual builder |
+| --- | --- |
+| <img src=".github/assets/screenshot-dashboard.png" alt="Admin dashboard"> | <img src=".github/assets/screenshot-builder.png" alt="Visual builder"> |
+
+| Storefront | Checkout |
+| --- | --- |
+| <img src=".github/assets/screenshot-storefront.png" alt="Storefront"> | <img src=".github/assets/screenshot-checkout.png" alt="Checkout"> |
+
+-->
 
 ---
 
@@ -561,30 +589,46 @@ php artisan cms:release
 composer install
 ```
 
-Step 4 prints a metadata block. **Paste it into the release notes** - GitHub has
-no concept of a checksum, and without one every site refuses the update:
+Step 4 produces three things in `storage/app/private/releases/`:
+
+| File | What it is |
+| --- | --- |
+| `radius-1.1.0.zip` | the release itself - attach this to the GitHub release |
+| `notes-1.1.0.md` | release notes, with the checksum already filled in |
+| `manifest.json` | only needed if you host your own manifest instead of using GitHub |
+
+**Open `notes-1.1.0.md` and write what changed.** The first paragraph is what
+site owners see in their admin panel, so put the headline there. The file
+already ends with the block the updater needs:
 
 ```
 <!-- radius
 sha256: 9f2c...
-tags: security, breaking
+tags:
 requires_backup: true
 min_version: 1.0.0
 min_php: 8.2.0
 -->
 ```
 
-It is an HTML comment, so nobody reading the release page ever sees it. `tags`
-is free text shown as badges; `requires_backup` is what actually forces a
-backup, so a typo in a tag can never quietly disable one.
+It is an HTML comment, so nobody reading the release page sees it. Leave the
+`sha256` alone - it is generated. Set `tags:` to `security` or `breaking` when
+that applies: tags are free text shown as badges, while `requires_backup` is
+what actually forces a backup, so a typo in a tag can never quietly disable one.
 
-Then publish, attaching the built ZIP:
+GitHub has no concept of a checksum, and **without that line every site refuses
+the update** - so the file is generated rather than left for you to assemble by
+hand. Re-running the build keeps whatever you have written and refreshes the
+checksum, because the archive has changed and a stale hash is worse than none.
+
+Then publish, attaching the ZIP:
 
 ```bash
-gh release create v1.1.0 --title 1.1.0 --notes-file notes.md   storage/app/private/releases/radius-1.1.0.zip
+gh release create v1.1.0 --title 1.1.0   --notes-file storage/app/private/releases/notes-1.1.0.md   storage/app/private/releases/radius-1.1.0.zip
 ```
 
-Tag as `v1.1.0`; the leading `v` is stripped when the version is read.
+Tag as `v1.1.0`; the leading `v` is stripped when the version is read. The exact
+command, with full paths, is printed at the end of step 4.
 
 Sites see it within a day, or immediately via **System → Updates → Check now**.
 
@@ -781,6 +825,55 @@ Node installed to run the site.
 
 ---
 
+## Branding
+
+Radius ships with its own logo and icon set so a fresh install looks finished
+before anyone has uploaded anything. They are defaults, not fixtures: the
+moment a site owner uploads their own under **Settings → General**, the
+uploaded file wins everywhere.
+
+| File | Used for |
+| --- | --- |
+| `public/images/radius-logo.png` | Default site logo (1271×1051) |
+| `public/images/radius-logo-small.png` | Same mark at 444×357, for tight spots |
+| `public/favicon.ico` | The bare `/favicon.ico` browsers ask for unprompted |
+| `public/favicon/` | The full icon set: `.ico`, `.svg`, 96px, Apple touch, 192/512 PWA icons, `site.webmanifest` |
+
+Views never read `setting('site_logo')` directly. They call the helpers in
+`app/Cms/Support/helpers.php`, which apply the fallback in one place:
+
+```php
+site_logo_url()        // uploaded logo, else the shipped one
+site_logo_url(true)    // the small variant
+site_favicon_url()     // uploaded favicon, else the shipped .ico
+brand_asset('favicon_svg')   // a shipped file, never the uploaded one
+site_logo_is_custom()  // has the owner replaced it?
+```
+
+The head tags live in one partial, `resources/views/partials/favicon.blade.php`,
+included by both themes, the admin panel, the installer, the auth pages and the
+error pages.
+
+**To rebrand the product itself** — for a fork, or a white-label build — you do
+not need to touch a view. Either replace the files above in place, or repoint
+the `brand` block in `config/cms.php`:
+
+```php
+'brand' => [
+    'logo' => 'images/radius-logo.png',
+    'logo_small' => 'images/radius-logo-small.png',
+    'favicon' => 'favicon/favicon.ico',
+    // ...
+],
+```
+
+Paths are relative to the web root and resolved through `asset()`, so they work
+whether the document root points at `public/` or at the project folder. Both
+`public/images/` and `public/favicon/` are in the updater's `track_edits` list,
+so a logo you replaced in place survives an update instead of being overwritten.
+
+---
+
 ## Project layout
 
 ```
@@ -804,8 +897,11 @@ app/
 │   ├── Auth/               sign-in, registration, two-factor
 │   └── Installer/          the setup wizard
 └── Models/
+public/
+├── images/                 default logo files
+└── favicon/                default icon set and the web manifest
 config/
-├── cms.php                 modules, themes, media, security
+├── cms.php                 modules, themes, media, security, brand assets
 ├── settings.php            every admin setting, declared once
 ├── payments.php            gateway definitions and endpoints
 └── builder.php             registered widgets, breakpoints, design tokens

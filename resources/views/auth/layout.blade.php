@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('title') &middot; {{ setting('site_name', config('app.name')) }}</title>
+
+    @include('partials.favicon')
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="grid h-full place-items-center bg-slate-100 px-4 py-10">
     <div class="w-full max-w-md">
         <div class="mb-6 text-center">
-            <a href="{{ url('/') }}" class="text-lg font-semibold text-slate-900">
-                {{ setting('site_name', config('app.name')) }}
+            <a href="{{ url('/') }}" class="inline-block">
+                <img src="{{ site_logo_url() }}" alt="{{ setting('site_name', config('app.name')) }}"
+                     class="mx-auto h-14 w-auto">
             </a>
             <p class="mt-1 text-sm text-slate-500">@yield('subtitle')</p>
         </div>

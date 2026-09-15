@@ -31,13 +31,7 @@
     <div class="sf-foot__top">
         <div class="sf-foot__brand">
             <a href="{{ url('/') }}" class="sf-logo">
-                @if (setting('site_logo'))
-                    <img src="{{ \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url(setting('site_logo')) }}"
-                         alt="{{ setting('site_name') }}">
-                @else
-                    <span class="sf-logo__mark">@include('theme::partials.icon', ['name' => 'logo'])</span>
-                    <span>{{ setting('site_name', config('app.name')) }}</span>
-                @endif
+                <img src="{{ site_logo_url() }}" alt="{{ setting('site_name', config('app.name')) }}">
             </a>
 
             @if (setting('site_tagline'))

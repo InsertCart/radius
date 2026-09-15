@@ -14,6 +14,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default brand assets
+    |--------------------------------------------------------------------------
+    | Shipped in public/ and used until the site owner uploads their own logo
+    | or favicon under Settings -> General. Paths are relative to the web root,
+    | resolved through asset(), so they keep working whether the document root
+    | points at public/ or at the project folder.
+    |
+    | Rebranding is a matter of replacing these files or pointing these keys
+    | somewhere else - no view needs editing.
+    */
+
+    'brand' => [
+        'logo' => 'images/radius-logo.png',
+        'logo_small' => 'images/radius-logo-small.png',
+
+        'favicon' => 'favicon/favicon.ico',
+        'favicon_svg' => 'favicon/favicon.svg',
+        'favicon_png' => 'favicon/favicon-96x96.png',
+        'apple_touch_icon' => 'favicon/apple-touch-icon.png',
+        'manifest' => 'favicon/site.webmanifest',
+
+        // Web push notifications. A PNG, not the .ico: browsers draw this one
+        // at 192px in the notification tray and several will not render an
+        // .ico there at all.
+        'push_icon' => 'favicon/web-app-manifest-192x192.png',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin panel
     |--------------------------------------------------------------------------
     | The admin prefix lives in .env so a buyer can obscure the login URL

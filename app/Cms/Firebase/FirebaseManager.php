@@ -169,7 +169,12 @@ class FirebaseManager
                     'notification' => array_filter([
                         'title' => $title,
                         'body' => $body,
-                        'icon' => setting('site_favicon') ? url(setting('site_favicon')) : null,
+                        // site_favicon_url() resolves against the media disk;
+                        // url() did not, so an uploaded favicon produced an
+                        // address that 404'd. Falls back to the shipped PNG.
+                        'icon' => filled(setting('site_favicon'))
+                            ? site_favicon_url()
+                            : brand_asset('push_icon'),
                     ]),
                     'fcm_options' => $link ? ['link' => $link] : null,
                 ]) ?: null,

@@ -1,12 +1,11 @@
 <header x-data="{ open: false }" class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
         <a href="{{ url('/') }}" class="flex shrink-0 items-center gap-2">
-            @if (setting('site_logo'))
-                <img src="{{ \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url(setting('site_logo')) }}"
-                     alt="{{ setting('site_name') }}" class="h-8 w-auto">
-            @else
-                <span class="text-lg font-bold text-slate-900">{{ setting('site_name', config('app.name')) }}</span>
-            @endif
+            {{-- site_logo_url() falls back to the logo the CMS ships with, so a
+                 fresh install has a real mark in the header rather than a
+                 placeholder. Uploading one under Settings -> General replaces it. --}}
+            <img src="{{ site_logo_url() }}"
+                 alt="{{ setting('site_name', config('app.name')) }}" class="h-10 w-auto">
         </a>
 
         {{-- Desktop navigation. Falls back to a sensible default when the site

@@ -9,9 +9,7 @@
     {{-- Title, meta, Open Graph and JSON-LD, all from the SEO manager. --}}
     @seoHead
 
-    @if (setting('site_favicon'))
-        <link rel="icon" href="{{ \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url(setting('site_favicon')) }}">
-    @endif
+    @include('partials.favicon')
 
     @vite(['resources/css/app.css', 'resources/css/builder-front.css'])
 

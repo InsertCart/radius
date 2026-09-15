@@ -9,9 +9,7 @@
     {{-- Title, meta, Open Graph and JSON-LD, all from the SEO manager. --}}
     @seoHead
 
-    @if (setting('site_favicon'))
-        <link rel="icon" href="{{ \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url(setting('site_favicon')) }}">
-    @endif
+    @include('partials.favicon')
 
     {{-- The CMS bundle supplies the reset plus the rich-text and builder block
          styles. The theme's own sheet loads after it and owns everything the

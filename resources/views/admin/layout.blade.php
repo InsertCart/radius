@@ -8,6 +8,8 @@
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('title', 'Dashboard') &middot; {{ setting('site_name', config('app.name')) }}</title>
 
+    @include('partials.favicon')
+
     {{-- Endpoints the Alpine components need. Kept as data rather than built
          into the bundle so the panel keeps working under a sub-directory. --}}
     @php

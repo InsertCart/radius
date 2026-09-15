@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex">
     <title>Back soon &middot; {{ setting('site_name', config('app.name')) }}</title>
+    @include('partials.favicon')
+
     @vite('resources/css/app.css')
 </head>
 <body class="grid h-full place-items-center bg-slate-100 px-4 text-center">

@@ -91,7 +91,9 @@ return [
             'config',
             'package.json',
             'public/.htaccess',
+            'public/favicon',
             'public/favicon.ico',
+            'public/images',
             'public/index.php',
             'public/robots.txt',
             'themes/default',
@@ -126,6 +128,13 @@ return [
             'public/.htaccess',
             'public/index.php',
             '.htaccess',
+
+            // The shipped logo and icons. Replacing these files in place is a
+            // documented way to rebrand, so an update that overwrote them would
+            // silently put our logo back on somebody else's site.
+            'public/favicon',
+            'public/favicon.ico',
+            'public/images',
         ],
     ],
 
