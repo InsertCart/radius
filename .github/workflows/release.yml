@@ -1,0 +1,124 @@
+name: Release
+
+# Publishing is driven by the tag, so cutting a release is one push. Building
+# locally meant remembering to swap the dev dependencies out and back in again,
+# and a release built on the wrong machine state is not obviously wrong until
+# somebody installs it.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The changelog is built from the commits since the previous tag.
+          fetch-depth: 0
+
+      - name: Read the version from the tag
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # The tag and config/cms.php must agree. The updater compares against
+      # config/cms.php, so a release tagged v1.2.0 carrying 1.1.0 inside would
+      # install and then still report itself as out of date - forever.
+      - name: Check the tag matches config/cms.php
+        run: |
+          declared=$(grep -m1 "'version'" config/cms.php | sed "s/.*=> '//;s/'.*//")
+          tagged="${{ steps.version.outputs.value }}"
+          if [ "$declared" != "$tagged" ]; then
+            echo "::error::Tag v$tagged does not match config/cms.php ($declared). Bump the version, commit, then re-tag."
+            exit 1
+          fi
+          echo "Version $declared confirmed."
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: zip, gd, fileinfo, intl, mbstring
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # --no-dev is what keeps PHPUnit, Pint and Tinker out of the product.
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+      - name: Build front-end assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package the release
+        run: php artisan cms:release --force
+
+      - name: Assemble the release notes
+        id: notes
+        run: |
+          version="${{ steps.version.outputs.value }}"
+          generated="storage/app/private/releases/notes-${version}.md"
+          final="release-notes.md"
+
+          # An annotated tag carries its own message; that is the best summary
+          # of a release, because it was written deliberately for this release
+          # rather than assembled from commit subjects afterwards.
+          message=$(git tag -l --format='%(contents:subject)%0a%0a%(contents:body)' "${GITHUB_REF_NAME}")
+          message=$(printf '%s' "$message" | sed '/^tags:/d' | sed -e :a -e '/^[[:space:]]*$/{$d;N;ba' -e '}')
+
+          if [ -n "$message" ]; then
+            printf '%s
+
+' "$message" > "$final"
+          else
+            : > "$final"
+          fi
+
+          previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+
+          if [ -n "$previous" ]; then
+            echo "## What changed" >> "$final"
+            echo "" >> "$final"
+            git log --no-merges --pretty=format:'- %s' "${previous}..${GITHUB_REF_NAME}" >> "$final"
+            printf '
+
+**Full changelog:** %s...%s
+' "$previous" "${GITHUB_REF_NAME}" >> "$final"
+          fi
+
+          echo "" >> "$final"
+
+          # The metadata block carries the checksum, so it is copied across
+          # rather than retyped. Without it every site refuses the update.
+          #
+          # `tags:` is the one line worth overriding here: it is what marks a
+          # release as security or breaking, and it is written into the tag
+          # message because nothing else in an automated build knows.
+          tags=$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}" | sed -n 's/^tags:[[:space:]]*//p' | head -1)
+
+          if [ -n "$tags" ]; then
+            sed "s/^tags:.*/tags: ${tags}/" "$generated" | sed -n '/<!-- radius/,/-->/p' >> "$final"
+            echo "Marked as: ${tags}"
+          else
+            sed -n '/<!-- radius/,/-->/p' "$generated" >> "$final"
+          fi
+
+          echo "--- release notes ---"
+          cat "$final"
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ steps.version.outputs.value }}"
+          gh release create "${GITHUB_REF_NAME}"             --title "$version"             --notes-file release-notes.md             "storage/app/private/releases/radius-${version}.zip"

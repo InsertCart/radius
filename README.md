@@ -569,75 +569,65 @@ invisibly and it would otherwise make a perfectly correct file unreadable.
 
 ### Cutting a release
 
-Releases are published as **GitHub Releases**. Git holds the source; the ZIP is
-built from it, because `vendor/` and `public/build/` are build output and are
-not committed - a source download is never a runnable copy.
+Pushing a `v*` tag builds and publishes the release. Nothing else is needed:
 
 ```bash
-# 1. Bump the version in config/cms.php  ->  'version' => '1.1.0'
+# 1. Bump the version in config/cms.php  ->  'version' => '1.1.3'
+git commit -am "Release 1.1.3"
 
-# 2. Commit and push the source.
-git add -A
-git commit -m "Release 1.1.0"
-git push
+# 2. Tag it. The message becomes the release description.
+git tag -a v1.1.3 -m "Fixes a stored XSS in the media library.
 
-# 3. Build the dependencies and assets that git does not carry.
-composer install --no-dev --optimize-autoloader
-npm install && npm run build
+tags: security"
 
-# 4. Package it.
-php artisan cms:release
-
-# 5. Restore your development tools.
-composer install
+# 3. Push both.
+git push && git push --tags
 ```
 
-Step 4 produces three things in `storage/app/private/releases/`:
+GitHub Actions then installs the dependencies, builds the assets, packages the
+ZIP, works out its checksum and publishes the release. Watch it under **Actions**.
+
+**The tag and `config/cms.php` must agree**, and the workflow stops if they do
+not. That check exists because the updater compares against `config/cms.php`: a
+release tagged `v1.1.3` carrying `1.1.2` inside would install and then still
+report itself as out of date, forever.
+
+A `tags:` line anywhere in the tag message marks the release - `security`,
+`breaking`, whatever you like. Those show as badges, and a security release is
+surfaced to site owners immediately instead of waiting for the daily check.
+Everything above that line becomes the release description, with a changelog of
+the commits since the previous tag appended.
+
+The checksum is generated and inserted automatically. GitHub has no concept of
+one, and without it every site refuses the update.
+
+#### Building by hand
+
+`php artisan cms:release` still does the packaging locally - useful for testing
+what a buyer receives, or for publishing outside GitHub:
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm install && npm run build
+php artisan cms:release
+composer install                       # put your dev tools back
+```
+
+It writes three files to `storage/app/private/releases/`:
 
 | File | What it is |
 | --- | --- |
-| `radius-1.1.0.zip` | the release itself - attach this to the GitHub release |
-| `notes-1.1.0.md` | release notes, with the checksum already filled in |
+| `radius-1.1.3.zip` | the release itself |
+| `notes-1.1.3.md` | release notes, with the checksum already filled in |
 | `manifest.json` | only needed if you host your own manifest instead of using GitHub |
 
-**Open `notes-1.1.0.md` and write what changed.** The first paragraph is what
-site owners see in their admin panel, so put the headline there. The file
-already ends with the block the updater needs:
+Re-running it keeps notes you have written and refreshes the checksum, because
+the archive has changed and a stale hash is worse than none - the notes would
+look complete and every site would refuse the update.
 
-```
-<!-- radius
-sha256: 9f2c...
-tags:
-requires_backup: true
-min_version: 1.0.0
-min_php: 8.2.0
--->
-```
-
-It is an HTML comment, so nobody reading the release page sees it. Leave the
-`sha256` alone - it is generated. Set `tags:` to `security` or `breaking` when
-that applies: tags are free text shown as badges, while `requires_backup` is
-what actually forces a backup, so a typo in a tag can never quietly disable one.
-
-GitHub has no concept of a checksum, and **without that line every site refuses
-the update** - so the file is generated rather than left for you to assemble by
-hand. Re-running the build keeps whatever you have written and refreshes the
-checksum, because the archive has changed and a stale hash is worse than none.
-
-Then publish, attaching the ZIP:
-
-```bash
-gh release create v1.1.0 --title 1.1.0   --notes-file storage/app/private/releases/notes-1.1.0.md   storage/app/private/releases/radius-1.1.0.zip
-```
-
-Tag as `v1.1.0`; the leading `v` is stripped when the version is read. The exact
-command, with full paths, is printed at the end of step 4.
-
-Sites see it within a day, or immediately via **System → Updates → Check now**.
-
-> **Do not point anyone at GitHub's own "Source code (zip)".** It has no
-> `vendor/` and no built assets, so it cannot boot. The updater ignores it and
-> picks your uploaded asset instead, but a human following a link will not.
+> **Never publish GitHub's own "Source code (zip)".** It has no `vendor/` and no
+> built assets, so it cannot boot. The updater ignores it and picks the uploaded
+> asset instead, but a human following a link will not.
 
 ### How sites find updates
 
