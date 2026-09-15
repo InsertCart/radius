@@ -184,6 +184,7 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::get('system', [SystemController::class, 'index'])->name('system.index');
                 Route::get('system/activity', [SystemController::class, 'activity'])->name('system.activity');
                 Route::get('system/logs', [SystemController::class, 'logs'])->name('system.logs');
+                Route::post('system/security-check', [SystemController::class, 'checkExposure'])->name('system.security-check');
 
                 // Updates. Admin-only, and never reachable by an editor: this
                 // group rewrites the application's own code.

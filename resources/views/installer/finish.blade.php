@@ -22,14 +22,21 @@
             </ol>
         </div>
 
-        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <p class="font-semibold">One security step to finish</p>
-            <p class="mt-1">
-                Delete the <code class="rounded bg-amber-100 px-1">install</code> routes or leave
-                <code class="rounded bg-amber-100 px-1">storage/installed</code> in place. While that
-                file exists the wizard refuses to run again, so nobody can point your site at a
-                different database.
-            </p>
+        {{-- Stating what has already happened, not asking for work. The
+             wizard closed itself the moment setup finished; telling the owner
+             to "delete the install routes" implies otherwise and is the kind
+             of instruction people either ignore or act on destructively. --}}
+        <div class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            <svg class="mt-0.5 h-5 w-5 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+            </svg>
+            <div>
+                <p class="font-semibold text-slate-800">Setup is now closed</p>
+                <p class="mt-0.5">
+                    The wizard has locked itself and will not run again, so nobody can point this
+                    site at another database. There is nothing for you to delete.
+                </p>
+            </div>
         </div>
 
         <div class="flex flex-wrap gap-3 border-t border-slate-100 pt-5">

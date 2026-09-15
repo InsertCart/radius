@@ -74,7 +74,7 @@
 
         <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6 text-xs text-slate-500">
             <p>&copy; {{ date('Y') }} {{ setting('site_name', config('app.name')) }}. All rights reserved.</p>
-            <p>Powered by {{ config('cms.name') }}</p>
+            <p>Powered by <a href="https://www.insertcart.com" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-900">{{ config('cms.name') }}</a></p>
         </div>
     </div>
 </footer>

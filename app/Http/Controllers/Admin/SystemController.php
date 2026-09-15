@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Cms\Support\ExposureProbe;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
@@ -14,13 +15,41 @@ use Illuminate\View\View;
  */
 class SystemController extends Controller
 {
+    public function __construct(private ExposureProbe $exposure) {}
+
     public function index(): View
     {
         return view('admin.system.index', [
             'environment' => $this->environment(),
             'warnings' => $this->warnings(),
             'storage' => $this->storage(),
+            'exposure' => $this->exposure->cached(),
+            'remediation' => $this->exposure->remediation(),
+            'servedFromProjectRoot' => $this->exposedProjectRoot() !== null,
         ]);
+    }
+
+    /**
+     * Ask the server what it will actually hand out, and report back.
+     *
+     * Deliberately a button rather than something that runs on every page
+     * load: it makes four HTTP requests, and the answer only changes when the
+     * hosting configuration does.
+     */
+    public function checkExposure(): \Illuminate\Http\RedirectResponse
+    {
+        $result = $this->exposure->run();
+
+        activity('system.security_checked', 'Ran the public-file security check.');
+
+        return match ($result['status']) {
+            ExposureProbe::EXPOSED => back()->with('error',
+                'Files that should be private are readable over the web: '
+                .implode(', ', array_keys($result['readable'])).'. See Security below for how to fix it.'),
+            ExposureProbe::PROTECTED => back()->with('status',
+                'Checked: none of the private files on this site can be downloaded over the web.'),
+            default => back()->with('warning', $result['reason']),
+        };
     }
 
     public function activity(Request $request): View
@@ -161,11 +190,30 @@ class SystemController extends Controller
             $warnings[] = 'The admin panel is on the default /admin path. Set CMS_ADMIN_PREFIX in .env to something less predictable.';
         }
 
-        if ($exposed = $this->exposedProjectRoot()) {
-            $warnings[] = "Your site is served from the project folder rather than its public/ folder, which puts {$exposed} "
-                .'inside the web root - it holds your database password and the key that signs every session. '
-                .'The .htaccess in the project root blocks it on Apache, but the real fix is to point your '
-                .'document root at the public/ folder. Request /.env in a browser to check: anything other than 403 or 404 means it is readable.';
+        // Reported from a real request this server made to itself, not from
+        // the folder layout. The layout only says a leak is possible; the
+        // probe says whether there is one. Warning on the first would fire on
+        // most shared hosting, where it is usually a false alarm and rarely
+        // something the owner can act on.
+        $exposure = $this->exposure->cached();
+
+        if ($exposure['status'] === ExposureProbe::EXPOSED) {
+            $files = implode(', ', array_keys($exposure['readable']));
+
+            $warnings[] = "Anyone on the internet can download {$files} from this site right now. "
+                .'That gives away '.reset($exposure['readable']).'. '
+                .'Fix this before anything else - see Security below.';
+        }
+
+        // Never run, on a layout where a leak is possible. Silence here would
+        // be worse than the old speculative warning: an exposed site would
+        // show nothing at all. So this asks for one click rather than
+        // asserting something nobody has established.
+        if ($exposure['status'] !== ExposureProbe::EXPOSED
+            && $exposure['checked_at'] === null
+            && $this->exposedProjectRoot() !== null) {
+            $warnings[] = 'This site is served from the project folder, so files like .env sit inside the web root. '
+                .'They should be blocked, but nobody has confirmed it on this server yet - run the check under Security below.';
         }
 
         if (config('cms.downloads.disk') === config('cms.media.disk')) {

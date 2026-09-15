@@ -424,8 +424,15 @@ location ~ ^/(app|bootstrap|config|database|lang|resources|routes|storage|tests|
 location ~ /\. { deny all; }
 ```
 
-To check your own install, request `/.env` from the browser. Anything other
-than 403 or 404 means the site is exposed.
+**The CMS checks this for you.** Under **System → Security** there is a button
+that makes the server request its own `/.env`, `composer.json`, log file and
+install lock, and reports what it actually got back. A green result means those
+files are genuinely unreachable on your host - not that the layout looks right.
+Re-run it after any hosting change.
+
+If it finds something readable, treat it as a live leak: fix the server
+configuration, then **change your database password and run
+`php artisan key:generate`**. Assume anything that was readable has been read.
 
 ---
 

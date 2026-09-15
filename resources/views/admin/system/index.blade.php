@@ -15,6 +15,73 @@
         </x-admin.card>
     @endif
 
+    {{-- Security: what the server will actually hand out, established by a
+         real request rather than inferred from the folder layout. --}}
+    <x-admin.card title="Security" class="mb-6">
+        <x-slot:actions>
+            <form method="POST" action="{{ route('admin.system.security-check') }}">
+                @csrf
+                <button class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50">
+                    {{ $exposure['checked_at'] ? 'Check again' : 'Run the check' }}
+                </button>
+            </form>
+        </x-slot:actions>
+
+        @if ($exposure['status'] === 'exposed')
+            <div class="rounded-xl border border-rose-300 bg-rose-50 p-4">
+                <p class="text-sm font-semibold text-rose-900">
+                    Private files are readable over the web right now
+                </p>
+                <ul class="mt-2 space-y-1 text-sm text-rose-800">
+                    @foreach ($exposure['readable'] as $file => $meaning)
+                        <li><code class="rounded bg-rose-100 px-1">{{ $file }}</code> &mdash; gives away {{ $meaning }}</li>
+                    @endforeach
+                </ul>
+                <p class="mt-3 text-sm text-rose-900">{{ $remediation['summary'] }}</p>
+                @if ($remediation['snippet'])
+                    <pre class="mt-2 overflow-x-auto rounded-lg bg-rose-950/90 p-3 text-xs text-rose-50">{{ $remediation['snippet'] }}</pre>
+                @endif
+                <p class="mt-3 text-xs text-rose-800">
+                    Once this is fixed, change your database password and run
+                    <code class="rounded bg-rose-100 px-1">php artisan key:generate</code>
+                    &mdash; assume anything that was readable has been read.
+                </p>
+            </div>
+        @elseif ($exposure['status'] === 'protected')
+            <div class="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                <div class="text-sm text-emerald-900">
+                    <p class="font-semibold">Your private files are not reachable over the web</p>
+                    <p class="mt-0.5">
+                        This server was asked for {{ count($exposure['checked']) }} files that should never be
+                        public &mdash; including <code class="rounded bg-emerald-100 px-1">.env</code> &mdash;
+                        and refused every one.
+                        @if ($servedFromProjectRoot)
+                            The site is served from the project folder, which is fine as long as this keeps
+                            passing. Re-run the check after any hosting change.
+                        @endif
+                    </p>
+                </div>
+            </div>
+        @else
+            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                <p class="font-semibold text-slate-800">Not checked yet</p>
+                <p class="mt-0.5">{{ $exposure['reason'] }}</p>
+            </div>
+        @endif
+
+        @if ($exposure['checked_at'])
+            <p class="mt-3 text-xs text-slate-400">
+                Last checked {{ \Illuminate\Support\Carbon::parse($exposure['checked_at'])->diffForHumans() }}.
+                @foreach ($exposure['checked'] as $file => $code)
+                    <span class="mr-2 whitespace-nowrap">{{ $file }}: {{ $code ?? 'unreachable' }}</span>
+                @endforeach
+            </p>
+        @endif
+    </x-admin.card>
+
     <div class="grid gap-6 lg:grid-cols-2">
         <x-admin.card title="Environment">
             <dl class="divide-y divide-slate-100 text-sm">
