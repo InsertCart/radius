@@ -95,6 +95,7 @@ return [
             'public/favicon-light',
             'public/favicon.ico',
             'public/images',
+            'nginx.conf.example',
             'public/index.php',
             'public/robots.txt',
             'themes/default',

@@ -72,6 +72,26 @@
             </div>
         @endif
 
+        {{-- Shown whatever the probe says. A correct document root keeps .env
+             private on nginx too, so the check can pass while the rules that
+             stop an uploaded file being executed are still missing. --}}
+        @unless ($readsHtaccess)
+            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p class="font-semibold">{{ $webServer }} ignores .htaccess files</p>
+                <p class="mt-1">
+                    {{ $remediation['summary'] }}
+                </p>
+                @if ($remediation['snippet'])
+                    <pre class="mt-2 overflow-x-auto rounded-lg bg-amber-950/90 p-3 text-xs text-amber-50">{{ $remediation['snippet'] }}</pre>
+                @endif
+                <p class="mt-2 text-xs">
+                    Uploads are still checked before they are stored, SVGs are still cleaned, and paid
+                    downloads are still served only through a paid order &mdash; none of that depends on
+                    the web server. What is missing is the second layer.
+                </p>
+            </div>
+        @endunless
+
         @if ($exposure['checked_at'])
             <p class="mt-3 text-xs text-slate-400">
                 Last checked {{ \Illuminate\Support\Carbon::parse($exposure['checked_at'])->diffForHumans() }}.

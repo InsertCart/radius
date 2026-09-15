@@ -77,6 +77,33 @@ shared hosting it is often not an option.
 project sits inside the web root. If your host ignores `.htaccess` files
 (`AllowOverride None`), you must point the document root at `public/`.
 
+### On nginx (including CloudPanel)
+
+**nginx does not read `.htaccess` at all**, so every one of those files is
+inert. Two things then need stating in your server block: Laravel's routing,
+without which every page but the home page returns 404; and the rules that keep
+`.env` private and stop an uploaded file being executed.
+
+A complete, commented server block ships with the CMS as
+**`nginx.conf.example`**, with notes for CloudPanel at the bottom.
+
+On CloudPanel the short version is:
+
+1. Create the site as a **PHP** site, PHP 8.2 or newer.
+2. Set the **Site Root** so it ends in `/public`. This is the step that
+   matters - leaving it at the project folder puts `.env` one URL away.
+3. Under the site's **Vhost** tab, add the `location ^~ /storage/`,
+   `location ^~ /themes/` and dotfile blocks from `nginx.conf.example`.
+   CloudPanel reloads nginx for you.
+4. Open **System → Security** in the admin and run the check. It asks your own
+   server for `.env` and reports what it actually got back.
+
+What does *not* change on nginx: uploads are still checked before they are
+stored, SVGs are still sanitised, and paid downloads still live on a disk with
+no URL and leave only through a controller that has verified the order. Those
+are application-level and do not depend on the web server. The admin panel
+says so plainly rather than implying the site is unprotected.
+
 The wizard writes `.env`, runs the migrations, seeds the defaults and creates
 your admin account. When it finishes it drops a `storage/installed` lock file,
 which permanently closes the wizard so nobody can re-point your site at another

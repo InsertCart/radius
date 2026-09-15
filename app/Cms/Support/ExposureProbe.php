@@ -96,7 +96,10 @@ class ExposureProbe
             'checked' => $checked,
             'checked_at' => now()->toIso8601String(),
             'reason' => $status === self::UNKNOWN
-                ? 'This server could not make a request to itself, which is common on hosts that block outbound connections. Check by hand instead: open '.$base.'/.env in a browser. Anything other than 403 or 404 means it is readable.'
+                ? 'This server could not make a request to itself. That is normal in Docker or behind a load '
+                    .'balancer, where the site address does not resolve from inside the container, and on hosts '
+                    .'that block outbound connections - none of that means anything is wrong. Check by hand '
+                    .'instead: open '.$base.'/.env in a browser. Anything other than 403 or 404 means it is readable.'
                 : null,
         ];
 
@@ -143,14 +146,44 @@ class ExposureProbe
      * config block - and telling them to "check your .htaccess" would waste
      * their afternoon.
      */
+    /** The web server's own description of itself, lower-cased. */
+    public function server(): string
+    {
+        return strtolower((string) request()->server('SERVER_SOFTWARE'));
+    }
+
+    /**
+     * Whether this server reads the .htaccess files shipped with the CMS.
+     *
+     * nginx never does. That matters even when nothing is currently leaking:
+     * the rules that stop an uploaded file being executed are in those files
+     * too, so on nginx they have to be restored in the vhost. Saying so only
+     * after a leak has been found would be saying it too late.
+     */
+    public function readsHtaccess(): bool
+    {
+        $server = $this->server();
+
+        if (str_contains($server, 'nginx')) {
+            return false;
+        }
+
+        // Apache, LiteSpeed and OpenLiteSpeed all honour .htaccess. An unknown
+        // server is assumed to, because the alternative is telling every owner
+        // on an unrecognised stack that their site is misconfigured.
+        return true;
+    }
+
     public function remediation(): array
     {
-        $server = strtolower((string) request()->server('SERVER_SOFTWARE'));
+        $server = $this->server();
 
         if (str_contains($server, 'nginx')) {
             return [
                 'server' => 'nginx',
-                'summary' => 'nginx does not read .htaccess files, so the protection shipped with this CMS does nothing on your server. Point the document root at the public/ folder, or add the block below and reload nginx.',
+                'summary' => 'nginx does not read .htaccess files, so the protection shipped with this CMS does nothing on your server. '
+                    .'A complete server block is included with the CMS as nginx.conf.example, with notes for CloudPanel. '
+                    .'The essentials are below.',
                 'snippet' => "root /path/to/this/project/public;\n\nlocation / {\n    try_files \$uri \$uri/ /index.php?\$query_string;\n}\n\nlocation ~ /\. { deny all; }\nlocation ~ ^/(app|bootstrap|config|database|resources|routes|storage|tests|themes|vendor)/ { deny all; }",
             ];
         }

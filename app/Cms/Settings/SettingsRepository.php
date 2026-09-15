@@ -222,8 +222,15 @@ class SettingsRepository
 
     private function hasTable(): bool
     {
-        if ($this->tableExists !== null) {
-            return $this->tableExists;
+        // Only a positive answer is remembered. "No such table" is a
+        // statement about this moment, not a fact: during installation these
+        // managers are resolved before the migrations run, and caching that
+        // first "no" made every later call in the same request agree with it -
+        // so sync() quietly seeded nothing and a fresh site came up with no
+        // modules at all. A table that does exist cannot stop existing mid-
+        // request, so the true case is still worth keeping.
+        if ($this->tableExists === true) {
+            return true;
         }
 
         try {

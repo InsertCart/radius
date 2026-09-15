@@ -26,6 +26,8 @@ class SystemController extends Controller
             'exposure' => $this->exposure->cached(),
             'remediation' => $this->exposure->remediation(),
             'servedFromProjectRoot' => $this->exposedProjectRoot() !== null,
+            'readsHtaccess' => $this->exposure->readsHtaccess(),
+            'webServer' => $this->exposure->remediation()['server'],
         ]);
     }
 
@@ -214,6 +216,15 @@ class SystemController extends Controller
             && $this->exposedProjectRoot() !== null) {
             $warnings[] = 'This site is served from the project folder, so files like .env sit inside the web root. '
                 .'They should be blocked, but nobody has confirmed it on this server yet - run the check under Security below.';
+        }
+
+        // nginx ignores every .htaccess in the project, including the ones that
+        // stop an uploaded file being executed. Worth saying even when nothing
+        // is leaking, because the owner cannot tell by looking.
+        if (! $this->exposure->readsHtaccess()) {
+            $warnings[] = 'This site runs on nginx, which ignores the .htaccess files shipped with the CMS - '
+                .'so the rules that keep .env private and stop uploaded files being executed are not in effect. '
+                .'Copy them into your server block: see nginx.conf.example in the project folder, and Security below.';
         }
 
         if (config('cms.downloads.disk') === config('cms.media.disk')) {
