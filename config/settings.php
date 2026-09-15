@@ -24,7 +24,7 @@ return [
         'fields' => [
             'site_name' => ['type' => 'text', 'label' => 'Site name', 'default' => 'Radius', 'rules' => 'required|string|max:120'],
             'site_tagline' => ['type' => 'text', 'label' => 'Tagline', 'default' => 'A fast, modular CMS'],
-            'site_email' => ['type' => 'email', 'label' => 'Contact email', 'default' => 'hello@insertcart.com'],
+            'site_email' => ['type' => 'email', 'label' => 'Contact email', 'default' => null],
             'site_phone' => ['type' => 'text', 'label' => 'Contact phone'],
             'site_address' => ['type' => 'textarea', 'label' => 'Address'],
             'site_logo' => ['type' => 'image', 'label' => 'Logo'],
@@ -95,7 +95,7 @@ return [
                 'postmark' => 'Postmark',
                 'log' => 'Log only (testing)',
             ]],
-            'mail_from_address' => ['type' => 'email', 'label' => 'From address', 'default' => 'hello@insertcart.com'],
+            'mail_from_address' => ['type' => 'email', 'label' => 'From address', 'default' => null],
             'mail_from_name' => ['type' => 'text', 'label' => 'From name', 'default' => 'Radius'],
             'mail_host' => ['type' => 'text', 'label' => 'SMTP host', 'depends' => ['mail_driver' => 'smtp']],
             'mail_port' => ['type' => 'number', 'label' => 'SMTP port', 'default' => 587, 'depends' => ['mail_driver' => 'smtp']],

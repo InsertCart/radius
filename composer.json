@@ -1,11 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "insertcart/radius",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "A modular, self-hosted CMS and eCommerce platform built on Laravel.",
     "keywords": [
+        "cms",
+        "ecommerce",
         "laravel",
-        "framework"
+        "page-builder",
+        "self-hosted"
     ],
     "license": "MIT",
     "require": {
@@ -91,5 +94,10 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "homepage": "https://github.com/InsertCart/radius",
+    "support": {
+        "issues": "https://github.com/InsertCart/radius/issues",
+        "source": "https://github.com/InsertCart/radius"
+    }
 }

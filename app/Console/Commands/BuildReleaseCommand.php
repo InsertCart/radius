@@ -83,11 +83,40 @@ class BuildReleaseCommand extends Command
         $this->line('  sha256    '.$hash);
         $this->line('  manifest  '.rtrim($output, '/\\').DIRECTORY_SEPARATOR.'manifest.json');
 
-        $this->newLine();
-        $this->line('Next: upload both files, then set the "download" address in manifest.json');
-        $this->line('to wherever the ZIP now lives, and point CMS_UPDATE_URL at the manifest.');
+        $this->publishingInstructions($version, $hash, $zipPath);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * What to do with the two files that were just produced.
+     *
+     * The metadata block is the part worth printing. A GitHub release carries
+     * no checksum of its own, so without it an update is refused - correctly,
+     * but confusingly, and long after the release went out. Handing it over
+     * ready to paste is the difference between that being a rule and being a
+     * trap.
+     */
+    private function publishingInstructions(string $version, string $hash, string $zipPath): void
+    {
+        $this->newLine();
+        $this->line('<comment>Paste this into the GitHub release notes</comment> (it is an HTML comment,');
+        $this->line('so nobody reading the page will see it):');
+        $this->newLine();
+        $this->line("<info><!-- radius</info>");
+        $this->line("<info>sha256: {$hash}</info>");
+        $this->line('<info>tags: </info>            <comment># e.g. security, breaking - free text, shown as badges</comment>');
+        $this->line('<info>requires_backup: true</info>');
+        $this->line("<info>min_version: 1.0.0</info>  <comment># oldest version that can upgrade straight to this one</comment>");
+        $this->line('<info>min_php: 8.2.0</info>');
+        $this->line('<info>--></info>');
+        $this->newLine();
+        $this->line('<comment>Then publish it:</comment>');
+        $this->newLine();
+        $this->line("  gh release create v{$version} --title {$version} --notes-file notes.md {$zipPath}");
+        $this->newLine();
+        $this->line('Sites pointed at the releases API see it within a day, or immediately');
+        $this->line('via System -> Updates -> Check now.');
     }
 
     /**

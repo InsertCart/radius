@@ -44,6 +44,12 @@ class ReleaseManifest
      */
     public static function fromArray(array $data): self
     {
+        // A GitHub release looks nothing like a hand-written manifest, so it is
+        // translated into one before anything else reads it.
+        if (self::looksLikeGitHub($data)) {
+            $data = self::fromGitHub($data);
+        }
+
         // Accept both the flat shape and a {"latest": {...}} wrapper, so the
         // simple hand-written file keeps working if the seller later grows
         // into a multi-release document.
@@ -146,6 +152,137 @@ class ReleaseManifest
         }
 
         return number_format($this->size / 1048576, 1).' MB';
+    }
+
+    // GitHub releases ------------------------------------------------------
+
+    /**
+     * A response from api.github.com/repos/<owner>/<repo>/releases/latest.
+     *
+     * Matched on two fields together: `tag_name` alone is plausible in a
+     * hand-written file, but `assets` beside it is not.
+     */
+    private static function looksLikeGitHub(array $data): bool
+    {
+        return isset($data['tag_name']) && isset($data['assets']) && is_array($data['assets']);
+    }
+
+    /**
+     * Translate a GitHub release into the manifest shape.
+     *
+     * GitHub supplies the version, the download and its size for free, which is
+     * most of what is needed. What it has no concept of is everything specific
+     * to updating a CMS - a checksum, whether a backup is required, the minimum
+     * version that can upgrade directly - so those are read from a small block
+     * in the release notes:
+     *
+     *     <!-- radius
+     *     sha256: 9f2c...
+     *     tags: security, breaking
+     *     min_version: 1.0.0
+     *     -->
+     *
+     * An HTML comment because GitHub renders release notes as Markdown: the
+     * block is invisible to anyone reading the page, and unambiguous to parse.
+     * `php artisan cms:release` prints it ready to paste.
+     */
+    private static function fromGitHub(array $data): array
+    {
+        $body = (string) ($data['body'] ?? '');
+        $meta = self::metadataBlock($body);
+
+        // Tags are conventionally written v1.2.3; the version itself is not.
+        $version = ltrim(trim((string) ($data['tag_name'] ?? '')), 'vV');
+
+        $asset = self::releaseAsset($data['assets'] ?? []);
+
+        return array_merge([
+            'format' => 1,
+            'version' => $version,
+            'download' => $asset['browser_download_url'] ?? null,
+            'size' => $asset['size'] ?? null,
+            'released_at' => $data['published_at'] ?? null,
+            'changelog_url' => $data['html_url'] ?? null,
+            // The notes are Markdown written for people. The metadata block is
+            // stripped out, and only the opening paragraph is kept, because the
+            // admin screen shows a summary and links to the rest.
+            'notes' => self::summarise($body),
+        ], $meta);
+    }
+
+    /**
+     * The downloadable release, which is not GitHub's own source archive.
+     *
+     * GitHub attaches "Source code (zip)" to every release automatically. That
+     * archive has no vendor/ and no built assets, so installing it would leave
+     * a site that cannot boot - it must never be picked by accident. Only
+     * uploaded assets appear in this list, so choosing the first .zip is safe,
+     * but the name is checked anyway.
+     *
+     * @param  array<int, array<string, mixed>>  $assets
+     * @return array<string, mixed>
+     */
+    private static function releaseAsset(array $assets): array
+    {
+        foreach ($assets as $asset) {
+            $name = strtolower((string) ($asset['name'] ?? ''));
+
+            if (str_ends_with($name, '.zip') && ! str_contains($name, 'source')) {
+                return $asset;
+            }
+        }
+
+        return [];
+    }
+
+    /** @return array<string, mixed> */
+    private static function metadataBlock(string $body): array
+    {
+        if (! preg_match('/<!--\s*(?:radius|cms|update)\s*(.*?)-->/is', $body, $matches)) {
+            return [];
+        }
+
+        $meta = [];
+
+        foreach (preg_split('/\R/', $matches[1]) as $line) {
+            if (! str_contains($line, ':')) {
+                continue;
+            }
+
+            [$key, $value] = array_map('trim', explode(':', $line, 2));
+            $key = strtolower($key);
+
+            if ($key === '' || $value === '') {
+                continue;
+            }
+
+            $meta[$key] = match ($key) {
+                'requires_backup' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+                'tags', 'requires_extensions' => array_values(array_filter(array_map('trim', explode(',', $value)))),
+                'size' => (int) $value,
+                default => $value,
+            };
+        }
+
+        return $meta;
+    }
+
+    /** The first real paragraph of the release notes, with the metadata gone. */
+    private static function summarise(string $body): ?string
+    {
+        $body = preg_replace('/<!--.*?-->/s', '', $body);
+        $body = trim((string) $body);
+
+        if ($body === '') {
+            return null;
+        }
+
+        $paragraph = preg_split('/\R{2,}/', $body)[0] ?? $body;
+
+        // Markdown heading markers and list bullets read badly out of context.
+        $paragraph = trim(preg_replace('/^[#>\-*\s]+/m', '', $paragraph));
+
+        return \Illuminate\Support\Str::limit(str_replace("\n", ' ', $paragraph), 300);
     }
 
     /** First non-empty value among several accepted key spellings. */

@@ -2,6 +2,12 @@
 
 A modular, self-hosted CMS and eCommerce platform built on Laravel 12.
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Open source under the [MIT licence](LICENSE): use it commercially, fork it,
+build closed-source themes and plugins on top of it. Security issues go through
+[SECURITY.md](SECURITY.md), not the public issue tracker.
+
 Every optional feature is a **module** that can be switched off from the admin
 panel. A disabled module registers no routes and runs no queries, so a
 blog-only site carries none of the shop's weight.
@@ -532,13 +538,12 @@ invisibly and it would otherwise make a perfectly correct file unreadable.
 
 ### Cutting a release
 
-Git holds the source; the release is built from it. The two are separate on
-purpose - `vendor/` and `public/build/` are build output and are not committed,
-so a source download is never a runnable copy.
+Releases are published as **GitHub Releases**. Git holds the source; the ZIP is
+built from it, because `vendor/` and `public/build/` are build output and are
+not committed - a source download is never a runnable copy.
 
 ```bash
-# 1. Bump the version that the manifest and the updater compare against.
-#    config/cms.php  ->  'version' => '1.1.0'
+# 1. Bump the version in config/cms.php  ->  'version' => '1.1.0'
 
 # 2. Commit and push the source.
 git add -A
@@ -551,25 +556,56 @@ npm install && npm run build
 
 # 4. Package it.
 php artisan cms:release
-```
 
-Step 4 writes two files to `storage/app/private/releases/`:
-
-- `radius-1.1.0.zip` - what buyers download and the updater installs
-- `manifest.json` - with the SHA-256 already filled in
-
-Upload both somewhere public, set `"download"` in the manifest to the ZIP's
-address, and point `CMS_UPDATE_URL` at the manifest. Existing sites see the
-update within a day, or immediately via **System → Updates → Check now**.
-
-Then put your development dependencies back:
-
-```bash
+# 5. Restore your development tools.
 composer install
 ```
 
-> `--no-dev` in step 3 is what keeps PHPUnit, Pint and Tinker out of the
-> product. Building a release without it ships 40 MB of tooling and a REPL.
+Step 4 prints a metadata block. **Paste it into the release notes** - GitHub has
+no concept of a checksum, and without one every site refuses the update:
+
+```
+<!-- radius
+sha256: 9f2c...
+tags: security, breaking
+requires_backup: true
+min_version: 1.0.0
+min_php: 8.2.0
+-->
+```
+
+It is an HTML comment, so nobody reading the release page ever sees it. `tags`
+is free text shown as badges; `requires_backup` is what actually forces a
+backup, so a typo in a tag can never quietly disable one.
+
+Then publish, attaching the built ZIP:
+
+```bash
+gh release create v1.1.0 --title 1.1.0 --notes-file notes.md   storage/app/private/releases/radius-1.1.0.zip
+```
+
+Tag as `v1.1.0`; the leading `v` is stripped when the version is read.
+
+Sites see it within a day, or immediately via **System → Updates → Check now**.
+
+> **Do not point anyone at GitHub's own "Source code (zip)".** It has no
+> `vendor/` and no built assets, so it cannot boot. The updater ignores it and
+> picks your uploaded asset instead, but a human following a link will not.
+
+### How sites find updates
+
+`CMS_UPDATE_URL` defaults to this project's releases API:
+
+```
+CMS_UPDATE_URL=https://api.github.com/repos/InsertCart/radius/releases/latest
+```
+
+A fork points it at its own repository, or at a hand-written JSON manifest - the
+reader accepts both shapes. GitHub's endpoint already excludes drafts and
+pre-releases, so a draft release is never offered to anybody.
+
+Unauthenticated GitHub API calls are rate-limited per IP, which is ample for a
+once-a-day check.
 
 ### Working on the source
 
