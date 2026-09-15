@@ -1,29 +1,30 @@
 # ---------------------------------------------------------------------------
-# Project root protection
+# Project root
 # ---------------------------------------------------------------------------
-# Only the public/ folder is meant to be reachable from the web. On a correctly
-# configured server the document root points there and this file never does
-# anything at all.
+# Serves the site from the project folder, so https://example.com/ works
+# without /public/ in the address, and keeps everything outside public/ out of
+# reach while doing it.
 #
-# It exists because that is not how most of these installs end up. A buyer
-# extracts the ZIP into public_html/mysite/ and opens mysite/public/ in a
-# browser, and it works, so nothing gets changed. The whole project is then
-# sitting inside the web root, where .env - the database password, the app key
-# that signs every session cookie, the payment gateway secrets - is one URL
-# away from anybody who asks for it.
+# The ideal setup is still to point the document root at public/ - then this
+# file is never read and none of it runs. But most installs do not end up that
+# way: a buyer extracts the ZIP into public_html/mysite/ and opens
+# mysite/public/ in a browser, it works, and nothing gets changed. The whole
+# project is then sitting inside the web root, where .env - the database
+# password, the key that signs every session cookie, the payment gateway
+# secrets - is one URL away from anybody who asks for it.
 #
-# So: everything outside public/ is refused here, by name and by directory.
-#
-# Apache only reads this file if the host allows overrides (AllowOverride All,
-# which is the default in XAMPP and on virtually all shared hosting). It is a
-# safety net, not a substitute for pointing the document root at public/.
+# Apache only reads this file where overrides are allowed (AllowOverride All,
+# the default in XAMPP and on virtually all shared hosting).
 
 # No directory listings anywhere in the project.
 Options -Indexes
 
-# Dotfiles: .env, .env.backup, .git/config, .htpasswd and friends.
-# Matched on the file name, so public/.well-known/acme-challenge/<token> -
-# how Let's Encrypt proves domain ownership - still works.
+# Dotfiles: .env, .env.backup, .git/config, .htpasswd and friends. Denied by
+# name as well as by the rewrite below, so a server with mod_rewrite switched
+# off still refuses the one file that matters most.
+#
+# Matched on the file name, so public/.well-known/acme-challenge/<token> - how
+# Let's Encrypt proves domain ownership - still works.
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>
         Require all denied
@@ -34,9 +35,9 @@ Options -Indexes
     </IfModule>
 </FilesMatch>
 
-# Build files, dependency manifests, logs, database dumps and scripts. None of
-# these should ever be fetched, and several of them describe the site's
-# dependencies precisely enough to look up known vulnerabilities.
+# Build files, dependency manifests, logs, database dumps and scripts. Several
+# of these describe the site's dependencies precisely enough to look up known
+# vulnerabilities against it.
 <FilesMatch "(?i)^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml(\.dist)?|vite\.config\.(js|ts)|tailwind\.config\.js|postcss\.config\.js|README\.md|CHANGELOG\.md|LICENSE|.*\.(env|log|sql|sh|bat|cmd|ini|yml|yaml|lock|bak|old|orig|save|swp|dist))$">
     <IfModule mod_authz_core.c>
         Require all denied
@@ -47,20 +48,41 @@ Options -Indexes
     </IfModule>
 </FilesMatch>
 
-# The application itself. A request for any of these directories is refused
-# outright - source code, compiled views, logs, uploaded files and the private
-# downloads folder all live under them.
-#
-# public/ is deliberately absent from the list, and is unaffected in any case:
-# it has its own .htaccess, and rewrite rules are not inherited by a directory
-# that starts its own rewrite engine.
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(app|bootstrap|config|database|lang|node_modules|resources|routes|storage|tests|themes|vendor)(/|$) - [F,L]
+
+    # Anything already aimed at public/ is left alone - public/.htaccess takes
+    # it from here. This rule has to come first: the rewrite below triggers a
+    # fresh pass through this file, and without this it would keep prefixing
+    # public/ forever.
+    RewriteRule ^public/ - [L]
+
+    # Everything else is served out of public/.
+    #
+    # This is also the real protection for the rest of the project. A URL can
+    # now only ever resolve to something inside public/, so app/, config/,
+    # vendor/ and storage/ are unreachable by construction rather than by a
+    # list of names somebody has to remember to keep up to date. A request for
+    # /app/Models/User.php becomes public/app/Models/User.php, which does not
+    # exist, and ends up at Laravel's 404 page.
+    #
+    # Uploads still work: /storage/uploads/x.jpg becomes
+    # public/storage/uploads/x.jpg, which is the symlink storage:link creates.
+    RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
 
-# There is deliberately no fallback for a server without mod_rewrite. The only
-# way to refuse those directories without it is a blanket rule on .php files,
-# which subdirectories inherit - including public/, whose index.php is the
-# entire site. A server missing mod_rewrite cannot run this CMS anyway, so the
-# trade is a broken home page in exchange for nothing.
+# Without mod_rewrite none of the above happens, so the source directories are
+# refused by name instead. The site itself will not work in that state - the
+# front controller is unreachable without rewriting - but a server that cannot
+# rewrite must not spend that failure handing out source code and credentials.
+<IfModule !mod_rewrite.c>
+    <FilesMatch "\.(php|blade\.php|json|lock|md|sql|log)$">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+        <IfModule !mod_authz_core.c>
+            Order allow,deny
+            Deny from all
+        </IfModule>
+    </FilesMatch>
+</IfModule>

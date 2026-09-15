@@ -23,10 +23,22 @@ The setup wizard checks all of this for you before it will continue.
 
 ## Installation
 
-1. Upload the files and point your domain at the **`public/`** directory.
+1. Upload the files. Point your domain at the **`public/`** directory if your
+   host lets you; if it does not, point it at the project folder and the
+   included `.htaccess` serves the site from there.
 2. Create an empty MySQL database.
 3. Open your site in a browser. The setup wizard starts automatically.
 4. Follow the four steps: server check → database → site details → admin account.
+
+Both addresses work, so `https://example.com/` and `https://example.com/public/`
+reach the same site. Pointing the document root at `public/` is still better -
+nothing outside it is then served at all - but it is not a requirement, and on
+shared hosting it is often not an option.
+
+**Never serve the project folder without its `.htaccess`.** It is what keeps
+`.env`, the source code and the uploads folder unreachable when the whole
+project sits inside the web root. If your host ignores `.htaccess` files
+(`AllowOverride None`), you must point the document root at `public/`.
 
 The wizard writes `.env`, runs the migrations, seeds the defaults and creates
 your admin account. When it finishes it drops a `storage/installed` lock file,
@@ -392,11 +404,22 @@ In practice a lot of installs skip this: the ZIP gets extracted into
 gets changed. The project root then sits inside the web root, and
 `mysite/.env` is a URL anybody can request.
 
-The `.htaccess` in the project root refuses everything outside `public/` for
-exactly that case. **On nginx**, or on any host where `AllowOverride` is off,
-that file does nothing — set the document root correctly, or add:
+The `.htaccess` in the project root covers exactly that case. It maps every
+request into `public/`, which does two jobs at once: the site answers on
+`https://example.com/` without `/public/` in the address, and nothing outside
+`public/` can be reached by URL at all - not by a list of denied names, but
+because no URL resolves anywhere else.
+
+**On nginx**, or on any host where `AllowOverride` is off, that file does
+nothing. Set the document root to `public/`, or add:
 
 ```nginx
+root /path/to/project/public;
+
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+}
+
 location ~ ^/(app|bootstrap|config|database|lang|resources|routes|storage|tests|themes|vendor)/ { deny all; }
 location ~ /\. { deny all; }
 ```
@@ -499,6 +522,64 @@ understands the document at all. If you ever restructure the file, raise
 Write the JSON as **UTF-8 without a byte-order mark** if you can — although the
 CMS strips one if it finds it, since Notepad and PowerShell both add one
 invisibly and it would otherwise make a perfectly correct file unreadable.
+
+### Cutting a release
+
+Git holds the source; the release is built from it. The two are separate on
+purpose - `vendor/` and `public/build/` are build output and are not committed,
+so a source download is never a runnable copy.
+
+```bash
+# 1. Bump the version that the manifest and the updater compare against.
+#    config/cms.php  ->  'version' => '1.1.0'
+
+# 2. Commit and push the source.
+git add -A
+git commit -m "Release 1.1.0"
+git push
+
+# 3. Build the dependencies and assets that git does not carry.
+composer install --no-dev --optimize-autoloader
+npm install && npm run build
+
+# 4. Package it.
+php artisan cms:release
+```
+
+Step 4 writes two files to `storage/app/private/releases/`:
+
+- `radius-1.1.0.zip` - what buyers download and the updater installs
+- `manifest.json` - with the SHA-256 already filled in
+
+Upload both somewhere public, set `"download"` in the manifest to the ZIP's
+address, and point `CMS_UPDATE_URL` at the manifest. Existing sites see the
+update within a day, or immediately via **System → Updates → Check now**.
+
+Then put your development dependencies back:
+
+```bash
+composer install
+```
+
+> `--no-dev` in step 3 is what keeps PHPUnit, Pint and Tinker out of the
+> product. Building a release without it ships 40 MB of tooling and a REPL.
+
+### Working on the source
+
+`vendor/` and `public/build/` are build output and are not committed, so a
+clone or a source-repository ZIP will not run until they are built:
+
+```bash
+composer install
+npm install && npm run build
+```
+
+Opening a copy that has neither now gives a short page saying exactly that
+rather than a PHP fatal about `vendor/autoload.php`.
+
+**To test what a buyer actually receives, build a release and extract that** -
+see below. A source download is not a release and never will be; testing with
+one only tests the missing pieces.
 
 ### Building a release ZIP
 

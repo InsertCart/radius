@@ -1,6 +1,7 @@
 <?php
 
 use App\Cms\Support\FirstRun;
+use App\Cms\Support\RootRewrite;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,6 +12,13 @@ use Illuminate\Support\Facades\Route;
 // wizard is never reached. This writes a starter .env with a key unique to this
 // installation. It does nothing at all once .env exists.
 FirstRun::ensureEnvironmentFile(dirname(__DIR__));
+
+// The root .htaccess lets the site answer without /public in the address. That
+// leaves SCRIPT_NAME disagreeing with the URL the visitor actually asked for,
+// which Symfony reads as the application being mounted one directory deeper
+// than it is - and every route misses. Corrected here, before the Request is
+// built from these values.
+RootRewrite::align();
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(

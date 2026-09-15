@@ -111,9 +111,20 @@ class FirstRun
         $secure = (! empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
             || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443;
 
-        // The project is served from public/, so the site's address is whatever
-        // sits above the script's own directory.
+        // Where the front controller lives, e.g. /mysite/public.
         $path = rtrim(str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/'))), '/');
+
+        // The root .htaccess lets the site be reached without /public in the
+        // address, and most installs are used that way. When that has happened
+        // the requested URL has no public/ segment while SCRIPT_NAME does, and
+        // the site's real base is one level up. Getting this wrong would not
+        // break anything - both addresses resolve - but every generated link
+        // would carry a /public nobody typed.
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+
+        if (str_ends_with($path, '/public') && ! str_starts_with($uri, $path)) {
+            $path = substr($path, 0, -strlen('/public'));
+        }
 
         return ($secure ? 'https://' : 'http://').$host.$path;
     }
