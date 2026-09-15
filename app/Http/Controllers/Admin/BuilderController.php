@@ -9,6 +9,7 @@ use App\Cms\Builder\RegionManager;
 use App\Cms\Builder\RegionStarter;
 use App\Cms\Builder\SectionSchema;
 use App\Cms\Builder\StyleCompiler;
+use App\Cms\Support\HtmlSanitizer;
 use App\Http\Controllers\Controller;
 use App\Models\DesignToken;
 use App\Models\Layout;
@@ -34,6 +35,7 @@ class BuilderController extends Controller
         private LayoutRenderer $renderer,
         private StyleCompiler $styles,
         private RegionManager $regions,
+        private HtmlSanitizer $sanitizer,
     ) {}
 
     // Opening the editor ---------------------------------------------------
@@ -123,7 +125,7 @@ class BuilderController extends Controller
     /** Autosave. Writes the draft only; the live layout is untouched. */
     public function saveDraft(Request $request, Layout $layout): JsonResponse
     {
-        $tree = $this->validateTree($request);
+        $tree = $this->validateTree($request, $layout);
 
         $layout->saveDraft($tree, $request->user()->id);
 
@@ -136,7 +138,7 @@ class BuilderController extends Controller
     /** Make the draft live and recompile its stylesheet. */
     public function publish(Request $request, Layout $layout): JsonResponse
     {
-        $tree = $this->validateTree($request);
+        $tree = $this->validateTree($request, $layout);
 
         $layout->publish($tree, $request->user()->id);
 
@@ -167,9 +169,13 @@ class BuilderController extends Controller
         ]);
 
         $renderer = $this->renderer->editing();
+        $isAdmin = (bool) $request->user()?->isAdmin();
+        $trusted = $this->rawHtmlAlreadyInLayout($layout);
 
         if ($request->filled('node')) {
-            $node = $request->input('node');
+            // Cleaned the same way the save path cleans it, so the canvas is a
+            // preview of what will be stored rather than of what was typed.
+            $node = $this->cleanTree([$request->input('node')], $isAdmin, $trusted)[0];
 
             return response()->json([
                 'html' => $renderer->renderNode($node),
@@ -177,7 +183,7 @@ class BuilderController extends Controller
             ]);
         }
 
-        $tree = $request->input('tree', []);
+        $tree = $this->cleanTree($request->input('tree', []), $isAdmin, $trusted);
 
         return response()->json([
             'html' => $renderer->render($tree),
@@ -363,8 +369,14 @@ class BuilderController extends Controller
      * Size and depth are capped because the tree arrives as JSON from the
      * browser: without limits a crafted request could make the renderer walk
      * an enormous or deeply nested structure.
+     *
+     * The tree is then cleaned. A layout is rendered unescaped - that is what
+     * a page builder is - so the markup inside it has to be trustworthy by the
+     * time it is stored, and the editor's own JavaScript is not what makes it
+     * so. Everything arriving here is a plain HTTP request that anyone with an
+     * account can craft by hand.
      */
-    private function validateTree(Request $request): array
+    private function validateTree(Request $request, ?Layout $layout = null): array
     {
         $request->validate(['tree' => ['present', 'array']]);
 
@@ -387,7 +399,147 @@ class BuilderController extends Controller
 
         $walk($tree, 1);
 
-        return $tree;
+        return $this->cleanTree(
+            $tree,
+            (bool) $request->user()?->isAdmin(),
+            $layout ? $this->rawHtmlAlreadyInLayout($layout) : []
+        );
+    }
+
+    /**
+     * Clean every widget's settings against the controls its block declares.
+     *
+     * Rich text is run through the same sanitiser the classic page and post
+     * editors use, so the two ways of writing a paragraph on this site are
+     * held to one standard rather than two.
+     */
+    private function cleanTree(array $nodes, bool $isAdmin, array $trustedHtml): array
+    {
+        foreach ($nodes as $index => $node) {
+            if (isset($node['elements']) && is_array($node['elements'])) {
+                $nodes[$index]['elements'] = $this->cleanTree($node['elements'], $isAdmin, $trustedHtml);
+            }
+
+            $type = $node['widgetType'] ?? null;
+
+            if (! $type || ! is_array($node['settings'] ?? null)) {
+                continue;
+            }
+
+            $class = $this->blocks->find($type);
+
+            if (! $class) {
+                continue;
+            }
+
+            $nodes[$index]['settings'] = $this->cleanSettings(
+                $node['settings'],
+                self::definitions($class),
+                $isAdmin,
+                $trustedHtml[$node['id'] ?? ''] ?? []
+            );
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * A block's controls as plain definition arrays. Repeater fields are
+     * already stored in that shape, so flattening here lets one routine walk
+     * top-level controls and repeater rows alike.
+     *
+     * @param  class-string<\App\Cms\Builder\Blocks\Block>  $class
+     */
+    private static function definitions(string $class): array
+    {
+        return array_map(fn ($control) => $control->toArray(), $class::controls());
+    }
+
+    private function cleanSettings(array $settings, array $definitions, bool $isAdmin, array $trusted): array
+    {
+        foreach ($definitions as $definition) {
+            $key = $definition['key'] ?? null;
+
+            if (! $key || ! array_key_exists($key, $settings)) {
+                continue;
+            }
+
+            switch ($definition['type'] ?? '') {
+                case 'richtext':
+                    $settings[$key] = $this->sanitizer->clean((string) $settings[$key]);
+                    break;
+
+                case 'code':
+                    // Raw markup, which is the whole point of the HTML widget
+                    // and also the one control that can put a <script> on the
+                    // public site. Only an administrator may author it.
+                    //
+                    // An editor saving a page that already contains one keeps
+                    // what the administrator wrote - the stored value wins over
+                    // whatever was submitted - so an ordinary edit elsewhere on
+                    // the page does not quietly destroy it.
+                    if (! $isAdmin) {
+                        $settings[$key] = array_key_exists($key, $trusted)
+                            ? $trusted[$key]
+                            : $this->sanitizer->clean((string) $settings[$key]);
+                    }
+                    break;
+
+                case 'repeater':
+                    if (is_array($settings[$key])) {
+                        $fields = $definition['fields'] ?? [];
+
+                        foreach ($settings[$key] as $row => $item) {
+                            if (is_array($item)) {
+                                $settings[$key][$row] = $this->cleanSettings($item, $fields, $isAdmin, []);
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+
+        return $settings;
+    }
+
+    /**
+     * The raw-HTML settings an administrator has already stored on this layout,
+     * keyed by widget id, so a later edit by someone else can preserve them.
+     */
+    private function rawHtmlAlreadyInLayout(Layout $layout): array
+    {
+        $found = [];
+
+        $walk = function (array $nodes) use (&$walk, &$found) {
+            foreach ($nodes as $node) {
+                $walk($node['elements'] ?? []);
+
+                $type = $node['widgetType'] ?? null;
+                $id = $node['id'] ?? null;
+
+                if (! $type || ! $id || ! is_array($node['settings'] ?? null)) {
+                    continue;
+                }
+
+                $class = $this->blocks->find($type);
+
+                if (! $class) {
+                    continue;
+                }
+
+                foreach (self::definitions($class) as $definition) {
+                    if (($definition['type'] ?? '') === 'code'
+                        && array_key_exists($definition['key'], $node['settings'])) {
+                        $found[$id][$definition['key']] = $node['settings'][$definition['key']];
+                    }
+                }
+            }
+        };
+
+        $walk($layout->data ?? []);
+        $walk($layout->draft_data ?? []);
+
+        return $found;
     }
 
     /** @return Model&\App\Models\Concerns\HasLayout */

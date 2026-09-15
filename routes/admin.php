@@ -89,7 +89,9 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
             });
 
-            Route::middleware('module:payments')->group(function () {
+            // Gateway credentials are secrets, so this section is admin-only
+            // even though the shop itself is not.
+            Route::middleware(['module:payments', 'staff:admin'])->group(function () {
                 Route::get('payments', [PaymentGatewayController::class, 'index'])->name('payments.index');
                 Route::get('payments/{gateway}', [PaymentGatewayController::class, 'edit'])->name('payments.edit');
                 Route::put('payments/{gateway}', [PaymentGatewayController::class, 'update'])->name('payments.update');
@@ -104,9 +106,14 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             Route::get('media/browse', [MediaController::class, 'browse'])->name('media.browse');
 
             // Users -----------------------------------------------------
-            Route::resource('users', UserController::class);
-            Route::patch('users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
-            Route::delete('users/{user}/two-factor', [UserController::class, 'resetTwoFactor'])->name('users.two-factor.reset');
+            // Admin-only without exception: anything that can create an
+            // account, change a password or clear someone's second factor is
+            // a way to become another user, so an editor must not reach it.
+            Route::middleware('staff:admin')->group(function () {
+                Route::resource('users', UserController::class);
+                Route::patch('users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
+                Route::delete('users/{user}/two-factor', [UserController::class, 'resetTwoFactor'])->name('users.two-factor.reset');
+            });
 
             // Marketing -------------------------------------------------
             Route::middleware('module:contact')->group(function () {
@@ -132,11 +139,16 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             });
 
             // Appearance ------------------------------------------------
-            Route::get('themes', [ThemeController::class, 'index'])->name('themes.index');
-            Route::post('themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
-            Route::post('themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
-            Route::delete('themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
-            Route::post('themes/sync', [ThemeController::class, 'sync'])->name('themes.sync');
+            // A theme is Blade, and Blade is compiled to PHP and executed, so
+            // installing or activating one is equivalent to deploying code.
+            // That is an owner's decision, never an editor's.
+            Route::middleware('staff:admin')->group(function () {
+                Route::get('themes', [ThemeController::class, 'index'])->name('themes.index');
+                Route::post('themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
+                Route::post('themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');
+                Route::delete('themes/{slug}', [ThemeController::class, 'destroy'])->name('themes.destroy');
+                Route::post('themes/sync', [ThemeController::class, 'sync'])->name('themes.sync');
+            });
 
             // Visual builder --------------------------------------------
             Route::prefix('builder')->name('builder.')->group(function () {
@@ -173,8 +185,12 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             });
 
             // System ----------------------------------------------------
-            Route::get('modules', [ModuleController::class, 'index'])->name('modules.index');
-            Route::patch('modules/{slug}/toggle', [ModuleController::class, 'toggle'])->name('modules.toggle');
+            // Switching a module off removes routes and sections from the
+            // whole site, which is a configuration decision, not an editing one.
+            Route::middleware('staff:admin')->group(function () {
+                Route::get('modules', [ModuleController::class, 'index'])->name('modules.index');
+                Route::patch('modules/{slug}/toggle', [ModuleController::class, 'toggle'])->name('modules.toggle');
+            });
 
             // Settings screens are admin-only; editors stop at content.
             Route::middleware('staff:admin')->group(function () {

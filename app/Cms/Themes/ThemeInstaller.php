@@ -41,36 +41,73 @@ class ThemeInstaller
      * Blade's own directives are deliberately not on this list: @include and
      * @each are how themes are built, and the negative lookbehind on the
      * include/require rule is what keeps them apart from PHP's own.
+     *
+     * A word about what this can and cannot do. A Blade template is compiled
+     * to PHP and executed, so a theme is code, and no pattern list can make
+     * arbitrary code safe - naming a function is optional in PHP, and
+     * "$f='sys'.'tem'; $f(...)" never contains the word it calls. That is why
+     * installing a theme is an administrator-only action: this scan is a
+     * safety net for an honest theme with a careless line in it, not a
+     * sandbox, and it must not be relied on as one. What it does do is close
+     * the cheap evasions - the indirection patterns below - so that getting
+     * past it requires deliberate effort rather than a string concatenation.
      */
     private const FORBIDDEN_PATTERNS = [
         '/<\?php/i' => 'raw PHP open tag',
         '/<\?=/' => 'raw PHP short echo tag',
+
         '/\beval\s*\(/i' => 'eval()',
         '/\bassert\s*\(/i' => 'assert()',
         '/\b(exec|shell_exec|system|passthru|proc_open|popen|pcntl_exec)\s*\(/i' => 'shell execution',
         '/\bbase64_decode\s*\(/i' => 'base64_decode()',
         '/\b(unlink|rmdir|file_put_contents|fwrite|fopen|move_uploaded_file)\s*\(/i' => 'filesystem write',
-        '/\b(curl_exec|file_get_contents\s*\(\s*[\'"]https?:)/i' => 'outbound HTTP request',
-        '/\$_(GET|POST|REQUEST|COOKIE|SERVER|ENV|FILES)\b/' => 'superglobal access',
+        '/\b(curl_exec|file_get_contents|readfile|show_source|highlight_file|fpassthru|parse_ini_file)\s*\(/i' => 'reading a file or URL directly',
+        // Each needs its opening bracket: matching the bare word would reject
+        // a template for containing "globe".
+        '/\b(scandir|glob|opendir)\s*\(/i' => 'directory inspection',
+        '/\b(getenv|putenv|ini_set|ini_alter|set_include_path|dl)\s*\(/i' => 'changing the PHP environment',
+        '/\$_(GET|POST|REQUEST|COOKIE|SERVER|ENV|FILES|SESSION)\b/' => 'superglobal access',
         '/\bphpinfo\s*\(/i' => 'phpinfo()',
         // (?<!@) so Blade's @include / @includeIf / @require are not caught.
         '/(?<!@)\b(include|require)(_once)?\s*[\(\'"]/i' => 'a PHP include/require',
         '/\bcall_user_func(_array)?\s*\(/i' => 'call_user_func()',
         '/\bcreate_function\s*\(/i' => 'create_function()',
-        '/\bfile_put_contents\s*\(/i' => 'file_put_contents()',
+        '/\b(unserialize|extract)\s*\(/i' => 'unserialize()/extract()',
+        '/\bReflection(Function|Method|Class)\b/i' => 'the Reflection API',
+
+        // Indirection: ways to call a function without ever naming it, which
+        // is what a list of function names alone cannot see. Every pattern
+        // here was checked against the themes and admin views that ship with
+        // this CMS - 175 real templates - and matches none of them, so an
+        // honest theme has no reason to trip one.
+        '/\$\w+\s*\(/' => 'a variable function call',
+        '/[\'"]\s*\)\s*\(/' => 'an immediately invoked expression',
+        '/\]\s*\(/' => 'a call through an array element',
+        // Backticks run a shell command in PHP, but are also ordinary
+        // JavaScript template literals, so they are only refused where PHP
+        // would read them: inside an echo, or inside an @php block.
+        '/\{\{[^}]*`/' => 'a shell backtick operator',
+        '/@php\b(?:(?!@endphp).)*`/s' => 'a shell backtick operator in an @php block',
+
+        // array_map('system', …) and friends are call primitives when handed a
+        // function *name*. Passing a closure - which is what a template
+        // actually does - is left alone.
+        '/\b(array_map|array_filter|array_walk|usort|uasort|uksort|preg_replace_callback)\s*\(\s*[\'"]/i'
+            => 'a function called by name through a callback',
     ];
 
     /**
      * Constructs worth telling the admin about without blocking the install.
-     *
-     * @php blocks are allowed because preparing a few view variables is
-     * ordinary template work, and anything genuinely dangerous inside one is
-     * still caught by the rules above, which scan the whole file.
      */
     private const WARNING_PATTERNS = [
+        // Preparing a few view variables is ordinary template work and the
+        // themes shipped here do it, so an @php block is reported rather than
+        // refused - anything dangerous inside one is still caught by the rules
+        // above, which scan the whole file.
         '/@php\b/i' => 'contains @php blocks',
         '/\bDB::|\\\\Illuminate\\\\Support\\\\Facades\\\\DB\b/' => 'queries the database directly',
         '/\benv\s*\(/i' => 'reads environment variables',
+        '/\bconfig\s*\(\s*[\'"](app\.key|database|services|mail)/i' => 'reads sensitive configuration',
     ];
 
     public function __construct(private ThemeManager $themes) {}
@@ -298,6 +335,17 @@ class ThemeInstaller
      *
      * @throws ThemeInstallException
      */
+    /**
+     * Blade comments are stripped before a file is compiled, so nothing inside
+     * one can execute - and scanning them only produces false alarms, because
+     * prose describing a template ("expects $model (any HasSeo model)") reads
+     * like a variable function call to a regular expression.
+     */
+    private function withoutComments(string $contents): string
+    {
+        return (string) preg_replace('/\{\{--.*?--\}\}/s', '', $contents);
+    }
+
     private function scanTemplates(string $root): array
     {
         $warnings = [];
@@ -308,7 +356,7 @@ class ThemeInstaller
                 continue;
             }
 
-            $contents = File::get($file->getPathname());
+            $contents = $this->withoutComments(File::get($file->getPathname()));
             $relative = ltrim(str_replace($root, '', $file->getPathname()), '/\\');
 
             foreach (self::FORBIDDEN_PATTERNS as $pattern => $label) {

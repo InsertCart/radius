@@ -16,11 +16,22 @@ use DOMXPath;
  */
 class SvgSanitizer
 {
-    /** Elements removed outright, with everything inside them. */
+    /**
+     * Elements removed outright, with everything inside them.
+     *
+     * Matched on the local name, so a document that reaches for an element
+     * from another namespace - <html:meta>, <html:script> - loses it too. On
+     * its own such an element is inert in a standalone SVG, because a browser
+     * only treats foreign content as HTML inside <foreignObject>, which is
+     * itself removed here. It goes anyway: an image has no use for any of
+     * these, and leaving them in place makes the file's safety depend on that
+     * second fact staying true.
+     */
     private const REMOVE_ELEMENTS = [
         'script', 'foreignobject', 'iframe', 'embed', 'object', 'handler',
         'listener', 'set', 'animate', 'animatemotion', 'animatetransform',
-        'animatecolor', 'discard',
+        'animatecolor', 'discard', 'meta', 'base', 'link', 'body', 'html',
+        'audio', 'video', 'frame', 'frameset', 'applet', 'form',
     ];
 
     public function cleanFile(string $path): void

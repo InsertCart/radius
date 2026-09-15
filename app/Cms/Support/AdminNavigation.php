@@ -31,9 +31,9 @@ class AdminNavigation
                 $this->link('Dashboard', 'admin.dashboard', null, null, 'dashboard'),
             ],
             'Content' => $this->contentLinks(),
-            'Shop' => $this->shopLinks(),
-            'Audience' => $this->audienceLinks(),
-            'Appearance' => $this->appearanceLinks(),
+            'Shop' => $this->shopLinks($user),
+            'Audience' => $this->audienceLinks($user),
+            'Appearance' => $this->appearanceLinks($user),
             'System' => $this->systemLinks($user),
         ];
 
@@ -64,12 +64,16 @@ class AdminNavigation
         return $links;
     }
 
-    private function shopLinks(): array
+    private function shopLinks(User $user): array
     {
+        // Gateway credentials are secrets, so the link follows the route: an
+        // editor is not shown a door that answers 403.
+        $payments = $user->isAdmin() && modules()->enabled('payments');
+
         if (modules()->disabled('shop')) {
             // Payments can still be configured for a site that only sells
             // through a custom flow, so it is not nested under the shop.
-            return modules()->enabled('payments')
+            return $payments
                 ? [$this->link('Payment gateways', 'admin.payments.index', 'admin.payments.*', null, 'payments')]
                 : [];
         }
@@ -81,18 +85,19 @@ class AdminNavigation
             $this->link('Coupons', 'admin.coupons.index', 'admin.coupons.*', null, 'coupons'),
         ];
 
-        if (modules()->enabled('payments')) {
+        if ($payments) {
             $links[] = $this->link('Payment gateways', 'admin.payments.index', 'admin.payments.*', null, 'payments');
         }
 
         return $links;
     }
 
-    private function audienceLinks(): array
+    private function audienceLinks(User $user): array
     {
-        $links = [
-            $this->link('Users', 'admin.users.index', 'admin.users.*', null, 'users'),
-        ];
+        // Account management is admin-only.
+        $links = $user->isAdmin()
+            ? [$this->link('Users', 'admin.users.index', 'admin.users.*', null, 'users')]
+            : [];
 
         if (modules()->enabled('contact')) {
             $links[] = $this->link('Messages', 'admin.contact.index', 'admin.contact.*',
@@ -106,12 +111,16 @@ class AdminNavigation
         return $links;
     }
 
-    private function appearanceLinks(): array
+    private function appearanceLinks(User $user): array
     {
         $links = [
             $this->link('Builder', 'admin.builder.index', 'admin.builder.*', null, 'builder'),
-            $this->link('Themes', 'admin.themes.index', 'admin.themes.*', null, 'themes'),
         ];
+
+        // Installing a theme deploys code, so it is an owner's screen.
+        if ($user->isAdmin()) {
+            $links[] = $this->link('Themes', 'admin.themes.index', 'admin.themes.*', null, 'themes');
+        }
 
         if (modules()->enabled('seo')) {
             $links[] = $this->link('SEO', 'admin.seo.index', 'admin.seo.*', null, 'seo');
@@ -122,12 +131,12 @@ class AdminNavigation
 
     private function systemLinks(User $user): array
     {
-        $links = [
-            $this->link('Modules', 'admin.modules.index', 'admin.modules.*', null, 'modules'),
-        ];
+        $links = [];
 
-        // Settings and diagnostics are admin-only; editors stop at content.
+        // Modules, settings and diagnostics are admin-only; editors stop at
+        // content.
         if ($user->isAdmin()) {
+            $links[] = $this->link('Modules', 'admin.modules.index', 'admin.modules.*', null, 'modules');
             $links[] = $this->link('Settings', 'admin.settings.edit', 'admin.settings.*', null, 'settings');
             $links[] = $this->link('System', 'admin.system.index', 'admin.system.*', null, 'system');
 

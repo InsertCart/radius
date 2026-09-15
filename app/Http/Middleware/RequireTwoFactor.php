@@ -17,29 +17,58 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class RequireTwoFactor
 {
-    /** Routes the user must still be able to reach mid-challenge. */
-    private const ALLOWED_ROUTES = [
+    /**
+     * Routes reachable while a challenge is outstanding.
+     *
+     * Deliberately only the challenge itself and the way out. Enrolment is NOT
+     * here: a session that has proved the password but not the second factor
+     * must not be able to enrol a new authenticator, because staging a fresh
+     * secret overwrites the one it has failed to satisfy - which would turn
+     * "I know the password" into a complete bypass of the second factor.
+     */
+    private const CHALLENGE_ROUTES = [
         'two-factor.challenge',
         'two-factor.verify',
         'two-factor.recovery',
+        'admin.logout',
+        'logout',
+    ];
+
+    /**
+     * Additionally reachable by someone who has no second factor yet and is
+     * being pushed into setting one up. Nothing here can weaken an existing
+     * second factor, because reaching it requires not having one.
+     */
+    private const ENROLMENT_ROUTES = [
         'two-factor.setup',
         'two-factor.enable',
         'two-factor.confirm',
-        'admin.logout',
-        'logout',
     ];
 
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
 
-        if (! $user || $this->isAllowed($request)) {
+        if (! $user) {
             return $next($request);
         }
 
-        // Step two of login is still outstanding.
+        $route = $request->route()?->getName();
+
+        // The challenge itself, and signing out, are always reachable.
+        if ($route !== null && in_array($route, self::CHALLENGE_ROUTES, true)) {
+            return $next($request);
+        }
+
+        // Step two of login is still outstanding. Note this is checked BEFORE
+        // the enrolment routes are allowed through: someone who already has a
+        // second factor has nothing to enrol, they have a challenge to answer.
         if ($user->hasTwoFactorEnabled() && ! session('auth.two_factor_confirmed')) {
             return $this->challenge($request);
+        }
+
+        if ($route !== null && in_array($route, self::ENROLMENT_ROUTES, true)) {
+            return $next($request);
         }
 
         // The site owner made 2FA mandatory for staff and this account has
@@ -54,13 +83,6 @@ class RequireTwoFactor
         }
 
         return $next($request);
-    }
-
-    private function isAllowed(Request $request): bool
-    {
-        $name = $request->route()?->getName();
-
-        return $name !== null && in_array($name, self::ALLOWED_ROUTES, true);
     }
 
     private function challenge(Request $request): Response

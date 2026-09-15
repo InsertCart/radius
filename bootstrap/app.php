@@ -52,9 +52,23 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\MaintenanceMode::class,
         ]);
 
-        // Sensitive parameters are stripped from exception reports and the
-        // request log so credentials never reach a log file.
-        $middleware->trustProxies(at: '*');
+        // Forwarded headers are only believable when something trustworthy set
+        // them. Trusting every proxy means trusting the client: X-Forwarded-For
+        // becomes whatever the caller types, which silently turns Request::ip()
+        // - and so every rate limit, lockout and audit entry keyed on it - into
+        // an attacker-controlled value, and lets X-Forwarded-Host rewrite the
+        // host in generated links such as password-reset emails.
+        //
+        // So: trust nothing by default, which is correct for the direct-Apache
+        // and shared-hosting setups this CMS is usually installed on. Sites
+        // behind a load balancer or Cloudflare set TRUSTED_PROXIES to that
+        // proxy's address, a comma-separated list, or '*' if the app can only
+        // ever be reached through it.
+        if ($proxies = trim((string) env('TRUSTED_PROXIES', ''))) {
+            $middleware->trustProxies(
+                at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+            );
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash([

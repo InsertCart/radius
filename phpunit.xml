@@ -19,6 +19,13 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!--
+            The suite builds request URLs with url(), so it must not inherit a
+            developer's local APP_URL: one pointing at a subdirectory - the
+            usual shape under XAMPP, http://localhost/project/public - sends
+            every test request to that path and each one answers 404.
+        -->
+        <env name="APP_URL" value="http://localhost"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

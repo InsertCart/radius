@@ -95,6 +95,19 @@ class TwoFactorController extends Controller
     /** Generates a secret and shows the QR code, without enabling 2FA yet. */
     public function enable(Request $request): RedirectResponse
     {
+        // Re-enrolling replaces a second factor that is already protecting the
+        // account, so it is gated exactly like removing one. Nothing may
+        // weaken an existing factor on the strength of the password alone.
+        if ($request->user()->hasTwoFactorEnabled()) {
+            $request->validate(['current_password' => ['required', 'string']]);
+
+            if (! Hash::check($request->input('current_password'), $request->user()->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => 'That password is not correct.',
+                ]);
+            }
+        }
+
         $this->twoFactor->beginEnrolment($request->user());
 
         return redirect()->route('two-factor.setup')
