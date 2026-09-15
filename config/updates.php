@@ -92,6 +92,7 @@ return [
             'package.json',
             'public/.htaccess',
             'public/favicon',
+            'public/favicon-light',
             'public/favicon.ico',
             'public/images',
             'public/index.php',
@@ -133,6 +134,7 @@ return [
             // documented way to rebrand, so an update that overwrote them would
             // silently put our logo back on somebody else's site.
             'public/favicon',
+            'public/favicon-light',
             'public/favicon.ico',
             'public/images',
         ],

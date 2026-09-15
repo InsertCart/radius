@@ -51,6 +51,16 @@ class SiteLogoBlock extends Block
 
             Control::image('image', 'Logo')->when('source', 'custom'),
 
+            // A logo block can be dropped onto any section, so the background
+            // behind it is the editor's choice and not something the CMS can
+            // work out. Phrased as the background rather than the ink because
+            // that is the part the person placing it is looking at.
+            Control::select('on', 'Background behind it', [
+                'auto' => 'Follow the site colour scheme',
+                'light' => 'Light - use the dark logo',
+                'dark' => 'Dark - use the light logo',
+            ])->default('auto')->when('source', 'setting'),
+
             Control::toggle('link_home', 'Link to the homepage')->default(true),
 
             Control::choose('align', 'Alignment', [

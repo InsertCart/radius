@@ -35,10 +35,11 @@
 
     <aside x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
            class="fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto bg-slate-900 text-slate-300 transition-transform lg:translate-x-0">
-        <div class="flex h-16 items-center gap-2 border-b border-slate-800 px-5">
-            <span class="grid h-8 w-8 place-items-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-                {{ strtoupper(substr(setting('site_name', 'C'), 0, 1)) }}
-            </span>
+        {{-- on="dark": this sidebar is bg-slate-900 at every colour scheme, so
+             it takes the light-ink mark. This is the one surface in the product
+             where the ordinary dark logo would be invisible. --}}
+        <div class="flex h-16 items-center gap-2.5 border-b border-slate-800 px-5">
+            <x-site-logo on="dark" small class="h-8 w-auto shrink-0" />
             <span class="truncate font-semibold text-white">{{ setting('site_name', config('app.name')) }}</span>
         </div>
 

@@ -14,8 +14,7 @@
     <div class="w-full max-w-md">
         <div class="mb-6 text-center">
             <a href="{{ url('/') }}" class="inline-block">
-                <img src="{{ site_logo_url() }}" alt="{{ setting('site_name', config('app.name')) }}"
-                     class="mx-auto h-14 w-auto">
+                <x-site-logo on="light" class="mx-auto h-14 w-auto" />
             </a>
             <p class="mt-1 text-sm text-slate-500">@yield('subtitle')</p>
         </div>

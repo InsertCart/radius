@@ -85,10 +85,29 @@ if (! function_exists('brand_asset')) {
     }
 }
 
+if (! function_exists('media_url')) {
+    /**
+     * Turn a stored media path into a URL, leaving addresses that are already
+     * absolute alone. Settings of type 'image' hold a path on the media disk,
+     * but an admin may also paste a CDN address into one.
+     */
+    function media_url(?string $path): ?string
+    {
+        if (blank($path)) {
+            return null;
+        }
+
+        return str_starts_with($path, 'http') || str_starts_with($path, 'data:')
+            ? $path
+            : \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url($path);
+    }
+}
+
 if (! function_exists('site_logo_url')) {
     /**
-     * The site logo: whatever the owner uploaded under Settings -> General,
-     * falling back to the logo this product ships with.
+     * The site logo in dark ink, for light backgrounds: whatever the owner
+     * uploaded under Settings -> General, falling back to the logo this
+     * product ships with.
      *
      * Views should call this instead of reading setting('site_logo')
      * themselves - that returns a media-disk path and is empty on a fresh
@@ -97,15 +116,27 @@ if (! function_exists('site_logo_url')) {
      */
     function site_logo_url(bool $small = false): string
     {
-        $uploaded = setting('site_logo');
+        return media_url(setting('site_logo'))
+            ?? brand_asset($small ? 'logo_small' : 'logo')
+            ?? '';
+    }
+}
 
-        if (filled($uploaded)) {
-            return str_starts_with($uploaded, 'http')
-                ? $uploaded
-                : \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url($uploaded);
-        }
-
-        return brand_asset($small ? 'logo_small' : 'logo') ?? '';
+if (! function_exists('site_logo_light_url')) {
+    /**
+     * The site logo in light ink, for dark backgrounds.
+     *
+     * Falls back to the owner's ordinary logo before it falls back to ours: a
+     * site that uploaded one logo and never made a light version is better
+     * served by their own mark, even at poor contrast, than by somebody
+     * else's brand appearing in their admin panel.
+     */
+    function site_logo_light_url(bool $small = false): string
+    {
+        return media_url(setting('site_logo_light'))
+            ?? media_url(setting('site_logo'))
+            ?? brand_asset($small ? 'logo_small_light' : 'logo_light')
+            ?? '';
     }
 }
 
@@ -113,15 +144,35 @@ if (! function_exists('site_favicon_url')) {
     /** The favicon the owner uploaded, or the one this product ships with. */
     function site_favicon_url(): string
     {
-        $uploaded = setting('site_favicon');
+        return media_url(setting('site_favicon')) ?? brand_asset('favicon') ?? '';
+    }
+}
 
-        if (filled($uploaded)) {
-            return str_starts_with($uploaded, 'http')
-                ? $uploaded
-                : \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url($uploaded);
-        }
+if (! function_exists('site_favicon_light_url')) {
+    /**
+     * The favicon for browsers reporting a dark colour scheme.
+     *
+     * There is deliberately no upload field for this one: an uploaded favicon
+     * is used as-is for both schemes, because asking a site owner for two
+     * 16-pixel icons buys less than it costs them.
+     */
+    function site_favicon_light_url(): string
+    {
+        return media_url(setting('site_favicon')) ?? brand_asset('favicon_light') ?? '';
+    }
+}
 
-        return brand_asset('favicon') ?? '';
+if (! function_exists('site_color_scheme')) {
+    /**
+     * Which ink the front end should use: 'light', 'dark', or 'system' when
+     * the choice belongs to the visitor's browser and has to be made in CSS
+     * rather than here.
+     */
+    function site_color_scheme(): string
+    {
+        $mode = (string) setting('dark_mode', 'system');
+
+        return in_array($mode, ['light', 'dark'], true) ? $mode : 'system';
     }
 }
 
@@ -129,7 +180,7 @@ if (! function_exists('site_logo_is_custom')) {
     /** Whether the owner has replaced the shipped logo with their own. */
     function site_logo_is_custom(): bool
     {
-        return filled(setting('site_logo'));
+        return filled(setting('site_logo')) || filled(setting('site_logo_light'));
     }
 }
 

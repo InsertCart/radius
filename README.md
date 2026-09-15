@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src=".github/assets/radius-logo.png" alt="Radius" width="220">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/radius-logo-light.png">
+  <img src=".github/assets/radius-logo.png" alt="Radius" width="220">
+</picture>
 
 # Radius
 
@@ -832,45 +835,93 @@ before anyone has uploaded anything. They are defaults, not fixtures: the
 moment a site owner uploads their own under **Settings → General**, the
 uploaded file wins everywhere.
 
-| File | Used for |
-| --- | --- |
-| `public/images/radius-logo.png` | Default site logo (1271×1051) |
-| `public/images/radius-logo-small.png` | Same mark at 444×357, for tight spots |
-| `public/favicon.ico` | The bare `/favicon.ico` browsers ask for unprompted |
-| `public/favicon/` | The full icon set: `.ico`, `.svg`, 96px, Apple touch, 192/512 PWA icons, `site.webmanifest` |
+Every mark comes in two inks. **`-light` describes the artwork, not the
+background** — the light files are white, and they are the ones that go *on* a
+dark surface.
 
-Views never read `setting('site_logo')` directly. They call the helpers in
-`app/Cms/Support/helpers.php`, which apply the fallback in one place:
+| File | Ink | Used for |
+| --- | --- | --- |
+| `public/images/radius-logo.png` | dark | Default site logo (1271×1051) |
+| `public/images/radius-logo-small.png` | dark | Same mark at 444×357 |
+| `public/images/radius-logo-light.png` | white | Dark backgrounds |
+| `public/images/radius-logo-small-light.png` | white | Dark backgrounds, small |
+| `public/favicon.ico` | dark | The bare `/favicon.ico` browsers ask for unprompted |
+| `public/favicon/` | dark | Full icon set + `site.webmanifest` |
+| `public/favicon-light/` | white | Same set for browsers in dark mode |
 
-```php
-site_logo_url()        // uploaded logo, else the shipped one
-site_logo_url(true)    // the small variant
-site_favicon_url()     // uploaded favicon, else the shipped .ico
-brand_asset('favicon_svg')   // a shipped file, never the uploaded one
-site_logo_is_custom()  // has the owner replaced it?
+### Placing a logo
+
+Views do not read `setting('site_logo')` and do not pick an ink themselves.
+They use one component, which names the **background** — the thing whoever
+writes the tag can actually see:
+
+```blade
+<x-site-logo class="h-10 w-auto" />             {{-- follows the colour scheme --}}
+<x-site-logo on="light" class="h-10 w-auto" />  {{-- surface is always pale --}}
+<x-site-logo on="dark" small class="h-8" />     {{-- surface is always dark --}}
 ```
 
-The head tags live in one partial, `resources/views/partials/favicon.blade.php`,
+`on="auto"` (the default) resolves through the **Color scheme** setting. On
+*Always light* or *Always dark* the choice is made server-side; on the default
+*Follow visitor system setting* the component emits a `<picture>` with a
+`prefers-color-scheme` source, because the server never learns what the
+visitor's browser prefers.
+
+Where the bundled views land:
+
+| Surface | Background | Ink |
+| --- | --- | --- |
+| Admin sidebar | `bg-slate-900`, always | `on="dark"` |
+| Default theme header | `bg-white/95`, always | `on="light"` |
+| Storefront header and footer | `--sf-accent` yellow, always | `on="light"` |
+| Sign-in and setup wizard | `bg-slate-100` | `on="light"` |
+| Builder logo block | wherever it is dropped | editor's choice, defaults to auto |
+
+The bundled themes are light-only, so they ask for `on="light"` explicitly
+rather than `auto` — a white logo on a bar that never darkens is just an
+invisible logo. A theme that does implement dark mode should use `auto`.
+
+### Helpers
+
+```php
+site_logo_url($small = false)        // dark ink: upload, else shipped
+site_logo_light_url($small = false)  // white ink: light upload, else upload, else shipped
+site_favicon_url()                   // upload, else shipped
+site_favicon_light_url()             // the dark-mode favicon
+brand_asset('favicon_png_light')     // a shipped file, never an upload
+site_color_scheme()                  // 'light' | 'dark' | 'system'
+site_logo_is_custom()
+```
+
+`site_logo_light_url()` falls back to the owner's *ordinary* logo before it
+falls back to ours. A site that uploaded one logo and never made a white
+version is better served by their own mark at poor contrast than by somebody
+else's brand turning up in their admin panel.
+
+Icon tags live in one partial, `resources/views/partials/favicon.blade.php`,
 included by both themes, the admin panel, the installer, the auth pages and the
 error pages.
 
-**To rebrand the product itself** — for a fork, or a white-label build — you do
-not need to touch a view. Either replace the files above in place, or repoint
-the `brand` block in `config/cms.php`:
+### Rebranding the product
+
+For a fork or a white-label build, no view needs editing. Replace the files
+above in place, or repoint the `brand` block in `config/cms.php`:
 
 ```php
 'brand' => [
     'logo' => 'images/radius-logo.png',
-    'logo_small' => 'images/radius-logo-small.png',
+    'logo_light' => 'images/radius-logo-light.png',
     'favicon' => 'favicon/favicon.ico',
+    'favicon_light' => 'favicon-light/favicon.ico',
     // ...
 ],
 ```
 
 Paths are relative to the web root and resolved through `asset()`, so they work
-whether the document root points at `public/` or at the project folder. Both
-`public/images/` and `public/favicon/` are in the updater's `track_edits` list,
-so a logo you replaced in place survives an update instead of being overwritten.
+whether the document root points at `public/` or at the project folder.
+`public/images/`, `public/favicon/` and `public/favicon-light/` are all in the
+updater's `track_edits` list, so a logo you replaced in place survives an update
+instead of being overwritten.
 
 ---
 
@@ -898,8 +949,9 @@ app/
 │   └── Installer/          the setup wizard
 └── Models/
 public/
-├── images/                 default logo files
-└── favicon/                default icon set and the web manifest
+├── images/                 default logos, dark ink and white
+├── favicon/                default icon set and the web manifest
+└── favicon-light/          the same icons for browsers in dark mode
 config/
 ├── cms.php                 modules, themes, media, security, brand assets
 ├── settings.php            every admin setting, declared once

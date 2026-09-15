@@ -27,7 +27,8 @@ return [
             'site_email' => ['type' => 'email', 'label' => 'Contact email', 'default' => null],
             'site_phone' => ['type' => 'text', 'label' => 'Contact phone'],
             'site_address' => ['type' => 'textarea', 'label' => 'Address'],
-            'site_logo' => ['type' => 'image', 'label' => 'Logo'],
+            'site_logo' => ['type' => 'image', 'label' => 'Logo', 'help' => 'Used on light backgrounds. Leave empty to keep the one this CMS ships with.'],
+            'site_logo_light' => ['type' => 'image', 'label' => 'Logo for dark backgrounds', 'help' => 'A light-coloured version of your logo, used where the background is dark. Falls back to the logo above, so only upload one if your logo disappears there.'],
             'site_favicon' => ['type' => 'image', 'label' => 'Favicon'],
             'timezone' => ['type' => 'select', 'label' => 'Timezone', 'default' => 'UTC', 'options' => 'timezones'],
             'date_format' => ['type' => 'select', 'label' => 'Date format', 'default' => 'd M Y', 'options' => [

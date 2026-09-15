@@ -23,9 +23,21 @@ return [
     |
     | Rebranding is a matter of replacing these files or pointing these keys
     | somewhere else - no view needs editing.
+    |
+    | Every mark comes in two inks. Read '_light' as a description of the
+    | ARTWORK, not of the background: the light files are white, and they are
+    | the ones to put ON a dark surface. The dark-ink files are the default
+    | because most surfaces in this product are pale.
+    |
+    |     surface          use
+    |     ---------------  -----------------------------
+    |     white / slate    'logo', 'favicon'
+    |     dark / slate-900 'logo_light', 'favicon_light'
     */
 
     'brand' => [
+
+        // Dark ink, for light backgrounds. The default everywhere.
         'logo' => 'images/radius-logo.png',
         'logo_small' => 'images/radius-logo-small.png',
 
@@ -39,6 +51,15 @@ return [
         // at 192px in the notification tray and several will not render an
         // .ico there at all.
         'push_icon' => 'favicon/web-app-manifest-192x192.png',
+
+        // White ink, for dark backgrounds: the admin sidebar, a theme in dark
+        // mode, GitHub's dark README. Same artwork, inverted.
+        'logo_light' => 'images/radius-logo-light.png',
+        'logo_small_light' => 'images/radius-logo-small-light.png',
+
+        'favicon_light' => 'favicon-light/favicon.ico',
+        'favicon_svg_light' => 'favicon-light/favicon.svg',
+        'favicon_png_light' => 'favicon-light/favicon-96x96.png',
     ],
 
     /*

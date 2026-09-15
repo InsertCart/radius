@@ -31,7 +31,7 @@
     <div class="sf-foot__top">
         <div class="sf-foot__brand">
             <a href="{{ url('/') }}" class="sf-logo">
-                <img src="{{ site_logo_url() }}" alt="{{ setting('site_name', config('app.name')) }}">
+                <x-site-logo on="light" />
             </a>
 
             @if (setting('site_tagline'))

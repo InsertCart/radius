@@ -28,7 +28,8 @@
         </button>
 
         <a href="{{ url('/') }}" class="sf-logo">
-            <img src="{{ site_logo_url() }}" alt="{{ setting('site_name', config('app.name')) }}">
+            {{-- The bar is --sf-accent (yellow) whatever the colour scheme. --}}
+            <x-site-logo on="light" />
         </a>
 
         <nav class="sf-nav" aria-label="Main">

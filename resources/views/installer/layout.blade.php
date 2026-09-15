@@ -13,9 +13,10 @@
 <body class="min-h-full bg-slate-100 py-10">
     <div class="mx-auto w-full max-w-3xl px-4">
         <header class="mb-8 text-center">
-            {{-- brand_asset() and not site_logo_url(): the wizard runs before
-                 there is a database to read a site logo out of, and this is the
-                 product introducing itself rather than the buyer's site. --}}
+            {{-- brand_asset() and not the x-site-logo component: the wizard runs
+                 before there is a database to read a site logo out of, and this
+                 is the product introducing itself rather than the buyer's site.
+                 The page is bg-slate-100, so dark ink. --}}
             <img src="{{ brand_asset('logo') }}" alt="{{ config('cms.name') }}"
                  class="mx-auto mb-3 h-16 w-auto">
             <p class="text-sm text-slate-500">Version {{ cms_version() }} &middot; Setup wizard</p>
