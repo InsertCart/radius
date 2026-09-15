@@ -29,3 +29,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Written by the release workflow while it assembles the GitHub release.
+/release-notes.md

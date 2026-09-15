@@ -1,8 +1,8 @@
 name: Release
 
 # Publishing is driven by the tag, so cutting a release is one push. Building
-# locally meant remembering to swap the dev dependencies out and back in again,
-# and a release built on the wrong machine state is not obviously wrong until
+# locally meant remembering to swap dev dependencies out and back in again, and
+# a release built on the wrong machine state is not obviously wrong until
 # somebody installs it.
 on:
   push:
@@ -64,25 +64,18 @@ jobs:
         run: php artisan cms:release --force
 
       - name: Assemble the release notes
-        id: notes
         run: |
           version="${{ steps.version.outputs.value }}"
           generated="storage/app/private/releases/notes-${version}.md"
           final="release-notes.md"
 
-          # An annotated tag carries its own message; that is the best summary
-          # of a release, because it was written deliberately for this release
-          # rather than assembled from commit subjects afterwards.
-          message=$(git tag -l --format='%(contents:subject)%0a%0a%(contents:body)' "${GITHUB_REF_NAME}")
-          message=$(printf '%s' "$message" | sed '/^tags:/d' | sed -e :a -e '/^[[:space:]]*$/{$d;N;ba' -e '}')
-
-          if [ -n "$message" ]; then
-            printf '%s
-
-' "$message" > "$final"
-          else
-            : > "$final"
-          fi
+          # An annotated tag carries its own message, written deliberately for
+          # this release rather than assembled from commit subjects afterwards.
+          # The tags: line is stripped - it is metadata, not prose.
+          git tag -l --format='%(contents:subject)' "${GITHUB_REF_NAME}" > "$final"
+          echo "" >> "$final"
+          git tag -l --format='%(contents:body)' "${GITHUB_REF_NAME}" | sed '/^tags:/d' >> "$final"
+          echo "" >> "$final"
 
           previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
 
@@ -90,10 +83,9 @@ jobs:
             echo "## What changed" >> "$final"
             echo "" >> "$final"
             git log --no-merges --pretty=format:'- %s' "${previous}..${GITHUB_REF_NAME}" >> "$final"
-            printf '
-
-**Full changelog:** %s...%s
-' "$previous" "${GITHUB_REF_NAME}" >> "$final"
+            echo "" >> "$final"
+            echo "" >> "$final"
+            echo "**Full changelog:** ${previous}...${GITHUB_REF_NAME}" >> "$final"
           fi
 
           echo "" >> "$final"
@@ -101,14 +93,13 @@ jobs:
           # The metadata block carries the checksum, so it is copied across
           # rather than retyped. Without it every site refuses the update.
           #
-          # `tags:` is the one line worth overriding here: it is what marks a
-          # release as security or breaking, and it is written into the tag
-          # message because nothing else in an automated build knows.
+          # tags: is the one line worth overriding: it marks a release as
+          # security or breaking, and lives in the tag message because nothing
+          # else in an automated build knows.
           tags=$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}" | sed -n 's/^tags:[[:space:]]*//p' | head -1)
 
           if [ -n "$tags" ]; then
             sed "s/^tags:.*/tags: ${tags}/" "$generated" | sed -n '/<!-- radius/,/-->/p' >> "$final"
-            echo "Marked as: ${tags}"
           else
             sed -n '/<!-- radius/,/-->/p' "$generated" >> "$final"
           fi
@@ -121,4 +112,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${{ steps.version.outputs.value }}"
-          gh release create "${GITHUB_REF_NAME}"             --title "$version"             --notes-file release-notes.md             "storage/app/private/releases/radius-${version}.zip"
+          gh release create "${GITHUB_REF_NAME}" --title "$version" --notes-file release-notes.md "storage/app/private/releases/radius-${version}.zip"
