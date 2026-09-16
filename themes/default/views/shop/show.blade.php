@@ -1,6 +1,7 @@
 @extends('theme::layout')
 
 @section('content')
+    @region('product', ['model' => $product])
     <div class="mx-auto max-w-6xl px-4 py-14">
         <nav class="mb-6 text-sm text-slate-500">
             <a href="{{ route('shop.index') }}" class="hover:text-slate-900">Shop</a>
@@ -188,4 +189,5 @@
             </section>
         @endif
     </div>
+    @endregion
 @endsection

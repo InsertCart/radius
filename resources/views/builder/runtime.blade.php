@@ -138,6 +138,41 @@
         document.querySelectorAll('[data-cb-animation]').forEach(function (el) { el.classList.add('cb-in'); });
     }
 
+    /* Product images ----------------------------------------------------- */
+    document.querySelectorAll('[data-cb-pimages]').forEach(function (root) {
+        var stage = root.querySelector('[data-cb-pimages-stage]');
+        if (!stage) return;
+
+        root.addEventListener('click', function (event) {
+            var thumb = event.target.closest('.cb-pimages__thumb');
+            if (!thumb || !root.contains(thumb)) return;
+
+            stage.src = thumb.getAttribute('data-full');
+            stage.alt = thumb.getAttribute('data-alt') || stage.alt;
+
+            root.querySelectorAll('.cb-pimages__thumb').forEach(function (other) {
+                other.classList.toggle('is-active', other === thumb);
+            });
+        });
+    });
+
+    /* Quantity stepper --------------------------------------------------- */
+    document.querySelectorAll('[data-cb-qty]').forEach(function (root) {
+        var input = root.querySelector('input');
+        if (!input) return;
+
+        root.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-step]');
+            if (!button) return;
+
+            var min = parseInt(input.min, 10) || 1;
+            var max = parseInt(input.max, 10) || 99;
+            var next = (parseInt(input.value, 10) || 0) + (parseInt(button.getAttribute('data-step'), 10) || 0);
+
+            input.value = Math.min(max, Math.max(min, next));
+        });
+    });
+
     /* Lightbox ----------------------------------------------------------- */
     document.querySelectorAll('[data-cb-lightbox]').forEach(function (root) {
         root.addEventListener('click', function (event) {

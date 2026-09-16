@@ -188,8 +188,15 @@
                  checkout, would leave customers unable to buy. The editor
                  watches for it rather than letting it be published quietly. --}}
             <div class="cb-guard" id="cb-guard" data-requires="{{ $area['requires_widget'] }}" hidden>
-                <strong>This page needs the {{ $area['requires_widget'] }} widget.</strong>
-                <span>Without it your customers cannot {{ $area['requires_widget'] === 'checkout' ? 'pay' : 'see their basket' }}. Drag it in from the Shop group, or use Restore default.</span>
+                @php
+                    [$requiredName, $requiredReason, $requiredGroup] = match ($area['requires_widget']) {
+                        'checkout' => ['Checkout', 'pay', 'Shop'],
+                        'product-add-to-cart' => ['Add to cart', 'buy this product', 'Product page'],
+                        default => ['Cart', 'see their basket', 'Shop'],
+                    };
+                @endphp
+                <strong>This page needs the {{ $requiredName }} widget.</strong>
+                <span>Without it your customers cannot {{ $requiredReason }}. Drag it in from the {{ $requiredGroup }} group, or use Restore default.</span>
             </div>
         @endif
 

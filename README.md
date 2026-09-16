@@ -411,6 +411,117 @@ still caught by the rules above.
 $siteMenus['header']                {{-- menu items, module-filtered --}}
 ```
 
+### The theme directory
+
+**Appearance → Browse themes** lists free themes from a catalogue we host, with
+search, tags, a details page and one-click install. When a newer version of a
+theme installed from there is published, **Appearance → Themes** badges it and
+offers an in-place update.
+
+Nothing about installing from the directory is looser than uploading a ZIP by
+hand. The archive must be served over `https://` and match the SHA-256 the
+catalogue publishes, and it then goes through the very same installer as an
+upload — the same extension allowlist, the same template scan, the same size
+limits. Installing is an administrator-only action for the same reason.
+
+- **Only themes installed from the directory are updated from it.** A theme you
+  uploaded yourself is never replaced, even if the directory lists one with the
+  same folder name — it may carry your own edits. Uploading a ZIP over a
+  directory theme likewise takes it out of the directory's hands.
+- **An archive must install under the name it was listed as.** A listing called
+  `aurora` whose ZIP declares a different slug is refused before anything is
+  written, so no entry can overwrite some other installed theme.
+- **Download addresses on your own network are refused**, checked on every
+  redirect as well, so a catalogue cannot point your server at internal services.
+
+**Privacy.** Browsing sends one request for the catalogue, carrying only the
+product name and version. No site address, no email, and no list of what is
+installed. A site that has never installed from the directory never contacts it
+at all — updates are only looked up for themes that came from it. Screenshots
+load from the directory's server; set `CMS_MARKETPLACE_REMOTE_IMAGES=false` to
+stop that, or `CMS_MARKETPLACE_ENABLED=false` to remove the directory entirely.
+
+Installing a theme from the directory means trusting whoever runs it, in exactly
+the way installing an update trusts the release host. The template scan is a
+safety net for honest mistakes, not a sandbox.
+
+#### The catalogue file
+
+`CMS_MARKETPLACE_URL` points at one static JSON file, so the directory can be
+hosted on anything that serves files over HTTPS — no server-side code is needed.
+A fork points it at its own.
+
+```json
+{
+  "format": 1,
+  "generated_at": "2026-09-16T10:00:00Z",
+  "items": [
+    {
+      "slug": "aurora",
+      "name": "Aurora",
+      "version": "1.2.0",
+      "author": "InsertCart",
+      "author_url": "https://www.insertcart.com",
+      "description": "A calm editorial theme for blogs and small shops.",
+      "tags": ["blog", "minimal", "dark"],
+      "supports": ["blog", "shop", "pages"],
+      "screenshot": "https://www.insertcart.com/marketplace/aurora/screenshot.png",
+      "screenshots": ["https://www.insertcart.com/marketplace/aurora/1.png"],
+      "preview_url": "https://demo.insertcart.com/aurora",
+      "download": "https://www.insertcart.com/marketplace/aurora/aurora-1.2.0.zip",
+      "sha256": "9f2c…",
+      "size": 482100,
+      "requires": "1.1.0",
+      "tested": "1.1.8",
+      "license": "MIT",
+      "updated_at": "2026-09-10"
+    }
+  ]
+}
+```
+
+Each entry needs `slug`, `name`, `version`, `download` and `sha256`; the rest is
+optional. The same rules as the update manifest apply:
+
+- **`version` must be a string.** An entry whose version is a JSON number is
+  skipped, because `1.10` written as a number reads as `1.1`.
+- **`slug` must match the theme's own `theme.json`**, or sites refuse the install.
+- Unknown keys are ignored, and one malformed entry is skipped rather than
+  breaking the whole directory. Raise `format` only if the file's structure
+  changes.
+- Links are only used when they are `http(s)://`, and images only when they are
+  `https://`.
+- Entries with `"price"` above zero or `"requires_license": true` are skipped by
+  this release, which only installs free themes. That is what lets paid listings
+  be added to the same file later without older sites offering a download that
+  would fail.
+
+A layout that works:
+
+```
+/marketplace/themes.json
+/marketplace/<slug>/screenshot.png
+/marketplace/<slug>/<slug>-<version>.zip
+```
+
+Keep old version ZIPs in place for a while, so a site part-way through an
+install does not hit a missing file.
+
+#### Listing a theme
+
+```bash
+php artisan cms:marketplace-entry path/to/aurora-1.2.0.zip \
+    --url=https://www.insertcart.com/marketplace/aurora
+```
+
+prints the entry for that ZIP with its checksum, size, slug and version read
+from the archive itself, ready to paste into `items`. It also warns about files
+the installer would drop. Add `tags`, `preview_url` and a realistic `requires`.
+
+**Before listing anything, install the ZIP through Appearance → Themes on a test
+site.** Every site runs that same scan, so a theme refused locally is refused
+everywhere.
+
 ---
 
 ## Uploads
@@ -790,6 +901,10 @@ request timeout to run into — the most reliable route for a large release.
   SHA-256 that must match, a version inside the archive that must agree with the
   manifest, and an allowlist of paths an update may write — so a release cannot
   reach `.env`, the uploads, or a theme you bought.
+- **Directory themes are verified the same way, then scanned like an upload.**
+  HTTPS only, a SHA-256 that must match, a slug that must match the listing, no
+  downloads from the server's own network, and the same installer and template
+  scan a hand-uploaded ZIP goes through.
 - **Payment returns are always verified against the provider's API.** A
   redirect back from a gateway proves nothing on its own — the customer
   controls it.
@@ -808,6 +923,7 @@ php artisan cms:sync               # register new modules/gateways/settings afte
 php artisan cms:sync --themes      # re-scan the themes folder
 php artisan cms:demo               # install sample posts, pages and products
 php artisan cms:demo --remove      # delete that sample content again
+php artisan cms:marketplace-entry <zip> --url=<folder>  # print a theme directory listing for a ZIP
 php artisan optimize:clear         # clear all caches
 ```
 
@@ -950,6 +1066,7 @@ app/
 │   ├── Settings/           database-backed settings with caching
 │   ├── Modules/            the module on/off switchboard
 │   ├── Themes/             theme discovery, activation and the ZIP installer
+│   ├── Marketplace/        the theme directory: catalogue, install, updates
 │   ├── Payments/           gateway contract, result object and drivers
 │   ├── Sms/                SMS drivers and the one-time-code flow
 │   ├── Firebase/           FCM push and client config

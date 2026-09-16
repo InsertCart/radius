@@ -264,6 +264,49 @@
                 <x-admin.card title="Featured image">
                     <x-form.media name="featured_image" label="" :value="$product->featured_image" />
                 </x-admin.card>
+
+                <x-admin.card title="Image gallery">
+                    <div x-data="mediaGallery(@js($galleryItems))" class="space-y-3">
+                        <p class="text-xs text-slate-500">Shown after the featured image on the product page. Use the arrows to reorder.</p>
+
+                        <div class="grid grid-cols-3 gap-2" x-show="items.length">
+                            <template x-for="(item, index) in items" :key="item.id">
+                                <div class="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                                    <input type="hidden" name="gallery[]" :value="item.id">
+                                    <img :src="item.url" alt="" class="h-full w-full object-cover">
+                                    <div class="absolute inset-x-0 bottom-0 flex justify-between bg-white/90 px-1 py-0.5 text-xs">
+                                        <button type="button" @click="move(index, -1)" :disabled="index === 0"
+                                                class="px-1 text-slate-600 disabled:opacity-30" aria-label="Move left">&larr;</button>
+                                        <button type="button" @click="remove(index)"
+                                                class="px-1 text-rose-600" aria-label="Remove">&times;</button>
+                                        <button type="button" @click="move(index, 1)" :disabled="index === items.length - 1"
+                                                class="px-1 text-slate-600 disabled:opacity-30" aria-label="Move right">&rarr;</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <p x-show="! items.length" class="text-sm text-slate-400">No gallery images yet.</p>
+
+                        <div class="flex gap-2">
+                            <button type="button" @click="pick"
+                                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50">
+                                Add from library
+                            </button>
+                            <button type="button" @click="$refs.files.click()"
+                                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
+                                    x-text="uploading ? 'Uploading...' : 'Upload'"></button>
+                            <input type="file" x-ref="files" class="hidden" accept="image/*" multiple @change="upload">
+                        </div>
+
+                        @error('gallery')
+                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                        @enderror
+                        @error('gallery.*')
+                            <p class="text-xs text-rose-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </x-admin.card>
             </div>
         </div>
     </form>

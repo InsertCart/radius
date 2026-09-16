@@ -113,21 +113,46 @@ class ThemeInstaller
     public function __construct(private ThemeManager $themes) {}
 
     /**
-     * @return array{slug: string, name: string, warnings: string[]}
+     * @return array{slug: string, name: string, version: string, warnings: string[]}
      *
      * @throws ThemeInstallException
      */
     public function installFromUpload(UploadedFile $file, bool $overwrite = false): array
     {
+        return $this->installFromArchive($file->getRealPath(), $file->getClientOriginalName(), $overwrite);
+    }
+
+    /**
+     * Installs a theme ZIP already on local disk - the one path every theme
+     * takes, whether it was uploaded or downloaded from the marketplace. There
+     * is deliberately no second route in: a downloaded theme gets exactly the
+     * extraction rules and template scan an uploaded one does.
+     *
+     * @param  string  $fallbackName  used for the folder name when theme.json names neither slug nor name
+     * @param  string|null  $expectedSlug  refuse the archive unless it installs to this folder. The
+     *                                     marketplace passes the slug it listed, so an archive cannot
+     *                                     declare a different slug and overwrite some other installed theme.
+     * @return array{slug: string, name: string, version: string, warnings: string[]}
+     *
+     * @throws ThemeInstallException
+     */
+    public function installFromArchive(string $archivePath, string $fallbackName, bool $overwrite = false, ?string $expectedSlug = null): array
+    {
         $workspace = storage_path('app/theme-install/'.Str::random(16));
         File::ensureDirectoryExists($workspace);
 
         try {
-            $this->extract($file->getRealPath(), $workspace);
+            $this->extract($archivePath, $workspace);
 
             $root = $this->locateThemeRoot($workspace);
             $manifest = $this->readManifest($root);
-            $slug = $this->resolveSlug($manifest, $file);
+            $slug = $this->resolveSlug($manifest, $fallbackName);
+
+            if ($expectedSlug !== null && $slug !== $expectedSlug) {
+                throw new ThemeInstallException(
+                    "This archive installs a theme called [{$slug}], but it was listed as [{$expectedSlug}]. It was not installed."
+                );
+            }
 
             $warnings = $this->scanTemplates($root);
 
@@ -151,6 +176,7 @@ class ThemeInstaller
             return [
                 'slug' => $slug,
                 'name' => $manifest['name'] ?? $slug,
+                'version' => (string) $manifest['version'],
                 'warnings' => $warnings,
             ];
         } finally {
@@ -312,9 +338,9 @@ class ThemeInstaller
         return $manifest;
     }
 
-    private function resolveSlug(array $manifest, UploadedFile $file): string
+    private function resolveSlug(array $manifest, string $fallbackName): string
     {
-        $slug = Str::slug($manifest['slug'] ?? $manifest['name'] ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+        $slug = Str::slug($manifest['slug'] ?? $manifest['name'] ?? pathinfo($fallbackName, PATHINFO_FILENAME));
 
         if (blank($slug)) {
             throw new ThemeInstallException('Could not work out a folder name for this theme.');

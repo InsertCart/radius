@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use Database\Seeders\Demo\DemoBlogSeeder;
+use Database\Seeders\Demo\DemoEngagementSeeder;
 use Database\Seeders\Demo\DemoMediaFactory;
+use Database\Seeders\Demo\DemoOrderSeeder;
 use Database\Seeders\Demo\DemoPageSeeder;
 use Database\Seeders\Demo\DemoShopSeeder;
 use Illuminate\Database\Seeder;
@@ -11,7 +13,9 @@ use Illuminate\Database\Seeder;
 /**
  * A shop and a blog with enough in them to actually test against: posts,
  * pages, products, categories, tags, comments, reviews, variants and the
- * placeholder images they all point at.
+ * placeholder images they all point at - and, behind the catalogue, three
+ * months of customers, orders and messages, so that the admin's dashboard,
+ * reports and inbox have something to show rather than a row of zeroes.
  *
  * Deliberately not called by DatabaseSeeder. A fresh install should not come
  * with fifteen invented products in it; this runs only when somebody asks for
@@ -44,8 +48,12 @@ class DemoContentSeeder extends Seeder
 
         if (modules()->enabled('shop')) {
             $this->call(DemoShopSeeder::class);
+            // After the catalogue, because every order line points at a product.
+            $this->call(DemoOrderSeeder::class);
         } else {
-            $this->command?->warn('The shop module is off, so no products were created.');
+            $this->command?->warn('The shop module is off, so no products or orders were created.');
         }
+
+        $this->call(DemoEngagementSeeder::class);
     }
 }

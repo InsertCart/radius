@@ -76,6 +76,73 @@ Alpine.data('mediaField', (name, initial) => ({
 }));
 
 /**
+ * Ordered image list for a product gallery. Each image posts as gallery[] with
+ * its media id, so the order on screen is the order saved.
+ */
+Alpine.data('mediaGallery', (initial = []) => ({
+    items: initial,
+    uploading: false,
+
+    add(media) {
+        if (media?.id && !this.items.some((item) => item.id === media.id)) {
+            this.items.push({ id: media.id, url: media.thumb || media.url });
+        }
+    },
+
+    remove(index) {
+        this.items.splice(index, 1);
+    },
+
+    move(index, step) {
+        const target = index + step;
+        if (target < 0 || target >= this.items.length) return;
+
+        const [item] = this.items.splice(index, 1);
+        this.items.splice(target, 0, item);
+    },
+
+    pick() {
+        window.dispatchEvent(new CustomEvent('cms:pick-media', {
+            detail: { onPick: (media) => this.add(media) },
+        }));
+    },
+
+    async upload(event) {
+        const files = [...event.target.files];
+        if (!files.length) return;
+
+        this.uploading = true;
+
+        const body = new FormData();
+        files.forEach((file) => body.append('files[]', file));
+
+        try {
+            const response = await fetch(window.CMS.mediaUploadUrl, {
+                method: 'POST',
+                body,
+                headers: {
+                    'X-CSRF-TOKEN': window.CMS.csrfToken,
+                    Accept: 'application/json',
+                },
+            });
+
+            const { data = [], rejected = [] } = await response.json();
+
+            data.forEach((media) => this.add(media));
+
+            if (!response.ok || rejected.length) {
+                alert('Some files could not be uploaded. Check the file type and size.');
+            }
+        } catch (error) {
+            alert('The files could not be uploaded. Check the file type and size.');
+        } finally {
+            this.uploading = false;
+            event.target.value = '';
+        }
+    },
+}));
+
+/**
  * Repeater used by the product variant editor: add and remove rows without a
  * round trip, with the index rewritten so the array posts contiguously.
  */

@@ -33,5 +33,15 @@
                 </form>
             @endif
         </div>
+
+        @if ($builderType === 'product' && Route::has('admin.builder.region'))
+            {{-- This builder only designs the description. Where the price, buttons
+                 and badges go is set once for every product, in the template. --}}
+            <p class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                This designs the description only. To arrange the images, price, buy buttons
+                and badges for every product, edit the
+                <a href="{{ route('admin.builder.region', 'product') }}" class="font-medium text-indigo-600 hover:underline">product page template</a>.
+            </p>
+        @endif
     @endif
 </x-admin.card>

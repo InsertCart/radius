@@ -19,6 +19,9 @@
         $saving = $product->isOnSale() ? $product->price - $product->sale_price : 0;
     @endphp
 
+    {{-- Replaced by the Product page template once one is published under
+         Builder > Site pages. Until then this markup is used as-is. --}}
+    @region('product', ['model' => $product])
     <div class="sf-wrap">
         <nav class="sf-crumbs" aria-label="Breadcrumb">
             <a href="{{ url('/') }}">Home</a>
@@ -34,7 +37,7 @@
 
         <div class="sf-pdp">
             {{-- Gallery ------------------------------------------------- --}}
-            <div class="sf-gallery">
+            <div class="sf-gallery {{ $images->count() > 1 ? 'sf-gallery--thumbs' : '' }}">
                 @if ($images->count() > 1)
                     <div class="sf-thumbs">
                         @foreach ($images as $url => $alt)
@@ -307,4 +310,5 @@
         'moreUrl' => $category?->url() ?? route('shop.index'),
         'soft' => true,
     ])
+    @endregion
 @endsection

@@ -55,6 +55,21 @@ return [
         Blocks\CartBlock::class,
         Blocks\CheckoutBlock::class,
 
+        // Product page template
+        Blocks\ProductBreadcrumbsBlock::class,
+        Blocks\ProductImagesBlock::class,
+        Blocks\ProductTitleBlock::class,
+        Blocks\ProductRatingBlock::class,
+        Blocks\ProductPriceBlock::class,
+        Blocks\ProductShortDescriptionBlock::class,
+        Blocks\ProductAddToCartBlock::class,
+        Blocks\ProductStockBlock::class,
+        Blocks\ProductBadgesBlock::class,
+        Blocks\ProductDescriptionBlock::class,
+        Blocks\ProductDetailsBlock::class,
+        Blocks\ProductReviewsBlock::class,
+        Blocks\ProductRelatedBlock::class,
+
         // Site parts
         Blocks\SiteLogoBlock::class,
         Blocks\MenuBlock::class,
@@ -108,6 +123,13 @@ return [
             'route' => 'checkout.index',
             'requires_widget' => 'checkout',
             'description' => 'The address, payment and place-order step.',
+        ],
+        'product' => [
+            'label' => 'Product page',
+            'module' => 'shop',
+            'route' => 'shop.index',
+            'requires_widget' => 'product-add-to-cart',
+            'description' => 'One design shared by every product: images, price, buy buttons and more.',
         ],
         'blog_index' => [
             'label' => 'Blog index',

@@ -2,6 +2,7 @@
 
 namespace App\Cms\Support;
 
+use App\Cms\Marketplace\CatalogClient;
 use App\Cms\Updates\UpdateChecker;
 use App\Models\Comment;
 use App\Models\ContactSubmission;
@@ -119,7 +120,16 @@ class AdminNavigation
 
         // Installing a theme deploys code, so it is an owner's screen.
         if ($user->isAdmin()) {
-            $links[] = $this->link('Themes', 'admin.themes.index', 'admin.themes.*', null, 'themes');
+            // Badged with the number of installed directory themes that have a
+            // newer version. Only themes installed from the directory are
+            // looked up, so a site that never used it makes no request.
+            $links[] = $this->link('Themes', 'admin.themes.index', 'admin.themes.index', $this->count(
+                fn () => count(app(CatalogClient::class)->availableUpdates())
+            ), 'themes');
+
+            if (app(CatalogClient::class)->enabled()) {
+                $links[] = $this->link('Browse themes', 'admin.themes.marketplace.index', 'admin.themes.marketplace.*', null, 'marketplace');
+            }
         }
 
         if (modules()->enabled('seo')) {

@@ -143,15 +143,17 @@ class CmsServiceProvider extends ServiceProvider
     {
         $manager = RegionManager::class;
 
+        // An optional second argument passes context to the layout's widgets:
+        // @region('product', ['model' => $product]).
         Blade::directive('region', function (string $expression) use ($manager) {
-            return "<?php \$__cbRegion = {$expression};
+            return "<?php \$__cbArgs = [{$expression}]; \$__cbRegion = \$__cbArgs[0];
                 app({$manager}::class)->markRendered(\$__cbRegion);
                 if (app({$manager}::class)->has(\$__cbRegion)):
-                    echo app({$manager}::class)->render(\$__cbRegion);
+                    echo app({$manager}::class)->render(\$__cbRegion, \$__cbArgs[1] ?? []);
                 else: ?>";
         });
 
-        Blade::directive('endregion', fn () => '<?php endif; unset($__cbRegion); ?>');
+        Blade::directive('endregion', fn () => '<?php endif; unset($__cbRegion, $__cbArgs); ?>');
 
         // True when a region has been taken over by the builder, for themes
         // that want to adjust their own wrapper markup.

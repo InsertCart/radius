@@ -144,7 +144,7 @@ class RegionManager
      * Render a region's layout. Returns an empty string when there is none,
      * which the Blade directive treats as "use the theme's own markup".
      */
-    public function render(string $region): string
+    public function render(string $region, array $context = []): string
     {
         $layout = $this->published()[$region] ?? null;
 
@@ -152,7 +152,9 @@ class RegionManager
             return '';
         }
 
-        $html = $this->renderer->render($layout['data']);
+        // $context carries what the page is showing - the product, for the
+        // product page template - so its widgets can read it.
+        $html = $this->renderer->render($layout['data'], $context);
 
         // Region CSS is collected and emitted once in the document head rather
         // than inline, so a header used on every page is not restyled per view.

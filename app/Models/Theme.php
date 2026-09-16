@@ -6,9 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Theme extends Model
 {
+    /** Uploaded by hand, dropped in over FTP, or bundled. */
+    public const SOURCE_MANUAL = 'manual';
+
+    /** Installed from the theme marketplace, and so eligible for its updates. */
+    public const SOURCE_MARKETPLACE = 'marketplace';
+
     protected $fillable = [
         'slug', 'name', 'version', 'author', 'author_url',
         'description', 'screenshot', 'is_active', 'meta', 'options',
+        'source', 'source_slug', 'installed_at',
     ];
 
     protected function casts(): array
@@ -17,6 +24,7 @@ class Theme extends Model
             'is_active' => 'boolean',
             'meta' => 'array',
             'options' => 'array',
+            'installed_at' => 'datetime',
         ];
     }
 
@@ -40,6 +48,11 @@ class Theme extends Model
     public function existsOnDisk(): bool
     {
         return is_dir($this->path()) && is_file($this->path('theme.json'));
+    }
+
+    public function isFromMarketplace(): bool
+    {
+        return $this->source === self::SOURCE_MARKETPLACE && filled($this->source_slug);
     }
 
     public function isDefault(): bool

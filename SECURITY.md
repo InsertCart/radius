@@ -20,7 +20,12 @@ rather than waiting for its daily check.
 
 The CMS itself: authentication and two-factor, the admin panel, file uploads and
 the media library, paid downloads, the visual builder's stored HTML, payment
-webhook verification, the theme installer, and the self-updater.
+webhook verification, the theme installer, the theme directory (catalogue
+parsing, download verification and install), and the self-updater.
+
+Themes *listed* in the theme directory are reviewed before publication, but a
+theme's own code is its author's. Report a problem in a listed theme to us all
+the same, so the listing can be pulled while it is fixed.
 
 Third-party themes and plugins are not maintained here - report those to their
 authors. Findings that require an account you already control to attack only

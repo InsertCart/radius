@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DesignToken;
 use App\Models\Layout;
 use App\Models\LayoutPreset;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -65,13 +66,16 @@ class BuilderController extends Controller
 
         $layout = Layout::forRegion($region);
         $starter = app(RegionStarter::class);
+        $area = $this->regions->area($region);
+        $sample = $this->regionContext($region)['model'] ?? null;
 
         return view('admin.builder.editor', $this->editorPayload($layout, [
-            'title' => $this->regions->availableForTheme()[$region] ?? ucfirst($region),
-            'subtitle' => 'Theme region',
+            'title' => $area['label'] ?? ucfirst($region),
+            'subtitle' => ($area['kind'] ?? 'region') === 'system' ? 'Site page' : 'Theme region',
             'previewUrl' => route('admin.builder.preview.region', ['region' => $region]),
             'backUrl' => route('admin.builder.index'),
-            'viewUrl' => url('/'),
+            'viewUrl' => $sample instanceof Product ? $sample->url() : url('/'),
+            'widgets' => $this->blocks->panel($region),
 
             // A region editor opens empty even though the live site clearly has
             // a header, because the theme's own markup is doing that job. The
@@ -171,6 +175,7 @@ class BuilderController extends Controller
         $renderer = $this->renderer->editing();
         $isAdmin = (bool) $request->user()?->isAdmin();
         $trusted = $this->rawHtmlAlreadyInLayout($layout);
+        $context = $this->layoutContext($layout);
 
         if ($request->filled('node')) {
             // Cleaned the same way the save path cleans it, so the canvas is a
@@ -178,7 +183,7 @@ class BuilderController extends Controller
             $node = $this->cleanTree([$request->input('node')], $isAdmin, $trusted)[0];
 
             return response()->json([
-                'html' => $renderer->renderNode($node),
+                'html' => $renderer->renderNode($node, $context),
                 'css' => $this->styles->compile([$node]),
             ]);
         }
@@ -186,7 +191,7 @@ class BuilderController extends Controller
         $tree = $this->cleanTree($request->input('tree', []), $isAdmin, $trusted);
 
         return response()->json([
-            'html' => $renderer->render($tree),
+            'html' => $renderer->render($tree, $context),
             'css' => $this->styles->compile($tree),
         ]);
     }
@@ -225,7 +230,7 @@ class BuilderController extends Controller
         $layout = Layout::forRegion($region);
 
         return view('admin.builder.canvas', [
-            'content' => $this->renderer->editing()->render($layout->editableTree()),
+            'content' => $this->renderer->editing()->render($layout->editableTree(), $this->regionContext($region)),
             'css' => $this->styles->compile($layout->editableTree()),
             'title' => ucfirst($region),
             // A region is a fragment, so it is previewed without the theme's
@@ -540,6 +545,32 @@ class BuilderController extends Controller
         $walk($layout->draft_data ?? []);
 
         return $found;
+    }
+
+    /** What a layout's widgets are rendered against while it is being edited. */
+    private function layoutContext(Layout $layout): array
+    {
+        if ($layout->layoutable) {
+            return ['model' => $layout->layoutable];
+        }
+
+        return $layout->region ? $this->regionContext($layout->region) : [];
+    }
+
+    /**
+     * The product page template is designed against a real product, so prices,
+     * images and stock in the preview look like the live page.
+     */
+    private function regionContext(string $region): array
+    {
+        if ($region !== 'product') {
+            return [];
+        }
+
+        $product = Product::published()->with('categories', 'variants', 'gallery')->latest()->first()
+            ?? Product::with('categories', 'variants', 'gallery')->latest()->first();
+
+        return $product ? ['model' => $product] : [];
     }
 
     /** @return Model&\App\Models\Concerns\HasLayout */

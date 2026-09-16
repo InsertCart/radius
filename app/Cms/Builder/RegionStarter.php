@@ -44,6 +44,10 @@ class RegionStarter
             'shop_index' => [
                 ['key' => 'simple', 'label' => 'Heading and product grid', 'hint' => 'A title above a grid of products'],
             ],
+            'product' => [
+                ['key' => 'classic', 'label' => 'Images beside details', 'hint' => 'Like your theme: gallery left, buy box right, reviews below'],
+                ['key' => 'stacked', 'label' => 'Centred, single column', 'hint' => 'Image on top, everything else beneath it'],
+            ],
             default => [],
         };
     }
@@ -66,6 +70,8 @@ class RegionStarter
             'checkout.simple' => $this->systemPage('Checkout', 'checkout'),
             'blog_index.simple' => $this->systemPage('Blog', 'posts'),
             'shop_index.simple' => $this->systemPage('Shop', 'products'),
+            'product.classic' => $this->productClassic(),
+            'product.stacked' => $this->productStacked(),
             default => [],
         };
     }
@@ -194,6 +200,66 @@ class RegionStarter
         ], [
             'padding' => $this->spacing(48, 0),
         ])];
+    }
+
+    // Product page -----------------------------------------------------------
+
+    /** The buy box widgets, in the order the theme's own page shows them. */
+    private function productBuyBox(): array
+    {
+        return [
+            $this->widget('product-title'),
+            $this->widget('product-rating'),
+            $this->widget('product-price'),
+            $this->widget('product-add-to-cart'),
+            $this->widget('product-stock'),
+            $this->widget('product-badges'),
+            $this->widget('product-description'),
+            $this->widget('product-details'),
+        ];
+    }
+
+    /** Reviews and related products, each in its own full-width section. */
+    private function productFooter(): array
+    {
+        return [
+            $this->section('div', [$this->column(100, [$this->widget('product-reviews')])], [
+                'padding' => $this->spacing(32, 0),
+            ]),
+            $this->section('div', [$this->column(100, [$this->widget('product-related')])], [
+                'padding' => $this->spacing(32, 0),
+            ]),
+        ];
+    }
+
+    private function productClassic(): array
+    {
+        return array_merge([
+            $this->section('div', [$this->column(100, [$this->widget('product-breadcrumbs')])], [
+                'padding' => $this->spacing(20, 0),
+            ]),
+            $this->section('div', [
+                $this->column(45, [$this->widget('product-images')]),
+                $this->column(55, $this->productBuyBox()),
+            ], [
+                'gap' => ['size' => 40, 'unit' => 'px'],
+                'padding' => $this->spacing(8, 0),
+            ]),
+        ], $this->productFooter());
+    }
+
+    private function productStacked(): array
+    {
+        return array_merge([
+            $this->section('div', [
+                $this->column(100, array_merge(
+                    [$this->widget('product-breadcrumbs'), $this->widget('product-images', ['thumbs' => 'below'])],
+                    $this->productBuyBox()
+                )),
+            ], [
+                'padding' => $this->spacing(24, 0),
+            ]),
+        ], $this->productFooter());
     }
 
     // Node builders --------------------------------------------------------

@@ -55,6 +55,11 @@ class CartController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        // The Buy now button submits the same form with buy_now set.
+        if ($request->boolean('buy_now')) {
+            return redirect()->route('checkout.index');
+        }
+
         return back()->with('status', "\"{$product->name}\" added to your cart.");
     }
 

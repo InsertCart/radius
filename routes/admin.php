@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\ThemeController;
+use App\Http\Controllers\Admin\ThemeMarketplaceController;
 use App\Http\Controllers\Admin\ToolsController;
 use App\Http\Controllers\Admin\UpdateController;
 use App\Http\Controllers\Admin\UserController;
@@ -143,6 +144,15 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             // installing or activating one is equivalent to deploying code.
             // That is an owner's decision, never an editor's.
             Route::middleware('staff:admin')->group(function () {
+                // The theme directory. Declared before the {slug} routes below
+                // so "marketplace" can never be read as a theme's folder name.
+                Route::get('themes/marketplace', [ThemeMarketplaceController::class, 'index'])->name('themes.marketplace.index');
+                Route::post('themes/marketplace/refresh', [ThemeMarketplaceController::class, 'refresh'])->name('themes.marketplace.refresh');
+                Route::get('themes/marketplace/{slug}', [ThemeMarketplaceController::class, 'show'])->name('themes.marketplace.show');
+                Route::post('themes/marketplace/{slug}/install', [ThemeMarketplaceController::class, 'install'])
+                    ->middleware('throttle:10,1')
+                    ->name('themes.marketplace.install');
+
                 Route::get('themes', [ThemeController::class, 'index'])->name('themes.index');
                 Route::post('themes/upload', [ThemeController::class, 'upload'])->name('themes.upload');
                 Route::post('themes/{slug}/activate', [ThemeController::class, 'activate'])->name('themes.activate');

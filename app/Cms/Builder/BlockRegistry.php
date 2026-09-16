@@ -28,6 +28,7 @@ class BlockRegistry
         'layout' => 'Layout',
         'content' => 'Content',
         'shop' => 'Shop',
+        'product' => 'Product page',
         'site' => 'Site parts',
     ];
 
@@ -109,12 +110,21 @@ class BlockRegistry
         return $available;
     }
 
-    /** The widget panel's grouped list. */
-    public function panel(): array
+    /**
+     * The widget panel's grouped list. Widgets tied to particular areas are
+     * only offered while one of those areas is being edited.
+     */
+    public function panel(?string $area = null): array
     {
         $grouped = [];
 
         foreach ($this->available() as $type => $schema) {
+            $areas = $this->blocks[$type]::areas();
+
+            if ($areas !== null && ! in_array($area, $areas, true)) {
+                continue;
+            }
+
             $grouped[$schema['category']][] = [
                 'type' => $type,
                 'name' => $schema['name'],

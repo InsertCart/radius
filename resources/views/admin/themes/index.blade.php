@@ -29,9 +29,14 @@
                                         v{{ $theme->version }}@if ($theme->author) &middot; {{ $theme->author }} @endif
                                     </p>
                                 </div>
-                                @if ($theme->is_active)
-                                    <x-admin.badge color="green">Active</x-admin.badge>
-                                @endif
+                                <div class="flex shrink-0 gap-1">
+                                    @isset($updates[$theme->slug])
+                                        <x-admin.badge color="amber">Update {{ $updates[$theme->slug]->version }}</x-admin.badge>
+                                    @endisset
+                                    @if ($theme->is_active)
+                                        <x-admin.badge color="green">Active</x-admin.badge>
+                                    @endif
+                                </div>
                             </div>
 
                             @if ($theme->description)
@@ -42,7 +47,17 @@
                                 <p class="mt-2 text-xs text-rose-600">The files for this theme are missing on disk.</p>
                             @endif
 
-                            <div class="mt-4 flex gap-2">
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                @isset($updates[$theme->slug])
+                                    <form method="POST" action="{{ route('admin.themes.marketplace.install', $updates[$theme->slug]->slug) }}"
+                                          onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Updating…';">
+                                        @csrf
+                                        <button class="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-600">
+                                            Update to {{ $updates[$theme->slug]->version }}
+                                        </button>
+                                    </form>
+                                @endisset
+
                                 @unless ($theme->is_active)
                                     <form method="POST" action="{{ route('admin.themes.activate', $theme->slug) }}">
                                         @csrf
@@ -70,6 +85,15 @@
         </div>
 
         <div class="space-y-6">
+            @if ($marketplaceEnabled)
+                <x-admin.card title="Find a theme" description="Free themes from the theme directory, installed in one click">
+                    <a href="{{ route('admin.themes.marketplace.index') }}"
+                       class="block w-full rounded-lg bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-indigo-700">
+                        Browse themes
+                    </a>
+                </x-admin.card>
+            @endif
+
             <x-admin.card title="Upload a theme" description="A .zip archive containing theme.json and a views folder">
                 <form method="POST" action="{{ route('admin.themes.upload') }}" enctype="multipart/form-data" class="space-y-4">
                     @csrf

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Cms\Marketplace\CatalogClient;
 use App\Cms\Themes\ThemeInstaller;
 use App\Cms\Themes\ThemeInstallException;
 use App\Cms\Themes\ThemeManager;
@@ -20,6 +21,7 @@ class ThemeController extends Controller
     public function __construct(
         private ThemeManager $themes,
         private ThemeInstaller $installer,
+        private CatalogClient $marketplace,
     ) {}
 
     public function index(): View
@@ -32,6 +34,8 @@ class ThemeController extends Controller
             'activeSlug' => $this->themes->activeSlug(),
             'maxUploadKb' => config('cms.themes.max_upload_kb'),
             'allowedExtensions' => config('cms.themes.allowed_extensions'),
+            'marketplaceEnabled' => $this->marketplace->enabled(),
+            'updates' => $this->availableUpdates(),
         ]);
     }
 
@@ -58,6 +62,11 @@ class ThemeController extends Controller
 
             return back()->with('error', 'The theme could not be installed. Check the logs for details.');
         }
+
+        // A hand upload replaces whatever was there, including a theme installed
+        // from the directory. It is no longer the directory's copy, so it must
+        // not be offered the directory's updates over the top of it.
+        Theme::where('slug', $result['slug'])->update(['source' => Theme::SOURCE_MANUAL, 'source_slug' => null]);
 
         activity('theme.installed', "Installed the {$result['name']} theme.", properties: ['slug' => $result['slug']]);
 
@@ -96,6 +105,24 @@ class ThemeController extends Controller
         activity('theme.deleted', "Deleted the {$slug} theme.");
 
         return back()->with('status', 'Theme deleted.');
+    }
+
+    /**
+     * Directory updates for installed themes. Wrapped so that an unreachable
+     * directory, or a site whose migrations have not run yet, still gets a
+     * working Themes screen.
+     *
+     * @return array<string, \App\Cms\Marketplace\MarketplaceItem>
+     */
+    private function availableUpdates(): array
+    {
+        try {
+            return $this->marketplace->availableUpdates();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
     }
 
     /** Re-reads themes/ and republishes assets. */

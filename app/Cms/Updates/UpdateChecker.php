@@ -2,6 +2,7 @@
 
 namespace App\Cms\Updates;
 
+use App\Cms\Support\JsonDocument;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -100,7 +101,8 @@ class UpdateChecker
             throw new UpdateException("The update server answered with an error ({$response->status()}).");
         }
 
-        $data = $this->decode($response->body());
+        // Forgives a byte-order mark or UTF-16, which hand-edited files often carry.
+        $data = JsonDocument::decode($response->body());
 
         if (! is_array($data)) {
             throw new UpdateException(
@@ -143,32 +145,6 @@ class UpdateChecker
         $manifest = $this->cached();
 
         return $manifest !== null && $manifest->isNewerThan($this->currentVersion());
-    }
-
-    /**
-     * Decode the manifest, forgiving the ways a hand-edited file arrives.
-     *
-     * The byte-order mark is the one that matters: Notepad, PowerShell's
-     * Set-Content and several Windows editors all add one by default, it is
-     * invisible in every editor, and json_decode rejects the file outright
-     * because of it. Leaving that unhandled would mean a seller's perfectly
-     * correct manifest silently never working, with nothing on screen to
-     * explain why.
-     */
-    private function decode(string $body): mixed
-    {
-        $body = ltrim($body, "\xEF\xBB\xBF \t\n\r\0\x0B");
-
-        // Some editors save UTF-16 when told to "save as Unicode".
-        if (str_starts_with($body, "\xFF\xFE") || str_starts_with($body, "\xFE\xFF")) {
-            $converted = @mb_convert_encoding($body, 'UTF-8', 'UTF-16');
-
-            if (is_string($converted)) {
-                $body = ltrim($converted, "\xEF\xBB\xBF \t\n\r\0\x0B");
-            }
-        }
-
-        return json_decode($body, true);
     }
 
     /**

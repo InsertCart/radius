@@ -8,6 +8,7 @@ use App\Cms\Support\HtmlSanitizer;
 use App\Http\Controllers\Admin\Concerns\HandlesSeoFields;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Media;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,6 +65,7 @@ class ProductController extends Controller
             $product = Product::create($this->attributes($validated, $request));
             $product->categories()->sync($validated['categories'] ?? []);
             $this->syncVariants($product, $request);
+            $this->syncGallery($product, $validated['gallery'] ?? []);
 
             return $product;
         });
@@ -75,7 +77,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        return view('admin.products.form', $this->formData($product->load('variants', 'categories')));
+        return view('admin.products.form', $this->formData($product->load('variants', 'categories', 'gallery')));
     }
 
     public function update(Request $request, Product $product): RedirectResponse
@@ -86,6 +88,7 @@ class ProductController extends Controller
             $product->fill($this->attributes($validated, $request, $product))->save();
             $product->categories()->sync($validated['categories'] ?? []);
             $this->syncVariants($product, $request);
+            $this->syncGallery($product, $validated['gallery'] ?? []);
         });
 
         activity('product.updated', "Updated the product \"{$product->name}\".", $product);
@@ -121,6 +124,8 @@ class ProductController extends Controller
             'short_description' => ['nullable', 'string', 'max:1000'],
             'description' => ['nullable', 'string'],
             'featured_image' => ['nullable', 'string', 'max:255'],
+            'gallery' => ['nullable', 'array', 'max:30'],
+            'gallery.*' => ['integer', 'distinct', 'exists:media,id'],
 
             'price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
@@ -273,6 +278,29 @@ class ProductController extends Controller
         $product->variants()->whereNotIn('id', $keptIds ?: [0])->delete();
     }
 
+    /** Attach the gallery images in the order the form listed them. */
+    private function syncGallery(Product $product, array $mediaIds): void
+    {
+        $product->gallery()->sync(collect($mediaIds)->values()->mapWithKeys(
+            fn ($id, $index) => [(int) $id => ['collection' => 'gallery', 'sort_order' => $index]]
+        )->all());
+    }
+
+    /**
+     * The gallery as the form's picker sees it. After a failed save the
+     * submitted order wins, so rearranging is not lost to a validation error.
+     */
+    private function galleryItems(Product $product): array
+    {
+        $old = old('gallery');
+
+        $media = is_array($old)
+            ? Media::whereIn('id', $old)->get()->sortBy(fn ($m) => array_search($m->id, $old))
+            : ($product->exists ? $product->gallery : collect());
+
+        return $media->map(fn (Media $m) => ['id' => $m->id, 'url' => $m->conversionUrl('thumb')])->values()->all();
+    }
+
     /** Parses "Size: M, Color: Blue" into an options map. */
     private function parseOptions(string $raw): array
     {
@@ -299,6 +327,7 @@ class ProductController extends Controller
             'product' => $product,
             'categories' => Category::shop()->orderBy('name')->pluck('name', 'id'),
             'selectedCategories' => $product->exists ? $product->categories->pluck('id')->all() : [],
+            'galleryItems' => $this->galleryItems($product),
             'schemaTypes' => $this->schemaTypes(),
             'downloadExtensions' => $this->downloads->allowedExtensions(),
             'downloadMaxKb' => $this->downloads->maxUploadKb(),

@@ -1,0 +1,224 @@
+<p><strong>If you have been googling "how to make a website for my business," you have probably noticed that every answer costs $29 a month forever. Here is a fourth option — one you install once and then own.</strong></p>
+
+<h2>"I just want a website. Where do I start?"</h2>
+
+<p>Ask the internet that question and you get three answers, all of them a little bit of a trap.</p>
+
+<h3>Road one: the hosted website builder</h3>
+
+<p>Sign up, drag some boxes, and you are live before lunch. Then the invoice starts. Want a store? That is the higher tier. Want to accept cards? They take a slice of every order. Want to move your site somewhere cheaper in two years? You cannot — you were never given the files. You were renting the whole time.</p>
+
+<h3>Road two: WordPress and twenty plugins</h3>
+
+<p>Free, until it isn't. One plugin for the page builder, one for SEO, one for forms, one for the shop, one for caching because the first four made it slow. Five vendors, five update schedules, five chances that a Tuesday morning update takes your homepage down.</p>
+
+<h3>Road three: hire someone</h3>
+
+<p>Excellent sites come out of this. So do quotes with a comma in them, and a three-week wait every time you want to change a phone number.</p>
+
+<h3>Road four: the one nobody advertises</h3>
+
+<p>Install a complete, self-hosted platform on ordinary cheap hosting, once, and stop paying rent on your own website.</p>
+
+<p>That is <strong>Radius</strong>.</p>
+
+<hr>
+
+<h2>What Radius actually is</h2>
+
+<p>A modular content management system and online store, built on Laravel 12, <strong>open source under the MIT licence</strong>. You download it, you install it on your own hosting, and it is yours — commercially, permanently. No seats, no monthly fee, no revenue share, no "contact sales."</p>
+
+<p>It runs on <code>PHP 8.2</code> and <code>MySQL</code>. That means it runs on the cheap shared hosting plan you can buy in the next five minutes. No Docker, no build step on the server, no DevOps hobby required.</p>
+
+<h2>How to build a website with it in one afternoon</h2>
+
+<ol>
+<li><strong>Upload the files</strong> to your host and point your domain at them.</li>
+<li><strong>Create an empty MySQL database.</strong> Your host's control panel does this in two clicks.</li>
+<li><strong>Open your site in a browser.</strong> The setup wizard starts on its own.</li>
+<li><strong>Answer four screens:</strong> server check, database, site details, admin account.</li>
+</ol>
+
+<p>The wizard verifies your server can actually run the thing <em>before</em> it starts, writes the configuration, builds the database, and creates your login. Then it locks itself shut, so nobody can ever re-point your live site at a different database.</p>
+
+<p>Want something to look at immediately instead of an empty dashboard? One command fills the site with a real demo: 12 blog posts, 9 pages, 15 products, with the categories, reviews, variants and images that go with them — including the awkward cases a genuine catalogue has, like an item out of stock, one on backorder, one on sale inside a date window, one digital. One more command deletes all of it when you are ready for your own content.</p>
+
+<h2>Drag and drop, without the JavaScript tax</h2>
+
+<p>Every modern website builder promises drag-and-drop. The interesting question is what it leaves behind in the page.</p>
+
+<p>Most visual builders ship a small application to every visitor: a stack of scripts that assembles your homepage in the reader's browser. It works. It also costs you loading time, and loading time is something Google measures.</p>
+
+<p><strong>The Radius builder renders on the server.</strong> You drag, you drop, you publish — and what goes out to the world is plain HTML with one stylesheet. No JavaScript is required to read your page. Fast by construction, indexable by default, and still perfectly readable on a bad phone connection in a lift.</p>
+
+<p>Inside the editor you get the things that actually matter day to day:</p>
+
+<ul>
+<li><strong>27 widgets</strong> — headings, buttons, galleries, maps, accordions, tabs, pricing tables, testimonials, counters, contact forms, post grids, product grids, menus, cart icon, social icons.</li>
+<li><strong>Instant styling.</strong> Colour, spacing and type controls rewrite the preview's stylesheet as you drag the slider. No waiting on the server between two shades of blue.</li>
+<li><strong>Drafts that stay private.</strong> Work autosaves as a draft; nothing appears on the public site until you press Publish.</li>
+<li><strong>History.</strong> Every publish is a revision. The last 25 are kept, and any one of them can be restored — so "put it back how it was" is a click, not a phone call.</li>
+<li><strong>Real responsive control.</strong> Switch to tablet or mobile in the toolbar and set a different value just for that size.</li>
+<li><strong>Design tokens.</strong> Pick a colour from your palette and it is stored as a token, not a stray hex code. Change your brand colour once next year and every element that used it follows.</li>
+</ul>
+
+<p>And here is the part page builders usually get wrong: <strong>it does not hijack your theme.</strong> A theme keeps owning its own header and footer unless you explicitly decide to design one yourself. Turn the builder off for a page and the original content comes straight back. Nothing here is a one-way door.</p>
+
+<h2>How to open an online store without giving away a cut of it</h2>
+
+<p>Search "how to start an online store" and every result wants a percentage.</p>
+
+<p>The shop in Radius is not a plugin bolted onto a blog engine — it is a module built into the same codebase, and there is no platform sitting between you and your customer's money. <strong>Eight ways to get paid:</strong> Stripe, PayPal, Razorpay, PayU, Cashfree, Wise bank transfer, cash on delivery, and manual bank transfer. Card fees are whatever you negotiate with your processor. Nobody takes a second bite.</p>
+
+<p>Underneath, the boring parts are done properly — which you only appreciate the first time a cheaper platform gets them wrong:</p>
+
+<ul>
+<li><strong>Money is stored as whole units of currency</strong>, never as decimals that drift. Add a thousand line items and the total is still exactly right.</li>
+<li><strong>Prices are snapshotted</strong> when an item goes into the cart, and every total is recalculated on the server at checkout. The browser gets to display prices. It never gets to decide them.</li>
+<li><strong>Stock comes down inside the order transaction</strong>, so two people racing for your last unit cannot both win.</li>
+<li><strong>Order numbers are unguessable</strong>, so no customer can go fishing through other people's orders by changing a number in the address bar.</li>
+<li><strong>Selling files?</strong> Paid downloads never live at a URL. They sit outside the web root entirely and leave only through a check that the order exists, has been paid for, and belongs to whoever is asking. Each buyer keeps the exact file they paid for, even after you upload a newer version.</li>
+<li><strong>Gateway credentials are encrypted at rest</strong> and are never sent back to the browser once saved.</li>
+</ul>
+
+<h2>Will Google actually find it?</h2>
+
+<p>The SEO module is built in, not sold separately:</p>
+
+<ul>
+<li>Per-page titles, descriptions and social share images</li>
+<li>Automatic <code>sitemap.xml</code> covering pages, posts and products</li>
+<li><code>robots.txt</code>, canonical URLs, and <code>noindex</code> where you want it</li>
+<li>schema.org structured data and breadcrumbs</li>
+<li>Redirect management, so changing a URL does not cost you the ranking you built</li>
+</ul>
+
+<p>Combine that with server-rendered HTML and you are handing search engines the version of your site they actually prefer.</p>
+
+<h2>The part other website builders leave off the pricing page</h2>
+
+<p>If you are going to own your website, security stops being someone else's department. So it is built into the defaults rather than sold as an add-on:</p>
+
+<ul>
+<li><strong>Two-factor authentication</strong> with any authenticator app, with encrypted secrets and one-time recovery codes.</li>
+<li><strong>Uploads are inspected, not trusted.</strong> A file's contents must match its extension. Code disguised as an image is refused. <code>photo.php.jpg</code> is refused. SVGs are stripped of scripts. Photos are re-encoded, which quietly removes the GPS coordinates your phone buried in them.</li>
+<li><strong>The uploads folder cannot run code</strong>, by server configuration rather than by hope.</li>
+<li><strong>Logins are rate limited</strong> by email <em>and</em> by IP, so an attacker hammering your address cannot lock you out of your own site.</li>
+<li><strong>A button that checks your host for you.</strong> Under System → Security, the CMS makes your own server request its <code>.env</code>, its config files and its logs, then reports what actually came back. Not a diagram of how it <em>should</em> be — proof of what a stranger can really reach.</li>
+<li><strong>Updates are verified before they are trusted.</strong> HTTPS only, a checksum that must match, and a strict list of paths an update is allowed to write — so a release can never overwrite your configuration, your uploads, or a theme you paid for. And nothing installs itself: it waits for your click.</li>
+</ul>
+
+<h2>You only carry what you switch on</h2>
+
+<p>Radius ships as <strong>12 modules</strong> — blog, pages, shop, payments, SMS, push notifications, SEO, media, themes, users, contact forms, newsletter — and you toggle them from the admin panel.</p>
+
+<p>A switched-off module is not merely hidden. It registers no routes, runs no queries, adds no menu entries, and its widgets disappear from the builder palette. <strong>A blog-only site carries none of the shop's weight.</strong> Turn it back on later and everything is exactly where you left it — nothing is ever deleted.</p>
+
+<p>This is the opposite of the plugin model, where every feature you tried in 2023 is still loading on every page today.</p>
+
+<h2>An honest comparison</h2>
+
+<table>
+<thead>
+<tr>
+<th scope="col">&nbsp;</th>
+<th scope="col">Hosted builder</th>
+<th scope="col">WordPress + plugins</th>
+<th scope="col">Radius</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Monthly fee</th>
+<td>Forever</td>
+<td>Hosting + premium plugins</td>
+<td><strong>Hosting only</strong></td>
+</tr>
+<tr>
+<th scope="row">Cut of your sales</th>
+<td>Often</td>
+<td>Depends on the stack</td>
+<td><strong>None</strong></td>
+</tr>
+<tr>
+<th scope="row">Who owns the files</th>
+<td>They do</td>
+<td>You do</td>
+<td><strong>You do</strong></td>
+</tr>
+<tr>
+<th scope="row">Store included</th>
+<td>Higher tier</td>
+<td>Another plugin</td>
+<td><strong>Built in</strong></td>
+</tr>
+<tr>
+<th scope="row">Page builder</th>
+<td>Yes, JavaScript-heavy</td>
+<td>Another plugin</td>
+<td><strong>Built in, server-rendered</strong></td>
+</tr>
+<tr>
+<th scope="row">SEO tools</th>
+<td>Basic</td>
+<td>Another plugin</td>
+<td><strong>Built in</strong></td>
+</tr>
+<tr>
+<th scope="row">Vendors to trust</th>
+<td>1</td>
+<td>5&ndash;20</td>
+<td><strong>1, and you can read the code</strong></td>
+</tr>
+<tr>
+<th scope="row">Can you leave?</th>
+<td>Not really</td>
+<td>Yes, messily</td>
+<td><strong>It is MIT &mdash; fork it</strong></td>
+</tr>
+</tbody>
+</table>
+
+<h2>Who this is not for</h2>
+
+<p>Fair is fair. If you want somebody else to handle the hosting, the backups and the SSL certificate, and you are happy paying monthly for that peace of mind, a hosted builder is a reasonable purchase and you should buy one.</p>
+
+<p>Radius is for the other kind of person: the one who would rather spend one afternoon and own the result. Small business owners tired of the monthly bill. Agencies who need to hand a client a finished site without also handing them a subscription. Developers who want a real Laravel codebase underneath instead of a decade of somebody else's backward compatibility.</p>
+
+<h2>Frequently asked</h2>
+
+<h3>Do I need to know how to code?</h3>
+
+<p>No. Install, then drag. The code is there if you ever want it — that is the point of owning it — but building pages, writing posts and running a shop never requires it.</p>
+
+<h3>Can I use it on cheap shared hosting?</h3>
+
+<p>Yes. PHP 8.2+ and MySQL is the whole requirement list, and the wizard checks your server before it installs anything.</p>
+
+<h3>Is it really free?</h3>
+
+<p>The software is MIT licensed: free to use, free commercially, free to fork, free to build closed-source themes on top of. You pay for hosting, like every website that has ever existed.</p>
+
+<h3>Can I move an existing site to it?</h3>
+
+<p>Your content, yes. Your theme will be rebuilt — templates are Blade, not PHP sprinkled through a functions file.</p>
+
+<h3>Can I sell digital products?</h3>
+
+<p>Yes, with real access control: private storage, per-order permissions, download limits and expiry.</p>
+
+<h3>Can I make it look like my own product?</h3>
+
+<p>Yes. Logos, favicons and the product name are configuration values, not hardcoded markup. Agencies can rebrand the admin panel without editing a single view.</p>
+
+<h3>What if I outgrow it?</h3>
+
+<p>You have the source. That is the whole answer, and no hosted platform can give it to you.</p>
+
+<h2>Try it once</h2>
+
+<p>Install it on a spare subdomain. Run the demo content command. Spend twenty minutes in the builder.</p>
+
+<p>Worst case, you have lost an afternoon. <strong>Best case, you never pay for a website again.</strong></p>
+
+<p><a href="https://www.insertcart.com/radius" rel="noopener"><strong>Download Radius</strong></a> &nbsp;·&nbsp; <a href="https://www.insertcart.com/radius/docs" rel="noopener"><strong>Read the documentation</strong></a> &nbsp;·&nbsp; <a href="https://www.insertcart.com/radius/demo" rel="noopener"><strong>See it running</strong></a></p>

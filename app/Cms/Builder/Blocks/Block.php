@@ -71,6 +71,15 @@ abstract class Block
         return null;
     }
 
+    /**
+     * The buildable areas this widget belongs to, or null for anywhere. The
+     * product page widgets only make sense on the product page template.
+     */
+    public static function areas(): ?array
+    {
+        return null;
+    }
+
     public static function isAvailable(): bool
     {
         $module = static::requiresModule();
