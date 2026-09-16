@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Cms\Mail\MailConfigurator;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
+use App\Cms\Shop\Currencies;
 use App\Cms\Themes\ThemeManager;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -88,6 +89,10 @@ class SettingsController extends Controller
             $values[$key] = $validated[$key] ?? null;
         }
 
+        if ($group === 'shop') {
+            $values = $this->syncCurrencySymbol($values);
+        }
+
         $this->settings->setMany($values, $group);
 
         // Switching theme has to republish assets and drop the view cache, or
@@ -160,21 +165,39 @@ class SettingsController extends Controller
 
             'schema_types' => SeoManager::SCHEMA_TYPES,
 
-            'currencies' => [
-                'USD' => 'US Dollar (USD)',
-                'EUR' => 'Euro (EUR)',
-                'GBP' => 'British Pound (GBP)',
-                'INR' => 'Indian Rupee (INR)',
-                'AUD' => 'Australian Dollar (AUD)',
-                'CAD' => 'Canadian Dollar (CAD)',
-                'SGD' => 'Singapore Dollar (SGD)',
-                'AED' => 'UAE Dirham (AED)',
-                'JPY' => 'Japanese Yen (JPY)',
-                'ZAR' => 'South African Rand (ZAR)',
-                'BRL' => 'Brazilian Real (BRL)',
-                'MYR' => 'Malaysian Ringgit (MYR)',
-            ],
+            'currencies' => Currencies::options(),
         ];
+    }
+
+    /**
+     * Move the symbol along when the currency changes.
+     *
+     * Someone who picks "Indian Rupee" expects prices to read in rupees, not
+     * to also have to know that the symbol is a separate field. A symbol that
+     * has been customised is left alone - only one still matching the currency
+     * being switched away from is treated as untouched.
+     */
+    private function syncCurrencySymbol(array $values): array
+    {
+        if (! array_key_exists('shop_currency', $values) || ! array_key_exists('shop_currency_symbol', $values)) {
+            return $values;
+        }
+
+        $previous = (string) $this->settings->get('shop_currency', 'USD');
+
+        if (strtoupper((string) $values['shop_currency']) === strtoupper($previous)) {
+            return $values;
+        }
+
+        $submitted = trim((string) $values['shop_currency_symbol']);
+
+        if ($submitted !== '' && $submitted !== Currencies::symbolFor($previous)) {
+            return $values;
+        }
+
+        $values['shop_currency_symbol'] = Currencies::symbolFor($values['shop_currency']) ?? $submitted;
+
+        return $values;
     }
 
     /** Whether the chosen mail provider is actually usable on this host. */

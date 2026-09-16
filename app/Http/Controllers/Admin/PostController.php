@@ -74,7 +74,9 @@ class PostController extends Controller
 
         activity('post.updated', "Updated the post \"{$post->title}\".", $post);
 
-        return back()->with('status', 'Post saved.');
+        // The admin URL is keyed by slug, so going "back" after the slug
+        // changed would land on an address this post no longer answers to.
+        return redirect()->route('admin.posts.edit', $post)->with('status', 'Post saved.');
     }
 
     public function show(Post $post): RedirectResponse

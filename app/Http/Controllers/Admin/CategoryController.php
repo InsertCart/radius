@@ -71,7 +71,9 @@ class CategoryController extends Controller
 
         activity('category.updated', "Updated the category \"{$category->name}\".", $category);
 
-        return back()->with('status', 'Category saved.');
+        // The admin URL is keyed by slug, so going "back" after the slug
+        // changed would land on an address this category no longer answers to.
+        return redirect()->route('admin.categories.edit', $category)->with('status', 'Category saved.');
     }
 
     public function show(Category $category): RedirectResponse

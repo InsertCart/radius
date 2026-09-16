@@ -30,12 +30,7 @@
             </x-form.field>
 
             <x-form.field label="Currency" name="currency" required>
-                <x-form.select name="currency" :value="$values['currency']" :options="[
-                    'USD' => 'US Dollar (USD)', 'EUR' => 'Euro (EUR)', 'GBP' => 'British Pound (GBP)',
-                    'INR' => 'Indian Rupee (INR)', 'AUD' => 'Australian Dollar (AUD)',
-                    'CAD' => 'Canadian Dollar (CAD)', 'SGD' => 'Singapore Dollar (SGD)',
-                    'AED' => 'UAE Dirham (AED)', 'JPY' => 'Japanese Yen (JPY)',
-                ]" />
+                <x-form.select name="currency" :value="$values['currency']" :options="$currencies" />
             </x-form.field>
         </div>
 

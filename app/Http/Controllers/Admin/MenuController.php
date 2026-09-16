@@ -60,7 +60,9 @@ class MenuController extends Controller
             'description' => ['nullable', 'string', 'max:255'],
         ]));
 
-        return back()->with('status', 'Menu saved.');
+        // The admin URL is keyed by slug, so going "back" after the slug
+        // changed would land on an address this menu no longer answers to.
+        return redirect()->route('admin.menus.edit', $menu)->with('status', 'Menu saved.');
     }
 
     public function show(Menu $menu): RedirectResponse

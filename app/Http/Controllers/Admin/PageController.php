@@ -63,7 +63,9 @@ class PageController extends Controller
 
         activity('page.updated', "Updated the page \"{$page->title}\".", $page);
 
-        return back()->with('status', 'Page saved.');
+        // The admin URL is keyed by slug, so going "back" after the slug
+        // changed would land on an address this page no longer answers to.
+        return redirect()->route('admin.pages.edit', $page)->with('status', 'Page saved.');
     }
 
     public function show(Page $page): RedirectResponse

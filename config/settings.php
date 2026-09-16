@@ -172,7 +172,8 @@ return [
         'module' => 'shop',
         'fields' => [
             'shop_currency' => ['type' => 'select', 'label' => 'Currency', 'default' => 'USD', 'options' => 'currencies'],
-            'shop_currency_symbol' => ['type' => 'text', 'label' => 'Currency symbol', 'default' => '$'],
+            'shop_currency_symbol' => ['type' => 'text', 'label' => 'Currency symbol', 'default' => '$',
+                'help' => 'Filled in for you when you change the currency above. Override it only if you want prices written a different way.'],
             'shop_currency_position' => ['type' => 'select', 'label' => 'Symbol position', 'default' => 'before', 'options' => [
                 'before' => 'Before amount',
                 'after' => 'After amount',

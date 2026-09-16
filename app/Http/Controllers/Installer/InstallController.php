@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Installer;
 use App\Cms\Modules\ModuleManager;
 use App\Cms\Payments\PaymentManager;
 use App\Cms\Settings\SettingsRepository;
+use App\Cms\Shop\Currencies;
 use App\Cms\Themes\ThemeManager;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -198,6 +200,7 @@ class InstallController extends Controller
                 'currency' => 'USD',
             ]),
             'timezones' => \DateTimeZone::listIdentifiers(),
+            'currencies' => Currencies::options(),
         ]);
     }
 
@@ -208,7 +211,7 @@ class InstallController extends Controller
             'site_email' => ['required', 'email', 'max:190'],
             'app_url' => ['required', 'url', 'max:190'],
             'timezone' => ['required', 'timezone'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', 'size:3', Rule::in(array_keys(Currencies::options()))],
         ]);
 
         session(['install.site' => $data]);
@@ -361,6 +364,7 @@ class InstallController extends Controller
             'schema_org_name' => $site['site_name'],
             'timezone' => $site['timezone'],
             'shop_currency' => $site['currency'],
+            'shop_currency_symbol' => Currencies::symbolFor($site['currency']) ?? '$',
             'mail_from_address' => $site['site_email'],
             'mail_from_name' => $site['site_name'],
         ]);

@@ -90,7 +90,9 @@ class ProductController extends Controller
 
         activity('product.updated', "Updated the product \"{$product->name}\".", $product);
 
-        return back()->with('status', 'Product saved.');
+        // The admin URL is keyed by slug, so going "back" after the slug
+        // changed would land on an address this product no longer answers to.
+        return redirect()->route('admin.products.edit', $product)->with('status', 'Product saved.');
     }
 
     public function show(Product $product): RedirectResponse
