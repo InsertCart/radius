@@ -282,14 +282,33 @@ class CartService
         return $this->cart()->items->contains(fn (CartItem $item) => (bool) $item->product?->requires_shipping);
     }
 
+    /**
+     * Read-only, unlike cart(): the header asks on every page, and creating a
+     * cart to answer would leave an empty row behind for every visitor and
+     * every crawler that ever loads the site.
+     */
     public function itemCount(): int
     {
-        return $this->cart()->itemCount();
+        return $this->existing()?->itemCount() ?? 0;
     }
 
     public function isEmpty(): bool
     {
-        return $this->cart()->isEmpty();
+        return $this->existing()?->isEmpty() ?? true;
+    }
+
+    /** The current cart if there is one, without creating it. */
+    private function existing(): ?Cart
+    {
+        if ($this->cart) {
+            return $this->cart;
+        }
+
+        $cart = auth()->check()
+            ? Cart::where('user_id', auth()->id())->first()
+            : Cart::where('session_id', session()->getId())->whereNull('user_id')->first();
+
+        return $cart ? $this->cart = $cart->load('items.product', 'items.variant') : null;
     }
 
     /** Every total at once, for the cart and checkout views. */

@@ -123,7 +123,7 @@
             <x-admin.card title="Theme structure">
 <pre class="overflow-x-auto rounded-lg bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">my-theme/
 ├── theme.json
-├── screenshot.png
+├── screenshot.png      1200 × 675, one copy only
 ├── assets/
 │   ├── css/theme.css
 │   └── js/theme.js

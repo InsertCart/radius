@@ -26,6 +26,7 @@
                         'X' => setting('social_twitter'),
                         'LinkedIn' => setting('social_linkedin'),
                         'YouTube' => setting('social_youtube'),
+                        'WhatsApp' => whatsapp_url(),
                     ]);
                 @endphp
 

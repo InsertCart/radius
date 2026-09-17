@@ -109,14 +109,14 @@ Route::middleware('installed')->group(function () {
     if (modules()->enabled('contact')) {
         Route::get('contact', [ContactController::class, 'show'])->name('contact');
         Route::post('contact', [ContactController::class, 'submit'])
-            ->middleware('throttle:5,1')
+            ->middleware(['throttle:5,1', 'recaptcha'])
             ->name('contact.submit');
     }
 
     // Newsletter --------------------------------------------------------
     if (modules()->enabled('newsletter')) {
         Route::post('newsletter/subscribe', [NewsletterController::class, 'subscribe'])
-            ->middleware('throttle:5,1')
+            ->middleware(['throttle:5,1', 'recaptcha'])
             ->name('newsletter.subscribe');
         Route::get('newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])
             ->name('newsletter.unsubscribe');

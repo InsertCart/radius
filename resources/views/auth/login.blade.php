@@ -31,6 +31,13 @@
             Sign in
         </button>
 
+        @if (\App\Http\Controllers\Auth\OtpLoginController::enabled())
+            <a href="{{ route('login.otp') }}"
+               class="block w-full rounded-lg border border-slate-300 px-4 py-2.5 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                Sign in with a code sent to your phone
+            </a>
+        @endif
+
         @if (setting('registration_enabled', true))
             <p class="text-center text-sm text-slate-500">
                 No account? <a href="{{ route('register') }}" class="text-indigo-600 hover:underline">Create one</a>

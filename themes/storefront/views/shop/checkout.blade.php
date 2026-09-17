@@ -182,7 +182,7 @@
 
                         <label class="sf-check sf-mt">
                             <input type="checkbox" name="terms" value="1" required>
-                            <span>I agree to the terms and conditions</span>
+                            <span>I agree to the @if ($termsUrl = terms_url())<a href="{{ $termsUrl }}" target="_blank" rel="noopener" class="underline">terms and conditions</a>@else terms and conditions @endif</span>
                         </label>
 
                         <button type="submit" @disabled($gateways->isEmpty())

@@ -92,7 +92,9 @@ class MarketplaceEntryCommand extends Command
             'description' => $manifest['description'] ?? null,
             'tags' => [],
             'supports' => $manifest['supports'] ?? null,
-            'screenshot' => $base !== '' ? $base.'/screenshot.png' : 'https://…/screenshot.png',
+            // The theme's own screenshot, so the file hosted beside the ZIP is
+            // the same one that ships inside it - one image to keep up to date.
+            'screenshot' => ($base !== '' ? $base : 'https://…').'/'.basename((string) ($manifest['screenshot'] ?? 'screenshot.png')),
             'preview_url' => '',
             'download' => $base !== '' ? $base.'/'.$filename : 'https://…/'.$filename,
             'sha256' => hash_file('sha256', $path),
@@ -149,7 +151,11 @@ class MarketplaceEntryCommand extends Command
             return [null, '', false, []];
         }
 
-        $manifest = json_decode((string) $zip->getFromName($prefix.'theme.json'), true);
+        // By index: the names above are normalised, but a ZIP made on Windows
+        // stores backslashes, and looking one up by its normalised name finds
+        // nothing - which would report a perfectly good theme as unreadable.
+        $manifestIndex = array_search($prefix.'theme.json', $names, true);
+        $manifest = $manifestIndex === false ? null : json_decode((string) $zip->getFromIndex($manifestIndex), true);
         $hasViews = false;
         $dropped = [];
         $allowed = config('cms.themes.allowed_extensions', []);

@@ -136,6 +136,41 @@ class ThemeInstaller
      *
      * @throws ThemeInstallException
      */
+    /**
+     * Run every check an upload would, without installing anything.
+     *
+     * Backs `php artisan cms:theme-package`, so a theme is proven installable
+     * before it is ever handed to anybody - by the same code their site runs,
+     * rather than a copy of its rules that can drift.
+     *
+     * @return array{slug: string, name: string, version: string, warnings: string[], files: int}
+     *
+     * @throws ThemeInstallException
+     */
+    public function inspectArchive(string $archivePath, string $fallbackName): array
+    {
+        $workspace = storage_path('app/theme-install/'.Str::random(16));
+        File::ensureDirectoryExists($workspace);
+
+        try {
+            $this->extract($archivePath, $workspace);
+
+            $root = $this->locateThemeRoot($workspace);
+            $manifest = $this->readManifest($root);
+            $slug = $this->resolveSlug($manifest, $fallbackName);
+
+            return [
+                'slug' => $slug,
+                'name' => $manifest['name'] ?? $slug,
+                'version' => (string) $manifest['version'],
+                'warnings' => $this->scanTemplates($root),
+                'files' => count(File::allFiles($root, true)),
+            ];
+        } finally {
+            File::deleteDirectory($workspace);
+        }
+    }
+
     public function installFromArchive(string $archivePath, string $fallbackName, bool $overwrite = false, ?string $expectedSlug = null): array
     {
         $workspace = storage_path('app/theme-install/'.Str::random(16));
@@ -207,16 +242,26 @@ class ThemeInstaller
 
             for ($i = 0; $i < $zip->numFiles; $i++) {
                 $stat = $zip->statIndex($i);
-                $name = $stat['name'];
+                $raw = $stat['name'];
+
+                // Separators normalised before anything reads the name. Windows
+                // PowerShell's Compress-Archive, and several other Windows tools,
+                // store "mytheme\views\layout.blade.php". Windows happens to
+                // accept that as a path, so the theme installs fine on a Windows
+                // test box - and on a Linux server it becomes one file with
+                // backslashes in its name, theme.json is "not found", and the
+                // upload is refused with a message that sends people looking in
+                // entirely the wrong place.
+                $name = str_replace(chr(92), '/', $raw);
 
                 // Directory entries carry no content; the files inside them
                 // create whatever directories are actually needed.
-                if (str_ends_with($name, '/')) {
+                if ($name === '' || str_ends_with($name, '/')) {
                     continue;
                 }
 
-                if ($this->isTraversal($name)) {
-                    throw new ThemeInstallException("The archive contains an illegal path: {$name}");
+                if ($this->isTraversal($raw)) {
+                    throw new ThemeInstallException("The archive contains an illegal path: {$raw}");
                 }
 
                 if (! $this->isAllowedFile($name)) {
@@ -238,7 +283,7 @@ class ThemeInstaller
                 $realParent = realpath(dirname($target));
 
                 if ($realParent === false || ! str_starts_with($realParent, $realDestination)) {
-                    throw new ThemeInstallException("The archive contains an illegal path: {$name}");
+                    throw new ThemeInstallException("The archive contains an illegal path: {$raw}");
                 }
 
                 $contents = $zip->getFromIndex($i);
@@ -383,7 +428,7 @@ class ThemeInstaller
             }
 
             $contents = $this->withoutComments(File::get($file->getPathname()));
-            $relative = ltrim(str_replace($root, '', $file->getPathname()), '/\\');
+            $relative = strtr(ltrim(substr($file->getPathname(), strlen($root)), '/'.chr(92)), chr(92), '/');
 
             foreach (self::FORBIDDEN_PATTERNS as $pattern => $label) {
                 if (preg_match($pattern, $contents)) {

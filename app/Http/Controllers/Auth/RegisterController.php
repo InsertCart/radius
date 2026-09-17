@@ -49,13 +49,25 @@ class RegisterController extends Controller
             'email_verified_at' => setting('email_verification', false) ? null : now(),
         ]);
 
-        event(new Registered($user));
+        // Sends the verification email when one is needed. The account already
+        // exists by now, so a mail server that is down or misconfigured must
+        // not turn a successful sign-up into an error page - the customer can
+        // ask for the link again from the verification screen.
+        try {
+            event(new Registered($user));
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();
         $request->session()->put('auth.two_factor_confirmed', true);
 
         LoginController::afterLogin($request, $user);
+
+        if (! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
 
         return redirect()->route('account.dashboard')->with('status', 'Welcome aboard.');
     }

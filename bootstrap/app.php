@@ -43,6 +43,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'module' => \App\Http\Middleware\EnsureModuleEnabled::class,
             'staff' => \App\Http\Middleware\EnsureUserIsStaff::class,
             '2fa' => \App\Http\Middleware\RequireTwoFactor::class,
+            'verified-email' => \App\Http\Middleware\EnsureEmailIsVerified::class,
+            'recaptcha' => \App\Http\Middleware\VerifyRecaptcha::class,
         ]);
 
         // Order matters: redirects are resolved before anything renders, and
@@ -50,6 +52,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleSeoRedirects::class,
             \App\Http\Middleware\MaintenanceMode::class,
+            // Outside InjectRecaptcha, so a cached page keeps its script.
+            \App\Http\Middleware\CachePages::class,
+            \App\Http\Middleware\InjectRecaptcha::class,
         ]);
 
         // Forwarded headers are only believable when something trustworthy set

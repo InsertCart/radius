@@ -326,7 +326,7 @@ class SeoManager
 
         $socials = array_values(array_filter([
             setting('social_facebook'), setting('social_instagram'), setting('social_twitter'),
-            setting('social_linkedin'), setting('social_youtube'),
+            setting('social_linkedin'), setting('social_youtube'), whatsapp_url(),
         ]));
 
         if ($socials !== []) {

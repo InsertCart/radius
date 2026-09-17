@@ -69,6 +69,9 @@ class CmsServiceProvider extends ServiceProvider
             // Saved content has to reach the search index. Registered only
             // on an installed site: the models' tables may not exist before.
             app(SearchManager::class)->observe();
+
+            // And retire cached HTML that shows the old version.
+            app(\App\Cms\Support\PageCache::class)->watchModels();
         }
 
         $this->registerRateLimiters();

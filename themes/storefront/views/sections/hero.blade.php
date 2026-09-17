@@ -1,16 +1,17 @@
+{{-- Block::safeUrl() rather than the safe_url() helper: this theme is also
+     installed from the theme directory onto sites running older releases,
+     which do not have the helper yet. --}}
 {{-- Homepage hero. Empty settings fall back to the site name and tagline,
      which is what the theme showed before the builder had a say. --}}
 @php
-    $safe = fn ($url) => \App\Cms\Builder\Blocks\Block::safeUrl($url);
-
     $eyebrow = trim((string) ($settings['eyebrow'] ?? '')) ?: setting('site_name', config('app.name'));
     $title = trim((string) ($settings['title'] ?? '')) ?: (setting('site_tagline') ?: 'Everything worth having, in one place.');
     $text = trim((string) ($settings['text'] ?? ''));
 
     $primaryLabel = trim((string) ($settings['primary_label'] ?? 'Start shopping'));
-    $primaryUrl = $safe($settings['primary_url'] ?? '') ?: (modules()->enabled('shop') ? route('shop.index') : '');
+    $primaryUrl = \App\Cms\Builder\Blocks\Block::safeUrl($settings['primary_url'] ?? '') ?: (modules()->enabled('shop') ? route('shop.index') : '');
     $secondaryLabel = trim((string) ($settings['secondary_label'] ?? 'Read the blog'));
-    $secondaryUrl = $safe($settings['secondary_url'] ?? '') ?: (modules()->enabled('blog') ? route('blog.index') : '');
+    $secondaryUrl = \App\Cms\Builder\Blocks\Block::safeUrl($settings['secondary_url'] ?? '') ?: (modules()->enabled('blog') ? route('blog.index') : '');
 @endphp
 
 <section class="sf-hero">

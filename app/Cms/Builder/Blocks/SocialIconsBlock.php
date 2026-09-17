@@ -99,6 +99,7 @@ class SocialIconsBlock extends Block
             'twitter' => setting('social_twitter'),
             'linkedin' => setting('social_linkedin'),
             'youtube' => setting('social_youtube'),
+            'whatsapp' => whatsapp_url(),
         ];
 
         $links = [];

@@ -122,6 +122,9 @@ class SettingsRepository
     {
         $this->items = null;
         Cache::forget(self::CACHE_KEY);
+
+        // Nearly every setting shows up somewhere on the public pages.
+        app(\App\Cms\Support\PageCache::class)->flush();
     }
 
     // Schema helpers ------------------------------------------------------

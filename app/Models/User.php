@@ -23,7 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public const STAFF_ROLES = [self::ROLE_ADMIN, self::ROLE_EDITOR];
 
     protected $fillable = [
-        'name', 'email', 'password', 'role', 'phone', 'phone_verified_at',
+        'name', 'email', 'email_verified_at', 'password', 'role', 'phone', 'phone_verified_at',
         'avatar', 'status', 'last_login_at', 'last_login_ip',
     ];
 

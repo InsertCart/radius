@@ -5,6 +5,7 @@
         'twitter' => setting('social_twitter'),
         'linkedin' => setting('social_linkedin'),
         'youtube' => setting('social_youtube'),
+        'whatsapp' => whatsapp_url(),
     ]);
 
     // Four link columns. The first falls back to the site's own sections so a

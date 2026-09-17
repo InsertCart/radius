@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\OtpLoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TwoFactorController;
@@ -23,9 +25,19 @@ Route::middleware('installed')->group(function () {
             ->middleware('throttle:10,1')
             ->name('login.attempt');
 
+        // Sign in with a texted code. Answers 404 unless OTP login is on.
+        Route::get('login/code', [OtpLoginController::class, 'show'])->name('login.otp');
+        Route::post('login/code/send', [OtpLoginController::class, 'send'])
+            ->middleware('throttle:5,1')
+            ->name('login.otp.send');
+        Route::post('login/code/verify', [OtpLoginController::class, 'verify'])
+            ->middleware('throttle:10,1')
+            ->name('login.otp.verify');
+        Route::post('login/code/cancel', [OtpLoginController::class, 'cancel'])->name('login.otp.cancel');
+
         Route::get('register', [RegisterController::class, 'show'])->name('register');
         Route::post('register', [RegisterController::class, 'store'])
-            ->middleware('throttle:5,1')
+            ->middleware(['throttle:5,1', 'recaptcha'])
             ->name('register.store');
 
         Route::get('forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
@@ -60,8 +72,23 @@ Route::middleware('installed')->group(function () {
             ->name('two-factor.recovery-codes');
     });
 
+    /*
+    | Email verification. Only enforced while the "Require email verification"
+    | setting is on - see EnsureEmailIsVerified. The link is signed, so it
+    | cannot be forged or altered.
+    */
+    Route::middleware(['auth', '2fa'])->group(function () {
+        Route::get('email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+        Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+            ->middleware(['signed', 'throttle:6,1'])
+            ->name('verification.verify');
+        Route::post('email/verification-notification', [EmailVerificationController::class, 'send'])
+            ->middleware('throttle:6,1')
+            ->name('verification.send');
+    });
+
     // Customer account area.
-    Route::middleware(['auth', '2fa'])->prefix('account')->name('account.')->group(function () {
+    Route::middleware(['auth', '2fa', 'verified-email'])->prefix('account')->name('account.')->group(function () {
         Route::get('/', [AccountController::class, 'dashboard'])->name('dashboard');
         Route::get('profile', [AccountController::class, 'profile'])->name('profile');
         Route::patch('profile', [AccountController::class, 'updateProfile'])->name('profile.update');

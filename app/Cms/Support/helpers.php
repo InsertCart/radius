@@ -130,6 +130,24 @@ if (! function_exists('theme_section')) {
     }
 }
 
+if (! function_exists('safe_url')) {
+    /**
+     * A link target a theme may print, or '' when it is not safe to.
+     *
+     * Builder settings are typed by site owners, and a field meant for a URL
+     * will accept "javascript:alert(1)". This keeps http(s), mailto, tel,
+     * site-relative paths and #anchors, and turns anything else into ''.
+     *
+     * Themes should call this rather than storing a closure in a variable and
+     * calling that: the theme installer refuses $variable(...) calls, because
+     * from the outside they are indistinguishable from $f = 'system'; $f(...).
+     */
+    function safe_url(mixed $url): string
+    {
+        return \App\Cms\Builder\Blocks\Block::safeUrl($url);
+    }
+}
+
 if (! function_exists('brand_asset')) {
     /**
      * URL for one of the default brand files shipped in public/.
@@ -392,5 +410,49 @@ if (! function_exists('safe_route')) {
         } catch (\Throwable $e) {
             return $fallback;
         }
+    }
+}
+
+if (! function_exists('whatsapp_url')) {
+    /**
+     * A click-to-chat link for the WhatsApp number in Settings → Social.
+     *
+     * The setting holds a phone number, not a URL, and people type it every
+     * way: "+91 98765-43210", "0091...", or a full wa.me link. wa.me wants the
+     * international number as bare digits, so anything else is reduced to that.
+     */
+    function whatsapp_url(?string $number = null): ?string
+    {
+        $number = trim((string) ($number ?? setting('social_whatsapp')));
+
+        if ($number === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $number)) {
+            return $number;
+        }
+
+        $digits = ltrim(preg_replace('/\D+/', '', $number), '0');
+
+        return strlen($digits) >= 7 ? 'https://wa.me/'.$digits : null;
+    }
+}
+
+if (! function_exists('terms_url')) {
+    /**
+     * Where "I agree to the terms and conditions" links to: the published page
+     * named by Settings → Shop → Terms page slug. Null when there is no such
+     * page, so the checkbox label is shown as plain text instead of a dead link.
+     */
+    function terms_url(): ?string
+    {
+        $slug = trim((string) setting('shop_terms_page', 'terms'));
+
+        if ($slug === '' || ! cms_installed()) {
+            return null;
+        }
+
+        return \App\Models\Page::published()->where('slug', $slug)->first()?->url();
     }
 }

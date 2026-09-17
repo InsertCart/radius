@@ -107,16 +107,51 @@ class ThemeManager
      */
     public function publishAssets(Theme $theme): void
     {
+        $destination = public_path(config('cms.themes.asset_url').DIRECTORY_SEPARATOR.$theme->slug);
         $source = $theme->path('assets');
 
-        if (! is_dir($source)) {
+        if (is_dir($source)) {
+            File::ensureDirectoryExists($destination);
+            File::copyDirectory($source, $destination);
+        }
+
+        $this->publishScreenshot($theme, $destination);
+    }
+
+    /**
+     * Publish the preview image from the theme's root folder.
+     *
+     * A theme keeps one screenshot, beside theme.json - the place authors
+     * coming from WordPress already put it. Only assets/ used to be published,
+     * so a root screenshot was never web-reachable: a theme that followed the
+     * documented structure showed "No preview image", and the bundled themes
+     * ended up carrying a second, identical copy in assets/ to work around it.
+     *
+     * Themes that still keep it in assets/ are unaffected; that folder is
+     * published above.
+     */
+    private function publishScreenshot(Theme $theme, string $destination): void
+    {
+        // The name is written by the theme's author. basename() and the
+        // extension check stop "screenshot": "../../.env" from publishing a
+        // server file into public/, where anyone could fetch it.
+        $name = basename((string) ($theme->screenshot ?: 'screenshot.png'));
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        if (! in_array($extension, ['png', 'jpg', 'jpeg', 'webp', 'svg'], true)) {
             return;
         }
 
-        $destination = public_path(config('cms.themes.asset_url').DIRECTORY_SEPARATOR.$theme->slug);
+        $file = $theme->path($name);
+        $root = realpath($theme->path());
+        $real = realpath($file);
+
+        if ($real === false || $root === false || ! str_starts_with($real, $root.DIRECTORY_SEPARATOR)) {
+            return;
+        }
 
         File::ensureDirectoryExists($destination);
-        File::copyDirectory($source, $destination);
+        File::copy($real, $destination.DIRECTORY_SEPARATOR.$name);
     }
 
     /** Reads theme.json for every folder in themes/. */

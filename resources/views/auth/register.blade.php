@@ -33,7 +33,7 @@
 
         <label class="flex items-start gap-2 text-sm text-slate-600">
             <input type="checkbox" name="terms" value="1" required class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600">
-            <span>I agree to the terms and conditions</span>
+            <span>I agree to the @if ($termsUrl = terms_url())<a href="{{ $termsUrl }}" target="_blank" rel="noopener" class="underline">terms and conditions</a>@else terms and conditions @endif</span>
         </label>
 
         <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
