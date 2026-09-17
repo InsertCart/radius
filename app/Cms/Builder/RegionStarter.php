@@ -22,6 +22,12 @@ class RegionStarter
     /** Regions that have a starter, with what it produces. */
     public function available(string $region): array
     {
+        // A theme's own starters look like the theme, so they come first.
+        return array_merge(app(\App\Cms\Themes\ThemeSections::class)->starters($region), $this->builtIn($region));
+    }
+
+    private function builtIn(string $region): array
+    {
         return match ($region) {
             'header' => [
                 ['key' => 'simple', 'label' => 'Logo and menu', 'hint' => 'A logo on the left, navigation on the right'],
@@ -60,6 +66,10 @@ class RegionStarter
     /** Build the tree for one starter. */
     public function build(string $region, string $key): array
     {
+        if (str_starts_with($key, 'theme-')) {
+            return app(\App\Cms\Themes\ThemeSections::class)->buildStarter($region, $key);
+        }
+
         return match ("{$region}.{$key}") {
             'header.simple' => $this->headerSimple(),
             'header.centred' => $this->headerCentred(),

@@ -22,6 +22,9 @@ return [
     */
 
     'blocks' => [
+        // Sections the active theme offers (see App\Cms\Themes\ThemeSections)
+        Blocks\ThemeSectionBlock::class,
+
         // Basic
         Blocks\HeadingBlock::class,
         Blocks\TextBlock::class,

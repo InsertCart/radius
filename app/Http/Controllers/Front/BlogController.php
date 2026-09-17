@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class BlogController extends Controller
@@ -123,8 +124,8 @@ class BlogController extends Controller
         $validated = $request->validate([
             'body' => ['required', 'string', 'min:3', 'max:3000'],
             'parent_id' => ['nullable', 'exists:comments,id'],
-            'author_name' => ['required_without:user_id', 'nullable', 'string', 'max:120'],
-            'author_email' => ['required_without:user_id', 'nullable', 'email', 'max:190'],
+            'author_name' => [Rule::requiredIf(! $request->user()), 'nullable', 'string', 'max:120'],
+            'author_email' => [Rule::requiredIf(! $request->user()), 'nullable', 'email', 'max:190'],
             // Honeypot: a real visitor never sees this field, so anything in
             // it is a bot. Rejected silently rather than with an error.
             'website' => ['nullable', 'size:0'],

@@ -33,6 +33,9 @@ class SectionSchema
             Control::choose('content_width', 'Content width', [
                 'boxed' => ['label' => 'Boxed', 'icon' => 'boxed'],
                 'full' => ['label' => 'Full width', 'icon' => 'full'],
+                // No side padding or gap: for a theme section that draws its
+                // own full-bleed band and inner container.
+                'edge' => ['label' => 'Edge to edge', 'icon' => 'full'],
             ])->default('boxed')->section('Layout'),
 
             Control::slider('max_width', 'Maximum width')

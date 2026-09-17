@@ -1,5 +1,4 @@
-{{-- The strip above the masthead. Design a layout for the "Announcement bar"
-     region in the visual builder to replace it, or edit the line below. --}}
-<div class="sf-announce">
-    {{ setting('storefront_announcement', 'Free delivery on orders over the minimum spend — shop the new season now.') }}
-</div>
+{{-- The strip above the masthead. Its markup lives in sections/announcement
+     so the visual builder can place it too; edit the message under Settings
+     or design the "Announcement bar" region. --}}
+{!! theme_section('announcement') !!}

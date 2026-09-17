@@ -45,6 +45,15 @@
     max-width: none;
 }
 
+.cb-section--edge > .cb-section-inner {
+    padding-inline: 0;
+}
+
+/* A theme section brings its own spacing, so its widget adds none. */
+.cb-section--edge > .cb-section-inner > .cb-column > .cb-column-inner {
+    gap: 0;
+}
+
 /* Sits above a background image to keep text readable. */
 .cb-section > .cb-overlay {
     position: absolute;

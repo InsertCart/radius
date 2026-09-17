@@ -21,15 +21,273 @@
         "footer_support": "Store & support"
     },
     "regions": {
-        "header": "Site header",
-        "footer": "Site footer",
         "announcement": "Announcement bar",
+        "header": "Site header",
+        "home": "Homepage (whole page)",
         "hero": "Homepage hero",
         "home_bottom": "Homepage, below the rails",
+        "footer": "Site footer",
         "before_content": "Before page content",
         "after_content": "After page content",
         "shop_index": "Shop listing page",
         "cart": "Cart page",
         "checkout": "Checkout page"
+    },
+    "builder": {
+        "styles": [
+            "css/theme.css"
+        ],
+        "scripts": [
+            "js/theme.js"
+        ],
+        "body_class": "sf"
+    },
+    "sections": {
+        "announcement": {
+            "label": "Announcement bar",
+            "icon": "info",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "text",
+                    "label": "Message",
+                    "default": "",
+                    "help": "Leave empty to use the message from Settings."
+                },
+                {
+                    "type": "text",
+                    "key": "url",
+                    "label": "Link (optional)",
+                    "default": ""
+                }
+            ]
+        },
+        "header": {
+            "label": "Storefront header",
+            "icon": "menu",
+            "description": "Logo, menu, search, saved items, account and bag."
+        },
+        "hero": {
+            "label": "Hero banner",
+            "icon": "heading",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "eyebrow",
+                    "label": "Small heading",
+                    "default": "",
+                    "help": "Leave empty to use the site name."
+                },
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "",
+                    "help": "Leave empty to use the site tagline."
+                },
+                {
+                    "type": "textarea",
+                    "key": "text",
+                    "label": "Text",
+                    "default": "Browse the full range, save what catches your eye, and check out in a couple of taps."
+                },
+                {
+                    "type": "text",
+                    "key": "primary_label",
+                    "label": "First button",
+                    "default": "Start shopping"
+                },
+                {
+                    "type": "text",
+                    "key": "primary_url",
+                    "label": "First button link",
+                    "default": "",
+                    "help": "Leave empty to link to the shop."
+                },
+                {
+                    "type": "text",
+                    "key": "secondary_label",
+                    "label": "Second button",
+                    "default": "Read the blog"
+                },
+                {
+                    "type": "text",
+                    "key": "secondary_url",
+                    "label": "Second button link",
+                    "default": "",
+                    "help": "Leave empty to link to the blog."
+                }
+            ]
+        },
+        "rail": {
+            "label": "Product rail",
+            "icon": "grid",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Featured this week"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "Hand-picked by our buyers"
+                },
+                {
+                    "type": "select",
+                    "key": "source",
+                    "label": "Products",
+                    "default": "featured",
+                    "options": {
+                        "featured": "Featured first",
+                        "latest": "Newest",
+                        "sale": "On sale",
+                        "popular": "Best selling",
+                        "category": "From one category"
+                    }
+                },
+                {
+                    "type": "select",
+                    "key": "category",
+                    "label": "Category",
+                    "default": "",
+                    "options": "@shop_categories",
+                    "help": "Used when Products is \"From one category\"."
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "How many",
+                    "default": 8,
+                    "min": 1,
+                    "max": 24
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_all",
+                    "label": "Show the \"Show all\" button",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "soft",
+                    "label": "Tinted background",
+                    "default": false
+                }
+            ]
+        },
+        "departments": {
+            "label": "Shop by department",
+            "icon": "users",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Shop by department"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "Find your way around the store"
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "How many categories",
+                    "default": 10,
+                    "min": 1,
+                    "max": 20
+                },
+                {
+                    "type": "toggle",
+                    "key": "soft",
+                    "label": "Tinted background",
+                    "default": true
+                }
+            ]
+        },
+        "category_rails": {
+            "label": "Rails for each category",
+            "icon": "grid",
+            "view": "sections.category-rails",
+            "controls": [
+                {
+                    "type": "number",
+                    "key": "categories",
+                    "label": "How many categories",
+                    "default": 3,
+                    "min": 1,
+                    "max": 10
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "Products per rail",
+                    "default": 10,
+                    "min": 1,
+                    "max": 24
+                }
+            ]
+        },
+        "collections": {
+            "label": "Collection tiles",
+            "icon": "image",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "kicker",
+                    "label": "Small label",
+                    "default": "Collection"
+                },
+                {
+                    "type": "text",
+                    "key": "link_label",
+                    "label": "Link text",
+                    "default": "Shop now"
+                }
+            ]
+        },
+        "reading_desk": {
+            "label": "Latest blog posts",
+            "icon": "document",
+            "view": "sections.reading-desk",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "From the reading desk"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "News, guides and recommendations"
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "How many posts",
+                    "default": 3,
+                    "min": 1,
+                    "max": 12
+                },
+                {
+                    "type": "toggle",
+                    "key": "soft",
+                    "label": "Tinted background",
+                    "default": true
+                }
+            ]
+        },
+        "footer": {
+            "label": "Storefront footer",
+            "icon": "menu",
+            "description": "Brand, newsletter, footer menus and popular searches."
+        }
     }
 }

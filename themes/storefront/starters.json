@@ -1,0 +1,127 @@
+{
+    "announcement": [
+        {
+            "key": "storefront",
+            "label": "Storefront announcement bar",
+            "hint": "The strip your theme shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "announcement"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "header": [
+        {
+            "key": "storefront",
+            "label": "Storefront header",
+            "hint": "The yellow masthead your theme shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "header"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "footer": [
+        {
+            "key": "storefront",
+            "label": "Storefront footer",
+            "hint": "The footer your theme shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "footer"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "hero": [
+        {
+            "key": "storefront",
+            "label": "Storefront hero",
+            "hint": "The banner your theme shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "hero"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "home": [
+        {
+            "key": "storefront",
+            "label": "Storefront homepage",
+            "hint": "Every section of today's homepage, ready to reorder",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "hero"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "rail"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "departments"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "category_rails"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "collections"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "reading_desk"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

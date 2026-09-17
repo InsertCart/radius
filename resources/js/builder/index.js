@@ -229,14 +229,14 @@ class Editor {
                 tile.addEventListener('dragstart', (event) => {
                     event.dataTransfer.effectAllowed = 'copy';
                     event.dataTransfer.setData('text/plain', widget.type);
-                    this.canvas.beginDrag({ kind: 'widget', type: widget.type });
+                    this.canvas.beginDrag({ kind: 'widget', type: widget.type, preset: widget.preset });
                 });
 
                 tile.addEventListener('dragend', () => this.canvas.endDrag());
 
                 // Clicking appends to the end, for people who would rather not
                 // drag at all.
-                tile.addEventListener('click', () => this.addWidget(widget.type));
+                tile.addEventListener('click', () => this.addWidget(widget.type, widget.preset));
 
                 grid.appendChild(tile);
             });
@@ -328,11 +328,13 @@ class Editor {
     }
 
     /** Append a widget, creating a section for it when the page is empty. */
-    addWidget(type) {
+    addWidget(type, preset = null) {
         const schema = this.boot.schemas[type];
         if (!schema) return;
 
-        const widget = makeWidget(type, schema.defaults);
+        // A preset is how one widget type offers several tiles - each theme
+        // section is a "theme-section" widget with its section preselected.
+        const widget = makeWidget(type, { ...schema.defaults, ...(preset || {}) });
 
         let columnId = this.currentColumnId();
 
@@ -385,7 +387,7 @@ class Editor {
         const schema = this.boot.schemas[payload.type];
         if (!schema) return;
 
-        const widget = makeWidget(payload.type, schema.defaults);
+        const widget = makeWidget(payload.type, { ...schema.defaults, ...(payload.preset || {}) });
 
         if (!target.id) {
             const section = makeSection([100], this.defaultsFor('section'));

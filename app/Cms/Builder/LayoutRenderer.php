@@ -188,8 +188,14 @@ class LayoutRenderer
         $classes = $this->classes('cb-'.$kind, $id, $settings, []);
 
         if ($kind === 'section') {
-            if (($settings['content_width'] ?? 'boxed') === 'full') {
+            $width = $settings['content_width'] ?? 'boxed';
+
+            if ($width === 'full' || $width === 'edge') {
                 $classes[] = 'cb-section--full';
+            }
+
+            if ($width === 'edge') {
+                $classes[] = 'cb-section--edge';
             }
             $classes[] = 'cb-stack-'.($settings['stack_on'] ?? 'tablet');
         }

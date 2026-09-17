@@ -84,12 +84,22 @@ class BuilderController extends Controller
         $sample = $this->regionContext($region, $productId)['model'] ?? null;
         $query = $productId ? ['product' => $productId] : [];
 
-        // An empty product template would open as a blank canvas while the
-        // live site clearly has a product page. Start from a copy of the
-        // theme's arrangement instead. It is only a draft: nothing changes for
-        // shoppers until it is published.
-        if ($region === 'product' && $layout->editableTree() === [] && $layout->published_at === null) {
-            $layout->saveDraft($starter->build('product', 'classic'), $request->user()->id);
+        // An empty region would open as a blank canvas while the live site
+        // clearly shows the theme's version. Open it as a copy of that
+        // instead: the theme's own starter, or for the product page the
+        // CMS's widget-based one. It is only a draft - nothing changes for
+        // visitors until it is published.
+        if ($layout->editableTree() === [] && $layout->published_at === null) {
+            $seed = $starter->available($region)[0]['key'] ?? null;
+            $themed = $seed !== null && str_starts_with($seed, 'theme-');
+
+            if ($themed || $region === 'product') {
+                $tree = $starter->build($region, $themed ? $seed : 'classic');
+
+                if ($tree !== []) {
+                    $layout->saveDraft($tree, $request->user()->id);
+                }
+            }
         }
 
         $payload = $this->editorPayload($layout, [
@@ -274,6 +284,9 @@ class BuilderController extends Controller
             // theme's stylesheet its preview would not look like the live site.
             'chrome' => ($this->regions->area($region)['kind'] ?? 'region') === 'system',
             'region' => $region,
+            // A fragment is previewed outside the theme's layout, so the theme
+            // says which of its stylesheets the fragment needs.
+            'themeAssets' => app(\App\Cms\Themes\ThemeSections::class)->canvasAssets(),
         ]);
     }
 

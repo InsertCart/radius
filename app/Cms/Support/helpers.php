@@ -103,6 +103,33 @@ if (! function_exists('theme_asset')) {
     }
 }
 
+if (! function_exists('theme_section')) {
+    /**
+     * Render one of the active theme's builder sections with its declared
+     * defaults, so a theme's own templates and the visual builder draw the
+     * section from the same view with the same settings.
+     *
+     *     {!! theme_section('hero') !!}
+     *     {!! theme_section('rail', ['title' => 'New in', 'source' => 'latest']) !!}
+     */
+    function theme_section(string $key, array $settings = []): string
+    {
+        $sections = app(\App\Cms\Themes\ThemeSections::class);
+        $section = $sections->get($key);
+
+        if (! $section) {
+            return '';
+        }
+
+        return view('theme::'.$section['view'], [
+            'settings' => array_merge($sections->defaults($key), $settings),
+            'context' => [],
+            'editing' => false,
+            'model' => null,
+        ])->render();
+    }
+}
+
 if (! function_exists('brand_asset')) {
     /**
      * URL for one of the default brand files shipped in public/.

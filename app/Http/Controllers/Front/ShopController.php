@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ShopController extends Controller
@@ -100,7 +101,7 @@ class ShopController extends Controller
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'title' => ['nullable', 'string', 'max:190'],
             'body' => ['nullable', 'string', 'max:2000'],
-            'author_name' => ['required_without:user_id', 'nullable', 'string', 'max:120'],
+            'author_name' => [Rule::requiredIf(! $request->user()), 'nullable', 'string', 'max:120'],
         ]);
 
         $user = $request->user();

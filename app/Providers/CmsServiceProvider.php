@@ -40,6 +40,7 @@ class CmsServiceProvider extends ServiceProvider
             SettingsRepository::class,
             ModuleManager::class,
             ThemeManager::class,
+            \App\Cms\Themes\ThemeSections::class,
             SeoManager::class,
             PaymentManager::class,
             SmsManager::class,

@@ -23,6 +23,7 @@ class BlockRegistry
 
     /** Categories shown as groups in the widget panel. */
     public const CATEGORIES = [
+        'theme' => 'Your theme',
         'basic' => 'Basic',
         'media' => 'Media',
         'layout' => 'Layout',
@@ -122,6 +123,26 @@ class BlockRegistry
             $areas = $this->blocks[$type]::areas();
 
             if ($areas !== null && ! in_array($area, $areas, true)) {
+                continue;
+            }
+
+            // Theme sections share one widget type, but each is its own tile
+            // so an admin can find "Product rail" by name.
+            if ($type === 'theme-section') {
+                foreach (app(\App\Cms\Themes\ThemeSections::class)->all() as $key => $section) {
+                    if ($section['areas'] !== null && ! in_array($area, $section['areas'], true)) {
+                        continue;
+                    }
+
+                    $grouped[$schema['category']][] = [
+                        'type' => $type,
+                        'name' => $section['label'],
+                        'icon' => $section['icon'],
+                        'keywords' => ['theme', $key],
+                        'preset' => \App\Cms\Builder\Blocks\ThemeSectionBlock::defaultsFor($key),
+                    ];
+                }
+
                 continue;
             }
 
