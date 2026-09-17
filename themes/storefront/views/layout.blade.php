@@ -17,12 +17,10 @@
     @vite(['resources/css/app.css', 'resources/css/builder-front.css'])
     @builderStyles
 
-    {{-- Published theme assets are served from a stable path, so the version
-         from theme.json doubles as the cache buster: bump it there after
-         editing the stylesheet and every visitor picks the change up. --}}
-    @php $themeVersion = themes()->active()?->version ?: '1.0.0'; @endphp
+    {{-- theme_asset() versions the URL from the file itself, so a changed
+         stylesheet reaches returning visitors without anyone bumping theme.json. --}}
 
-    <link rel="stylesheet" href="{{ theme_asset('css/theme.css') }}?v={{ $themeVersion }}">
+    <link rel="stylesheet" href="{{ theme_asset('css/theme.css') }}">
 
     @if (setting('custom_css'))
         <style>{!! setting('custom_css') !!}</style>
@@ -42,7 +40,7 @@
         </script>
     @endif
 
-    <script src="{{ theme_asset('js/theme.js') }}?v={{ $themeVersion }}" defer></script>
+    <script src="{{ theme_asset('js/theme.js') }}" defer></script>
 
     @stack('head')
 </head>

@@ -64,9 +64,42 @@ if (! function_exists('theme_view')) {
 }
 
 if (! function_exists('theme_asset')) {
-    function theme_asset(string $file): string
+    /**
+     * URL for a file in the active theme's published assets, with a version
+     * appended so browsers fetch it again when it changes.
+     *
+     * Theme assets are served from a fixed path - themes/<slug>/css/theme.css -
+     * so without a version a browser that has seen the file keeps using its
+     * copy after an update replaces it. Themes used to handle that with the
+     * version in theme.json, which only worked if somebody remembered to bump
+     * it; the stylesheet changed twice without it moving, and every returning
+     * visitor kept the old styles.
+     *
+     * The version is taken from the published file itself, so it changes
+     * exactly when the file does. It costs a stat per asset, and only the
+     * files a layout actually references are looked at.
+     *
+     * A theme that still appends its own ?v= is unaffected: the extra query is
+     * ignored by the web server, and the URL still changes when the file does.
+     */
+    function theme_asset(string $file, bool $versioned = true): string
     {
-        return asset(config('cms.themes.asset_url').'/'.themes()->activeSlug().'/'.ltrim($file, '/'));
+        $relative = config('cms.themes.asset_url').'/'.themes()->activeSlug().'/'.ltrim($file, '/');
+        $url = asset($relative);
+
+        if (! $versioned) {
+            return $url;
+        }
+
+        $path = public_path($relative);
+
+        // Not published (yet): no version to give, and inventing one would
+        // hide the missing file behind a URL that looks valid.
+        if (! is_file($path)) {
+            return $url;
+        }
+
+        return $url.'?v='.substr(md5(filemtime($path).'-'.filesize($path)), 0, 10);
     }
 }
 

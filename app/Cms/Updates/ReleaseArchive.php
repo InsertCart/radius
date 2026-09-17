@@ -33,7 +33,7 @@ class ReleaseArchive
      *
      * @throws UpdateException
      */
-    public function extract(string $archivePath, string $destination): array
+    public function extract(string $archivePath, string $destination, ?string $only = null): array
     {
         $zip = new ZipArchive;
 
@@ -81,6 +81,15 @@ class ReleaseArchive
                 }
 
                 $relative = $this->strip($name, $prefix);
+
+                // $only narrows extraction to one subtree, for the finalize step
+                // that brings bundled themes up to date without unpacking - and
+                // re-hashing - the whole of vendor/ a second time.
+                if ($only !== null && $relative !== null && ! str_starts_with($relative, $only)) {
+                    $skipped++;
+
+                    continue;
+                }
 
                 if ($relative === null || ! $this->isWritablePath($relative)) {
                     $skipped++;

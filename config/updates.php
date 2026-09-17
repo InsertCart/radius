@@ -102,7 +102,11 @@ return [
             'nginx.conf.example',
             'public/index.php',
             'public/robots.txt',
+            // Every theme bundled with the CMS. A shipped theme missing from this
+            // list is silently never updated - php artisan cms:release refuses to
+            // build a release that would leave one behind.
             'themes/default',
+            'themes/storefront',
             'vite.config.js',
         ],
 
@@ -131,6 +135,7 @@ return [
         'track_edits' => [
             'config',
             'themes/default',
+            'themes/storefront',
             'public/.htaccess',
             'public/index.php',
             '.htaccess',

@@ -63,6 +63,10 @@ class BuildReleaseCommand extends Command
         $files = $this->collect($root);
         $this->line('  '.number_format(count($files)).' file(s)');
 
+        if (! $this->bundledThemesAreUpdatable($files)) {
+            return self::FAILURE;
+        }
+
         $this->info('Writing the archive...');
 
         if (! $this->writeZip($zipPath, $root, $files, "{$slug}-{$version}")) {
@@ -139,8 +143,7 @@ class BuildReleaseCommand extends Command
             '',
         ];
 
-        File::put($path, implode("
-", $lines));
+        File::put($path, implode(chr(10), $lines));
 
         return $path;
     }
@@ -169,6 +172,44 @@ class BuildReleaseCommand extends Command
         $this->line("     <info>gh release create v{$version} --title {$version} --notes-file \"{$notesPath}\" \"{$zipPath}\"</info>");
         $this->newLine();
         $this->line('Sites see it within a day, or immediately via System -> Updates -> Check now.');
+    }
+
+    /**
+     * Refuse to ship a theme the updater could never update.
+     *
+     * The updater only writes paths listed in config/updates.php. A theme that
+     * is packaged but not listed installs fine and then quietly stays at that
+     * version forever - which is exactly how storefront missed instant search
+     * and the new cursors on every site that updated. It looks like a caching
+     * problem from the outside, so it is worth stopping the build over.
+     *
+     * @param  string[]  $files
+     */
+    private function bundledThemesAreUpdatable(array $files): bool
+    {
+        $archive = app(\App\Cms\Updates\ReleaseArchive::class);
+        $stranded = [];
+
+        foreach ($files as $file) {
+            if (preg_match('#^themes/([^/]+)/theme\.json$#', $file, $m)
+                && ! $archive->isWritablePath($file)) {
+                $stranded[] = $m[1];
+            }
+        }
+
+        if ($stranded === []) {
+            return true;
+        }
+
+        $this->newLine();
+        $this->error('This release ships themes that updates would never reach: '.implode(', ', $stranded));
+        $this->line('  Add each one to both paths.merge and paths.track_edits in config/updates.php:');
+
+        foreach ($stranded as $slug) {
+            $this->line("    'themes/{$slug}',");
+        }
+
+        return false;
     }
 
     /**

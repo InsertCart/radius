@@ -234,6 +234,11 @@ class UpdateApplier
                 'skipped' => $result['skipped'],
                 'added' => $result['added'],
                 'changed' => $result['changed'],
+                // Marks an update applied under a path policy that already covers
+                // every bundled theme. Updates applied by older releases lack it,
+                // and finalize() then brings the themes up to date itself.
+                'policy' => 2,
+                'overwrite_edited' => $overwriteEdited,
                 'started_at' => now()->toIso8601String(),
             ], JSON_PRETTY_PRINT));
 
@@ -265,7 +270,7 @@ class UpdateApplier
      * @param  string[]  $protect  project-relative paths edited on this site
      * @return array{changed: int, skipped: string[]}
      */
-    private function swap(string $stage, array $staged, string $backupDir, array $protect): array
+    private function swap(string $stage, array $staged, string $backupDir, array $protect, bool $removeOrphans = true): array
     {
         File::ensureDirectoryExists($backupDir);
 
@@ -320,7 +325,13 @@ class UpdateApplier
             $changed++;
         }
 
-        $changed += $this->removeOrphans($present, $backupDir);
+        // Only for a full release. A partial stage - the bundled-themes refresh
+        // in finalize() - lists a handful of files, and orphan removal treats
+        // everything it does not list as deleted: it would empty app/ and
+        // vendor/ in a single pass.
+        if ($removeOrphans) {
+            $changed += $this->removeOrphans($present, $backupDir);
+        }
 
         return ['changed' => $changed, 'skipped' => $skipped, 'added' => $added];
     }
@@ -623,6 +634,12 @@ class UpdateApplier
     {
         $steps = [];
 
+        // Before cms:sync, which is what publishes theme assets into
+        // public/themes - so the copy it publishes is the new one.
+        if ($themes = $this->refreshBundledThemes()) {
+            $steps['Bundled themes'] = $themes;
+        }
+
         \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
         $steps['Database migrations'] = trim(\Illuminate\Support\Facades\Artisan::output()) ?: 'Nothing to migrate.';
 
@@ -650,6 +667,87 @@ class UpdateApplier
         $this->resetOpcache();
 
         return $steps;
+    }
+
+    /**
+     * Bring bundled themes up to date when the files were swapped by an older
+     * release of the updater.
+     *
+     * The first half of an update runs on the code the site already has, with
+     * that code's idea of which paths it may write. Releases before this one
+     * only allowed themes/default, so a site updating *to* this release still
+     * skipped themes/storefront - the theme carrying instant search and the new
+     * cursors - and would have gone on skipping it until the release after.
+     * This half runs on the new code, so it can fix that in the same update.
+     *
+     * The archive is gone by now, deleted by the old code, so the release is
+     * fetched again and verified against its checksum exactly as before. Only
+     * themes/ is unpacked, and orphan removal is off: a partial stage must never
+     * be treated as a complete release.
+     *
+     * Never fatal. The code and the database are already on the new version;
+     * failing here would strand the site half-finished over a stylesheet.
+     */
+    private function refreshBundledThemes(): ?string
+    {
+        $pending = $this->pending();
+
+        // Nothing to catch up: this update's own file swap already used a
+        // policy that covers every bundled theme.
+        if (! $pending || isset($pending['policy'])) {
+            return null;
+        }
+
+        $version = (string) ($pending['to'] ?? '');
+
+        try {
+            $manifest = app(UpdateChecker::class)->fetch();
+        } catch (\Throwable $e) {
+            return 'Could not re-check the release, so bundled themes will catch up on the next update.';
+        }
+
+        // Only the exact release that was installed. A newer one published in
+        // the meantime would mix another version's theme into this one.
+        if ($manifest->version !== $version) {
+            return "Version {$manifest->version} has been published since; bundled themes will update with it.";
+        }
+
+        $workspace = storage_path('app/private/'.trim((string) config('updates.workspace', 'updates'), '/'));
+        $stage = $workspace.DIRECTORY_SEPARATOR.'themes-'.Str::random(10);
+        $archivePath = null;
+
+        try {
+            $archivePath = $this->downloader->download($manifest, $workspace);
+            $extracted = $this->archive->extract($archivePath, $stage, 'themes/');
+
+            $protect = empty($pending['overwrite_edited']) ? $this->modifiedFiles() : [];
+            $backupDir = (string) ($pending['backup_dir'] ?? '');
+
+            $result = $this->swap($stage, $extracted['files'], $backupDir, $protect, removeOrphans: false);
+
+            // Folded into the pending record, so Roll back restores these files
+            // and removes the ones this step added, like the rest of the update.
+            $pending['added'] = array_values(array_unique(array_merge($pending['added'] ?? [], $result['added'])));
+            $pending['skipped'] = array_values(array_unique(array_merge($pending['skipped'] ?? [], $result['skipped'])));
+            $pending['changed'] = (int) ($pending['changed'] ?? 0) + $result['changed'];
+            $pending['policy'] = 2;
+
+            File::put($this->pendingPath(), json_encode($pending, JSON_PRETTY_PRINT));
+
+            return $result['changed'] > 0
+                ? "{$result['changed']} file(s) brought up to date."
+                : 'Already up to date.';
+        } catch (\Throwable $e) {
+            Log::warning('[updates] Bundled theme refresh failed: '.$e->getMessage());
+
+            return 'Could not be refreshed this time ('.$e->getMessage().'); they will catch up on the next update.';
+        } finally {
+            File::deleteDirectory($stage);
+
+            if ($archivePath && is_file($archivePath)) {
+                @unlink($archivePath);
+            }
+        }
     }
 
     /**
