@@ -59,8 +59,9 @@
 }
 
 .cb-column {
-    /* Set inline by the renderer; the calc accounts for the flex gap. */
-    flex: 1 1 calc(var(--cb-col-width, 100) * 1% - var(--cb-gap));
+    /* Set inline by the renderer as a percentage (e.g. 45%); the calc takes
+       the flex gap back off so side-by-side columns fit on one row. */
+    flex: 1 1 calc(var(--cb-col-width, 100%) - var(--cb-gap));
     min-width: 0;
 }
 

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Cms\Search\Concerns\IsSearchable;
+use App\Cms\Search\Contracts\Searchable;
 use App\Models\Concerns\FlushesPublicCache;
 use App\Models\Concerns\HasLayout;
 use App\Models\Concerns\HasSeo;
@@ -20,9 +22,9 @@ use Illuminate\Support\Str;
  * accessor named *Money returns minor units; formatting happens in the view
  * through the money() helper.
  */
-class Product extends Model
+class Product extends Model implements Searchable
 {
-    use FlushesPublicCache, HasLayout, HasSeo, HasSlug, SoftDeletes;
+    use FlushesPublicCache, HasLayout, HasSeo, HasSlug, IsSearchable, SoftDeletes;
 
     protected $fillable = [
         'name', 'slug', 'sku', 'short_description', 'description', 'featured_image',
@@ -118,6 +120,43 @@ class Product extends Model
                 ->orWhere('sku', 'like', $like)
                 ->orWhere('short_description', 'like', $like);
         });
+    }
+
+    // Search --------------------------------------------------------------
+
+    public static function searchableQuery(bool $includeScheduled = false): Builder
+    {
+        return static::query()->published();
+    }
+
+    /** The same columns scopeSearch() matches, so both engines agree on the basics. */
+    public static function searchableColumns(): array
+    {
+        return ['name' => 5, 'sku' => 4, 'short_description' => 2];
+    }
+
+    public function searchableFields(): array
+    {
+        return [
+            'name' => [$this->name, 5],
+            'sku' => [$this->sku, 4],
+            'variants' => [$this->variants()->pluck('sku')->filter()->implode(' '), 3],
+            'categories' => [$this->categories()->pluck('name')->implode(' '), 2],
+            'short_description' => [$this->short_description, 2],
+            'description' => [$this->rawContent(), 1],
+        ];
+    }
+
+    public function toSearchResult(): array
+    {
+        return [
+            'title' => (string) $this->name,
+            'url' => $this->url(),
+            'excerpt' => $this->searchExcerpt($this->short_description ?: $this->rawContent()),
+            'image' => $this->imageUrl(),
+            'meta' => money($this->effectivePrice()),
+            'visible_from' => null,
+        ];
     }
 
     // Pricing -------------------------------------------------------------

@@ -589,6 +589,55 @@ body.sf {
 .sf-review__verified { color: var(--sf-green); font-weight: 600; }
 .sf-reviewform { border: 1px solid var(--sf-line); border-radius: var(--sf-r-lg); padding: 18px; background: var(--sf-soft); height: fit-content; }
 
+/* Product page template (builder widgets) ------------------------------- */
+/* Gives the product page widgets this theme's look. Every rule here is a
+   single class, so colours and corners set on a widget in the builder still
+   win over it. */
+
+.cb-pimages__stage { border-color: var(--sf-line); border-radius: var(--sf-r-lg); }
+.cb-pimages__thumb { border-color: var(--sf-line); border-radius: var(--sf-r-sm); }
+.cb-pimages__thumb.is-active { border-color: var(--sf-ink); }
+
+.cb-ptitle { color: var(--sf-ink); font-size: clamp(23px, 3vw, 32px); }
+.cb-ptitle__category { color: #1d4ed8; font-size: 14px; }
+
+.cb-rating { font-size: 13px; }
+.cb-rating__stars { color: #e8a200; }
+.cb-rating__count { color: var(--sf-muted); }
+
+.cb-price__now { font-size: 28px; color: var(--sf-ink); }
+.cb-price__was { font-size: 15px; color: var(--sf-faint); }
+.cb-price__saving { background: var(--sf-green-soft); color: var(--sf-green); }
+.cb-price__tax { font-size: 12.5px; color: var(--sf-faint); }
+
+.cb-qty { border-color: var(--sf-line-strong); border-radius: var(--sf-r-sm); }
+.cb-qty input { border-color: var(--sf-line); }
+.cb-buy__btn { border-radius: var(--sf-r-sm); padding: 14px 18px; font-size: 16px; font-weight: 700; }
+.cb-buy__cart { background: var(--sf-accent); color: var(--sf-accent-ink); }
+.cb-buy__cart:hover { background: var(--sf-accent-dark); filter: none; }
+.cb-buy__now { background: #fff; color: var(--sf-ink); border-color: var(--sf-line-strong); }
+.cb-buy__now:hover { background: var(--sf-soft); filter: none; }
+
+.cb-stock--in { color: var(--sf-green); }
+.cb-stock--out { color: var(--sf-rose); }
+
+.cb-badges { gap: 10px; }
+.cb-badges__ring { width: 44px; height: 44px; background: var(--sf-accent); color: var(--sf-accent-ink); }
+.cb-badges__ring svg { width: 20px; height: 20px; }
+.cb-badges__label { font-size: 11.5px; color: var(--sf-muted); line-height: 1.3; }
+
+.cb-pinfo { border-color: var(--sf-line); padding: 18px 2px; }
+.cb-pinfo__title { font-size: 18px; color: var(--sf-ink); }
+.cb-pinfo__body { color: #44444f; font-size: 14.5px; }
+.cb-pdetails dt { color: var(--sf-muted); font-weight: 400; }
+
+.cb-reviews__heading, .cb-related__heading { color: var(--sf-ink); }
+.cb-review { border: 0; border-bottom: 1px solid var(--sf-line); border-radius: 0; padding: 16px 0; }
+.cb-reviews__stars { color: #e8a200; }
+.cb-review__meta, .cb-review__empty { color: var(--sf-faint); }
+.cb-reviews__form { border-color: var(--sf-line); border-radius: var(--sf-r-lg); background: var(--sf-soft); }
+.cb-reviews .cb-button { background: var(--sf-accent); color: var(--sf-accent-ink); border-radius: var(--sf-r-sm); }
+
 /* Cart, checkout and summary panels -------------------------------------- */
 
 .sf-split { display: grid; gap: 26px; align-items: start; padding-bottom: 40px; }
@@ -793,3 +842,18 @@ body.sf {
 @media (prefers-reduced-motion: reduce) {
     .sf *, .sf *::before, .sf *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Live search results --------------------------------------------------------
+   The dropdown itself comes from the CMS. A theme only sets its colours and
+   shape through these properties; see resources/views/theme/search/script.blade.php
+   for the full list of classes if more is needed. */
+
+.sf-search {
+    --radius-search-fg: var(--sf-ink);
+    --radius-search-muted: var(--sf-muted);
+    --radius-search-border: var(--sf-line);
+    --radius-search-active: var(--sf-soft);
+    --radius-search-accent: var(--sf-ink);
+    --radius-search-radius: var(--sf-r);
+}
+.sf-search .radius-search-meta { color: var(--sf-ink); font-weight: 600; }

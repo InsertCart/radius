@@ -11,15 +11,18 @@ use App\Cms\Firebase\FirebaseManager;
 use App\Cms\Mail\MailConfigurator;
 use App\Cms\Modules\ModuleManager;
 use App\Cms\Payments\PaymentManager;
+use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
 use App\Cms\Support\AdminNavigation;
 use App\Cms\Sms\SmsManager;
 use App\Cms\Themes\ThemeManager;
 use App\Models\Menu;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -41,6 +44,7 @@ class CmsServiceProvider extends ServiceProvider
             PaymentManager::class,
             SmsManager::class,
             FirebaseManager::class,
+            SearchManager::class,
 
             // Visual builder.
             BlockRegistry::class,
@@ -60,7 +64,13 @@ class CmsServiceProvider extends ServiceProvider
         if ($this->isInstalled()) {
             $this->applyRuntimeSettings();
             app(ThemeManager::class)->registerViewNamespace();
+
+            // Saved content has to reach the search index. Registered only
+            // on an installed site: the models' tables may not exist before.
+            app(SearchManager::class)->observe();
         }
+
+        $this->registerRateLimiters();
 
         $this->registerBladeDirectives();
         $this->shareViewState();
@@ -122,6 +132,11 @@ class CmsServiceProvider extends ServiceProvider
         // Emits the full SEO head block: title, meta, Open Graph, JSON-LD.
         Blade::directive('seoHead', fn () => '<?php echo seo()->render(); ?>');
 
+        // The live search script, once per page, only when live results are
+        // on. Search forms put this next to themselves, so a theme never has
+        // to add it to its layout.
+        Blade::directive('searchScripts', fn () => '<?php echo search()->scripts(); ?>');
+
         $this->registerBuilderDirectives();
     }
 
@@ -166,6 +181,17 @@ class CmsServiceProvider extends ServiceProvider
         // lightboxes. Only emitted on pages that actually contain a layout.
         Blade::directive('builderScripts', function () {
             return '<?php echo view("builder.runtime")->render(); ?>';
+        });
+    }
+
+    /**
+     * Live search fires a request per pause in typing, so it gets its own,
+     * owner-adjustable budget per visitor rather than sharing a generic one.
+     */
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('search', function ($request) {
+            return Limit::perMinute(app(SearchManager::class)->rateLimit())->by($request->ip());
         });
     }
 

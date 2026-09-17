@@ -7,6 +7,7 @@ use App\Http\Controllers\Front\ContactController;
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\NewsletterController;
 use App\Http\Controllers\Front\PushController;
+use App\Http\Controllers\Front\SearchController;
 use App\Http\Controllers\Front\SeoController;
 use App\Http\Controllers\Front\ShopController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,19 @@ Route::middleware('installed')->group(function () {
     if (modules()->enabled('seo')) {
         Route::get('sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
         Route::get('robots.txt', [SeoController::class, 'robots'])->name('robots');
+    }
+
+    // Search ------------------------------------------------------------
+    // Live results are always routed; the controller answers 404 while they
+    // are switched off, so toggling the setting needs no route reload. The
+    // results page is only routed when enabled, because /search would
+    // otherwise shadow a CMS page an owner created with that slug.
+    Route::get('search/suggest', [SearchController::class, 'suggest'])
+        ->middleware('throttle:search')
+        ->name('search.suggest');
+
+    if (search()->pageEnabled()) {
+        Route::get('search', [SearchController::class, 'index'])->name('search');
     }
 
     // Blog --------------------------------------------------------------

@@ -229,6 +229,7 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::post('tools/mail/test', [ToolsController::class, 'testMail'])->name('tools.mail.test');
                 Route::post('tools/sms/test', [ToolsController::class, 'testSms'])->name('tools.sms.test');
                 Route::post('tools/push/test', [ToolsController::class, 'testPush'])->name('tools.push.test');
+                Route::post('tools/search/rebuild', [ToolsController::class, 'rebuildSearch'])->name('tools.search.rebuild');
             });
         });
     });

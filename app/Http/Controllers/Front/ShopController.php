@@ -125,8 +125,10 @@ class ShopController extends Controller
     /** Shared filtering and sorting for the shop index and category pages. */
     private function filtered($query, Request $request)
     {
+        // Relevance leads only when the visitor has not picked a sort order.
+        $query = search()->constrain($query, 'product', $request->string('q')->toString(), rank: ! $request->filled('sort'));
+
         return $query
-            ->search($request->string('q')->toString())
             ->when($request->filled('min'), fn ($q) => $q->where('price', '>=', to_minor_units($request->input('min'))))
             ->when($request->filled('max'), fn ($q) => $q->where('price', '<=', to_minor_units($request->input('max'))))
             ->when($request->boolean('in_stock'), fn ($q) => $q->inStock())

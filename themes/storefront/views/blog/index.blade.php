@@ -19,11 +19,12 @@
             @include('theme::blog.sidebar')
 
             <div>
-                <form method="GET" class="sf-toolbar">
+                <form method="GET" class="sf-toolbar" role="search" data-radius-search="post">
                     <label for="sf-blog-q" class="sf-sr">Search posts</label>
-                    <input type="search" name="q" id="sf-blog-q" value="{{ $query }}" placeholder="Search posts" class="sf-input">
+                    <input type="search" name="q" id="sf-blog-q" value="{{ $query }}" placeholder="Search posts" class="sf-input" autocomplete="off">
                     <button class="sf-btn sf-btn--ghost">Search</button>
                 </form>
+                @searchScripts
 
                 @if ($posts->isEmpty())
                     <p class="sf-empty">{{ $query ? 'No posts match that search.' : 'No posts published yet.' }}</p>

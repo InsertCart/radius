@@ -27,14 +27,14 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full bg-slate-100 text-slate-800 antialiased">
-<div x-data="{ sidebarOpen: false }" class="min-h-full">
+<div x-data="{ sidebarOpen: false }" class="min-h-full lg:flex">
 
     {{-- Mobile backdrop --}}
     <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false"
          class="fixed inset-0 z-30 bg-slate-900/50 lg:hidden"></div>
 
     <aside x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-           class="fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto bg-slate-900 text-slate-300 transition-transform lg:translate-x-0">
+           class="fixed inset-y-0 left-0 z-40 w-64 transform overflow-y-auto bg-slate-900 text-slate-300 transition-transform lg:static lg:shrink-0 lg:translate-x-0 lg:overflow-visible">
         {{-- on="dark": this sidebar is bg-slate-900 at every colour scheme, so
              it takes the light-ink mark. This is the one surface in the product
              where the ordinary dark logo would be invisible. --}}
@@ -76,7 +76,7 @@
         </nav>
     </aside>
 
-    <div class="lg:pl-64">
+    <div class="min-w-0 lg:flex-1">
         <header class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6">
             <button @click="sidebarOpen = !sidebarOpen" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden" aria-label="Toggle menu">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>

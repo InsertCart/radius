@@ -51,7 +51,6 @@ class ProductImagesBlock extends ProductBlock
 
             Control::color('stage_bg', 'Image background')
                 ->tab(Control::TAB_STYLE)
-                ->default('#ffffff')
                 ->selector('{{WRAPPER}} .cb-pimages__stage', 'background-color'),
 
             Control::dimensions('radius', 'Corners')

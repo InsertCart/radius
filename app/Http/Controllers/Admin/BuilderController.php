@@ -42,9 +42,21 @@ class BuilderController extends Controller
     // Opening the editor ---------------------------------------------------
 
     /** The editor for a content record: a page, post or product. */
-    public function edit(Request $request, string $type, int $id): View
+    public function edit(Request $request, string $type, int $id): View|RedirectResponse
     {
         $model = $this->resolveModel($type, $id);
+
+        // A product's page is designed once, in the shared template, so that
+        // is where "Open the builder" goes - previewing this product. The
+        // description-only editor stays reachable with ?description=1, and a
+        // product that already has a description layout keeps opening it.
+        if ($model instanceof Product
+            && ! $request->boolean('description')
+            && $this->regions->isDeclared('product')
+            && ($model->layout()->first()?->editableTree() ?? []) === []) {
+            return redirect()->route('admin.builder.region', ['region' => 'product', 'product' => $model->id]);
+        }
+
         $layout = Layout::forModel($model);
 
         return view('admin.builder.editor', $this->editorPayload($layout, [
@@ -67,13 +79,28 @@ class BuilderController extends Controller
         $layout = Layout::forRegion($region);
         $starter = app(RegionStarter::class);
         $area = $this->regions->area($region);
-        $sample = $this->regionContext($region)['model'] ?? null;
 
-        return view('admin.builder.editor', $this->editorPayload($layout, [
+        $productId = $region === 'product' ? $request->integer('product') ?: null : null;
+        $sample = $this->regionContext($region, $productId)['model'] ?? null;
+        $query = $productId ? ['product' => $productId] : [];
+
+        // An empty product template would open as a blank canvas while the
+        // live site clearly has a product page. Start from a copy of the
+        // theme's arrangement instead. It is only a draft: nothing changes for
+        // shoppers until it is published.
+        if ($region === 'product' && $layout->editableTree() === [] && $layout->published_at === null) {
+            $layout->saveDraft($starter->build('product', 'classic'), $request->user()->id);
+        }
+
+        $payload = $this->editorPayload($layout, [
             'title' => $area['label'] ?? ucfirst($region),
-            'subtitle' => ($area['kind'] ?? 'region') === 'system' ? 'Site page' : 'Theme region',
-            'previewUrl' => route('admin.builder.preview.region', ['region' => $region]),
-            'backUrl' => route('admin.builder.index'),
+            'subtitle' => $sample instanceof Product
+                ? 'Previewing '.$sample->name
+                : (($area['kind'] ?? 'region') === 'system' ? 'Site page' : 'Theme region'),
+            'previewUrl' => route('admin.builder.preview.region', array_merge(['region' => $region], $query)),
+            'backUrl' => $productId && $sample
+                ? route('admin.products.edit', $sample)
+                : route('admin.builder.index'),
             'viewUrl' => $sample instanceof Product ? $sample->url() : url('/'),
             'widgets' => $this->blocks->panel($region),
 
@@ -85,7 +112,14 @@ class BuilderController extends Controller
             'starters' => $starter->available($region),
             'restoreUrl' => route('admin.builder.restore-default', $layout),
             'canRestore' => ! $layout->isEmpty(),
-        ]));
+        ]);
+
+        // Re-renders must use the same product as the first preview.
+        if ($query !== []) {
+            $payload['config']['renderUrl'] = route('admin.builder.render', array_merge(['layout' => $layout], $query));
+        }
+
+        return view('admin.builder.editor', $payload);
     }
 
     /** Everything the editor's JavaScript needs on boot. */
@@ -175,7 +209,7 @@ class BuilderController extends Controller
         $renderer = $this->renderer->editing();
         $isAdmin = (bool) $request->user()?->isAdmin();
         $trusted = $this->rawHtmlAlreadyInLayout($layout);
-        $context = $this->layoutContext($layout);
+        $context = $this->layoutContext($layout, $request->integer('product') ?: null);
 
         if ($request->filled('node')) {
             // Cleaned the same way the save path cleans it, so the canvas is a
@@ -228,14 +262,17 @@ class BuilderController extends Controller
     public function previewRegion(Request $request, string $region): View
     {
         $layout = Layout::forRegion($region);
+        $context = $this->regionContext($region, $request->integer('product') ?: null);
 
         return view('admin.builder.canvas', [
-            'content' => $this->renderer->editing()->render($layout->editableTree(), $this->regionContext($region)),
+            'content' => $this->renderer->editing()->render($layout->editableTree(), $context),
             'css' => $this->styles->compile($layout->editableTree()),
             'title' => ucfirst($region),
-            // A region is a fragment, so it is previewed without the theme's
-            // own header and footer wrapped around it.
-            'chrome' => false,
+            // A theme region is a fragment, so it is previewed without the
+            // theme's own header and footer wrapped around it. A site page -
+            // the product page, the cart - is a whole page, and without the
+            // theme's stylesheet its preview would not look like the live site.
+            'chrome' => ($this->regions->area($region)['kind'] ?? 'region') === 'system',
             'region' => $region,
         ]);
     }
@@ -548,27 +585,31 @@ class BuilderController extends Controller
     }
 
     /** What a layout's widgets are rendered against while it is being edited. */
-    private function layoutContext(Layout $layout): array
+    private function layoutContext(Layout $layout, ?int $productId = null): array
     {
         if ($layout->layoutable) {
             return ['model' => $layout->layoutable];
         }
 
-        return $layout->region ? $this->regionContext($layout->region) : [];
+        return $layout->region ? $this->regionContext($layout->region, $productId) : [];
     }
 
     /**
      * The product page template is designed against a real product, so prices,
      * images and stock in the preview look like the live page.
      */
-    private function regionContext(string $region): array
+    private function regionContext(string $region, ?int $productId = null): array
     {
         if ($region !== 'product') {
             return [];
         }
 
-        $product = Product::published()->with('categories', 'variants', 'gallery')->latest()->first()
-            ?? Product::with('categories', 'variants', 'gallery')->latest()->first();
+        $with = ['categories', 'variants', 'gallery', 'approvedReviews'];
+
+        // The product the editor was opened from, when there is one.
+        $product = ($productId ? Product::with($with)->find($productId) : null)
+            ?? Product::published()->with($with)->latest()->first()
+            ?? Product::with($with)->latest()->first();
 
         return $product ? ['model' => $product] : [];
     }

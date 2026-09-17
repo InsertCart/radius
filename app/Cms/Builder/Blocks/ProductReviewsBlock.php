@@ -38,7 +38,6 @@ class ProductReviewsBlock extends ProductBlock
                 ->selector('{{WRAPPER}} .cb-reviews__heading', 'color'),
             Control::color('star_color', 'Star colour')
                 ->tab(Control::TAB_STYLE)
-                ->default('#f59e0b')
                 ->selector('{{WRAPPER}} .cb-reviews__stars', 'color'),
             Control::color('button_bg', 'Submit button')
                 ->tab(Control::TAB_STYLE)

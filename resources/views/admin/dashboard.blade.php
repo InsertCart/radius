@@ -32,17 +32,19 @@
 
     <div class="grid gap-6 lg:grid-cols-3">
         @module('shop')
-            <x-admin.card title="Revenue" description="Paid orders over the last 30 days" class="lg:col-span-2">
+            <x-admin.card title="Revenue" description="Paid orders over the last 30 days" class="flex flex-col lg:col-span-2" bodyClass="flex flex-1 flex-col p-5">
                 @if (array_sum($salesChart['values']) > 0)
-                    <div class="flex h-40 items-end gap-1">
+                    {{-- The card stretches to match its grid row, so the chart grows to fill it instead of using a fixed height. --}}
+                    <div class="flex min-h-40 flex-1 items-end gap-1">
                         @php $peak = max($salesChart['values']) ?: 1; @endphp
                         @foreach ($salesChart['values'] as $index => $value)
-                            <div class="group relative flex-1">
-                                <div class="rounded-t bg-indigo-500/80 transition group-hover:bg-indigo-600"
-                                     style="height: {{ max(2, round(($value / $peak) * 150)) }}px"></div>
-                                <span class="pointer-events-none absolute bottom-full left-1/2 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-[10px] text-white group-hover:block">
-                                    {{ $salesChart['labels'][$index] }}: {{ money((int) round($value * 100)) }}
-                                </span>
+                            <div class="group flex h-full flex-1 items-end">
+                                <div class="relative w-full rounded-t bg-indigo-500/80 transition group-hover:bg-indigo-600"
+                                     style="height: {{ round(($value / $peak) * 100, 2) }}%; min-height: 2px">
+                                    <span class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-[10px] text-white group-hover:block">
+                                        {{ $salesChart['labels'][$index] }}: {{ money((int) round($value * 100)) }}
+                                    </span>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -51,7 +53,7 @@
                         <span>{{ end($salesChart['labels']) ?: '' }}</span>
                     </div>
                 @else
-                    <p class="py-10 text-center text-sm text-slate-500">No paid orders in the last 30 days.</p>
+                    <p class="my-auto py-10 text-center text-sm text-slate-500">No paid orders in the last 30 days.</p>
                 @endif
             </x-admin.card>
         @endmodule

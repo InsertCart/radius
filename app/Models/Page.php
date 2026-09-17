@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Cms\Search\Concerns\IsSearchable;
+use App\Cms\Search\Contracts\Searchable;
 use App\Models\Concerns\FlushesPublicCache;
 use App\Models\Concerns\HasLayout;
 use App\Models\Concerns\HasSeo;
@@ -13,9 +15,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
-class Page extends Model
+class Page extends Model implements Searchable
 {
-    use FlushesPublicCache, HasLayout, HasSeo, HasSlug, SoftDeletes;
+    use FlushesPublicCache, HasLayout, HasSeo, HasSlug, IsSearchable, SoftDeletes;
 
     protected string $slugSource = 'title';
 
@@ -61,6 +63,28 @@ class Page extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', 'published');
+    }
+
+    public static function searchableQuery(bool $includeScheduled = false): Builder
+    {
+        return static::query()->published();
+    }
+
+    public static function searchableColumns(): array
+    {
+        return ['title' => 5, 'content' => 1];
+    }
+
+    public function toSearchResult(): array
+    {
+        return [
+            'title' => (string) $this->title,
+            'url' => $this->url(),
+            'excerpt' => $this->searchExcerpt($this->meta_description ?: $this->content),
+            'image' => $this->imageUrl(),
+            'meta' => null,
+            'visible_from' => null,
+        ];
     }
 
     public function url(): string

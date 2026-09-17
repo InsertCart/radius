@@ -42,15 +42,12 @@ class ProductStockBlock extends ProductBlock
 
             Control::color('in_color', 'In stock colour')
                 ->tab(Control::TAB_STYLE)
-                ->default('#047857')
                 ->selector('{{WRAPPER}} .cb-stock--in', 'color'),
             Control::color('low_color', 'Low stock colour')
                 ->tab(Control::TAB_STYLE)
-                ->default('#b45309')
                 ->selector('{{WRAPPER}} .cb-stock--low', 'color'),
             Control::color('out_color', 'Out of stock colour')
                 ->tab(Control::TAB_STYLE)
-                ->default('#be123c')
                 ->selector('{{WRAPPER}} .cb-stock--out', 'color'),
         ];
     }

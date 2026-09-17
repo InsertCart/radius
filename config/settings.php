@@ -62,6 +62,29 @@ return [
         ],
     ],
 
+    'search' => [
+        'label' => 'Search',
+        'icon' => 'search',
+        'fields' => [
+            'search_engine' => ['type' => 'select', 'label' => 'Search engine', 'default' => 'database', 'options' => 'search_engines',
+                'help' => 'Database searches your content directly and needs no setup. Index answers from a prebuilt word index, so searching never slows your database down: better for large sites or heavy traffic. The index is built when you save this, and kept current as you edit.'],
+            'search_instant' => ['type' => 'boolean', 'label' => 'Show results while typing', 'default' => true,
+                'help' => 'A dropdown of matches appears under search boxes as visitors type. Pressing Enter still opens the full results.'],
+            'search_min_chars' => ['type' => 'number', 'label' => 'Start after this many characters', 'default' => 2, 'rules' => 'integer|min:1|max:10'],
+            'search_suggest_limit' => ['type' => 'number', 'label' => 'Results per group while typing', 'default' => 5, 'rules' => 'integer|min:1|max:20'],
+            'search_posts' => ['type' => 'boolean', 'label' => 'Search blog posts', 'default' => true],
+            'search_products' => ['type' => 'boolean', 'label' => 'Search products', 'default' => true],
+            'search_pages' => ['type' => 'boolean', 'label' => 'Search pages', 'default' => true],
+            'search_page' => ['type' => 'boolean', 'label' => 'Site-wide results page at /search', 'default' => true,
+                'help' => 'Lists matches from everything above on one page. Turn it off if you already have a page with the address /search.'],
+            'search_rate_limit' => ['type' => 'number', 'label' => 'Live searches allowed per visitor per minute', 'default' => 60, 'rules' => 'integer|min:10|max:1000',
+                'help' => 'Protects the site from scripts hammering the search. A person typing uses a handful.'],
+            'search_cache_seconds' => ['type' => 'number', 'label' => 'Remember live results for (seconds)', 'default' => 60, 'rules' => 'integer|min:0|max:3600',
+                'depends' => ['search_engine' => 'database'],
+                'help' => 'Repeated searches are answered without querying the database again. Set to 0 to turn off.'],
+        ],
+    ],
+
     'seo' => [
         'label' => 'SEO',
         'icon' => 'search',

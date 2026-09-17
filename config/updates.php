@@ -207,6 +207,8 @@ return [
             'storage/app/shipped-checksums.json',
             'storage/app/update-pending.json',
             'storage/app/update-last.json',
+            // This site's own content, and rebuilt on demand anyway.
+            'storage/app/search-index',
         ],
 
         /*

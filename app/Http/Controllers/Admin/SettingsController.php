@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Cms\Mail\MailConfigurator;
+use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
 use App\Cms\Shop\Currencies;
@@ -25,6 +26,7 @@ class SettingsController extends Controller
         private SettingsRepository $settings,
         private ThemeManager $themes,
         private MailConfigurator $mail,
+        private SearchManager $search,
     ) {}
 
     public function edit(Request $request, ?string $group = null): View
@@ -41,6 +43,7 @@ class SettingsController extends Controller
             'values' => $this->currentValues($groups[$group]),
             'optionSets' => $this->optionSets(),
             'mailStatus' => $group === 'mail' ? $this->mailStatus() : null,
+            'searchStatus' => $group === 'search' ? $this->searchStatus() : null,
         ]);
     }
 
@@ -93,6 +96,10 @@ class SettingsController extends Controller
             $values = $this->syncCurrencySymbol($values);
         }
 
+        $searchBefore = $group === 'search'
+            ? [$this->search->engineName(), array_keys($this->search->types())]
+            : null;
+
         $this->settings->setMany($values, $group);
 
         // Switching theme has to republish assets and drop the view cache, or
@@ -103,7 +110,19 @@ class SettingsController extends Controller
 
         activity('settings.updated', "Updated the {$group} settings.", properties: ['group' => $group, 'keys' => array_keys($values)]);
 
-        return back()->with('status', ucfirst($groups[$group]['label'] ?? $group).' settings saved.');
+        $message = ucfirst($groups[$group]['label'] ?? $group).' settings saved.';
+
+        if ($searchBefore !== null) {
+            [$ok, $note] = $this->afterSearchSettingsSaved(...$searchBefore);
+
+            if (! $ok) {
+                return back()->with('error', $message.' '.$note);
+            }
+
+            $message = trim($message.' '.$note);
+        }
+
+        return back()->with('status', $message);
     }
 
     /** Settings groups whose module is enabled. */
@@ -166,6 +185,12 @@ class SettingsController extends Controller
             'schema_types' => SeoManager::SCHEMA_TYPES,
 
             'currencies' => Currencies::options(),
+
+            'search_engines' => collect($this->search->engineNames())->mapWithKeys(fn ($name) => [$name => match ($name) {
+                'database' => 'Database (no setup, always current)',
+                'index' => 'Index (fast, no database queries)',
+                default => ucfirst($name),
+            }])->all(),
         ];
     }
 
@@ -198,6 +223,53 @@ class SettingsController extends Controller
         $values['shop_currency_symbol'] = Currencies::symbolFor($values['shop_currency']) ?? $submitted;
 
         return $values;
+    }
+
+    /**
+     * Builds the index when it is first chosen, or when the set of searchable
+     * types changes. Until it exists the database answers, so a slow or failed
+     * build never leaves the site without search.
+     *
+     * @return array{0: bool, 1: string}
+     */
+    private function afterSearchSettingsSaved(string $engineBefore, array $typesBefore): array
+    {
+        if ($this->search->engineName() === 'database') {
+            return [true, ''];
+        }
+
+        $engine = $this->search->engine();
+        $types = array_keys($this->search->types());
+
+        $stale = $engineBefore !== $this->search->engineName()
+            || array_diff($types, $typesBefore) !== []
+            || collect($types)->contains(fn ($type) => ! $engine->ready($type));
+
+        if (! $stale) {
+            return [true, ''];
+        }
+
+        @set_time_limit(0);
+
+        try {
+            $counts = $this->search->rebuild();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [false, 'The search index could not be built, so search keeps using the database for now: '.$e->getMessage()];
+        }
+
+        activity('search.rebuilt', 'Rebuilt the search index.', properties: $counts);
+
+        return [true, 'Search index built: '.array_sum($counts).' item(s).'];
+    }
+
+    private function searchStatus(): array
+    {
+        return [
+            'engine' => $this->search->engineName(),
+            'types' => $this->search->status(),
+        ];
     }
 
     /** Whether the chosen mail provider is actually usable on this host. */

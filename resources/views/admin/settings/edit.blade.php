@@ -93,6 +93,67 @@
                 </x-admin.card>
             @endif
 
+            @if ($activeGroup === 'search' && $searchStatus)
+                @php $usesIndex = $searchStatus['engine'] !== 'database'; @endphp
+                <x-admin.card title="Search status"
+                              :description="$usesIndex ? 'What the index holds for each kind of content' : 'Database search reads your content directly, so there is nothing to build'"
+                              class="mt-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-xs uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="py-2 pr-4 font-medium">Content</th>
+                                    <th class="py-2 pr-4 font-medium">Searchable</th>
+                                    @if ($usesIndex)
+                                        <th class="py-2 pr-4 font-medium">Index</th>
+                                        <th class="py-2 pr-4 font-medium">Items</th>
+                                        <th class="py-2 pr-4 font-medium">Size</th>
+                                        <th class="py-2 font-medium">Last change</th>
+                                    @endif
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @foreach ($searchStatus['types'] as $row)
+                                    <tr>
+                                        <td class="py-2 pr-4 font-medium text-slate-700">{{ $row['label'] }}</td>
+                                        <td class="py-2 pr-4">
+                                            <span class="{{ $row['enabled'] ? 'text-emerald-600' : 'text-slate-400' }}">{{ $row['enabled'] ? 'Yes' : 'No' }}</span>
+                                        </td>
+                                        @if ($usesIndex)
+                                            <td class="py-2 pr-4">
+                                                @if ($row['ready'])
+                                                    <span class="inline-flex items-center gap-1.5 text-emerald-600"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Ready</span>
+                                                @elseif ($row['enabled'])
+                                                    <span class="inline-flex items-center gap-1.5 text-amber-600" title="{{ $row['error'] ?? '' }}"><span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>Not built, using database</span>
+                                                @else
+                                                    <span class="text-slate-400">Not built</span>
+                                                @endif
+                                            </td>
+                                            <td class="py-2 pr-4 text-slate-600">{{ $row['documents'] ?? '—' }}</td>
+                                            <td class="py-2 pr-4 text-slate-600">{{ $row['bytes'] !== null ? \Illuminate\Support\Number::fileSize($row['bytes'], 1) : '—' }}</td>
+                                            <td class="py-2 text-slate-600">{{ ($row['updated_at'] ?? null) ? \Illuminate\Support\Carbon::createFromTimestamp($row['updated_at'])->diffForHumans() : '—' }}</td>
+                                        @endif
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if ($usesIndex)
+                        <form method="POST" action="{{ route('admin.tools.search.rebuild') }}" class="mt-5 flex flex-wrap items-center gap-3">
+                            @csrf
+                            <button class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-50">
+                                Rebuild index now
+                            </button>
+                            <p class="text-xs text-slate-500">
+                                The index updates itself as you edit. Rebuild after importing content straight into the database, or run
+                                <code class="rounded bg-slate-100 px-1">php artisan search:rebuild</code> on the server for very large sites.
+                            </p>
+                        </form>
+                    @endif
+                </x-admin.card>
+            @endif
+
             @if ($activeGroup === 'sms')
                 <x-admin.card title="Send a test SMS" class="mt-6">
                     <form method="POST" action="{{ route('admin.tools.sms.test') }}" class="flex flex-wrap gap-3">

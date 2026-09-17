@@ -1,6 +1,7 @@
 <?php
 
 use App\Cms\Modules\ModuleManager;
+use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
 use App\Cms\Themes\ThemeManager;
@@ -188,6 +189,13 @@ if (! function_exists('seo')) {
     function seo(): SeoManager
     {
         return app(SeoManager::class);
+    }
+}
+
+if (! function_exists('search')) {
+    function search(): SearchManager
+    {
+        return app(SearchManager::class);
     }
 }
 

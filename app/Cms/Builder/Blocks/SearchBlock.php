@@ -35,9 +35,15 @@ class SearchBlock extends Block
     {
         return [
             Control::select('target', 'Search in', [
+                'all' => 'Whole site',
                 'blog' => 'Blog posts',
                 'shop' => 'Products',
             ])->default('blog'),
+
+            Control::select('instant', 'Results while typing', [
+                'site' => 'Use the site setting',
+                'off' => 'Off for this box',
+            ])->default('site'),
 
             Control::text('placeholder', 'Placeholder')->default('Search...'),
             Control::toggle('show_button', 'Show search button')->default(true),
@@ -59,12 +65,22 @@ class SearchBlock extends Block
 
     public function data(array $settings, array $context = []): array
     {
-        $target = $settings['target'] ?? 'blog';
+        $type = match ($settings['target'] ?? 'blog') {
+            'shop' => 'product',
+            'all' => 'all',
+            default => 'post',
+        };
+
+        // "Whole site" needs the /search page. With it switched off, fall
+        // back to a listing that exists rather than a form that 404s.
+        if ($type === 'all' && ! \Illuminate\Support\Facades\Route::has('search')) {
+            $type = \Illuminate\Support\Facades\Route::has('shop.index') ? 'product' : 'post';
+        }
 
         return [
-            'action' => $target === 'shop'
-                ? safe_route('shop.index', [], '#')
-                : safe_route('blog.index', [], '#'),
+            'type' => $type,
+            'action' => search()->formAction($type),
+            'instant' => ($settings['instant'] ?? 'site') !== 'off',
         ];
     }
 }

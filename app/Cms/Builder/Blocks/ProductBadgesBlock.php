@@ -50,7 +50,6 @@ class ProductBadgesBlock extends ProductBlock
 
             Control::color('ring_bg', 'Icon background')
                 ->tab(Control::TAB_STYLE)
-                ->default('var(--cb-color-accent, #f59e0b)')
                 ->selector('{{WRAPPER}} .cb-badges__ring', 'background-color'),
             Control::color('icon_color', 'Icon colour')
                 ->tab(Control::TAB_STYLE)

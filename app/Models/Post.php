@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Cms\Search\Concerns\IsSearchable;
+use App\Cms\Search\Contracts\Searchable;
 use App\Models\Concerns\FlushesPublicCache;
 use App\Models\Concerns\HasLayout;
 use App\Models\Concerns\HasSeo;
@@ -15,9 +17,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-class Post extends Model
+class Post extends Model implements Searchable
 {
-    use FlushesPublicCache, HasLayout, HasSeo, HasSlug, SoftDeletes;
+    use FlushesPublicCache, HasLayout, HasSeo, HasSlug, IsSearchable, SoftDeletes;
 
     protected string $slugSource = 'title';
 
@@ -111,6 +113,43 @@ class Post extends Model
                 ->orWhere('excerpt', 'like', $like)
                 ->orWhere('content', 'like', $like);
         });
+    }
+
+    // Search --------------------------------------------------------------
+
+    public static function searchableQuery(bool $includeScheduled = false): Builder
+    {
+        return $includeScheduled
+            ? static::query()->where('status', 'published')
+            : static::query()->published();
+    }
+
+    public static function searchableColumns(): array
+    {
+        return ['title' => 5, 'excerpt' => 2, 'content' => 1];
+    }
+
+    public function searchableFields(): array
+    {
+        return [
+            'title' => [$this->title, 5],
+            'excerpt' => [$this->excerpt, 2],
+            'tags' => [$this->tags()->pluck('name')->implode(' '), 3],
+            'category' => [$this->category?->name, 2],
+            'content' => [$this->content, 1],
+        ];
+    }
+
+    public function toSearchResult(): array
+    {
+        return [
+            'title' => (string) $this->title,
+            'url' => $this->url(),
+            'excerpt' => $this->searchExcerpt($this->excerpt ?: $this->content),
+            'image' => $this->imageUrl(),
+            'meta' => $this->published_at?->format((string) setting('date_format', 'd M Y')),
+            'visible_from' => $this->published_at?->getTimestamp(),
+        ];
     }
 
     // Presentation --------------------------------------------------------

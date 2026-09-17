@@ -34,7 +34,6 @@ class ProductRatingBlock extends ProductBlock
 
             Control::color('star_color', 'Star colour')
                 ->tab(Control::TAB_STYLE)
-                ->default('#f59e0b')
                 ->selector('{{WRAPPER}} .cb-rating__stars', 'color'),
         ];
     }

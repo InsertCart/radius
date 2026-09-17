@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Cms\Firebase\FirebaseManager;
+use App\Cms\Search\SearchManager;
 use App\Cms\Sms\SmsManager;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -52,6 +53,28 @@ class ToolsController extends Controller
         activity('system.optimized', 'Cached the config, routes and views.');
 
         return back()->with('status', 'Optimised. Remember to clear the caches again before changing modules or settings that affect routing.');
+    }
+
+    /** Rebuilds the search index for every enabled content type. */
+    public function rebuildSearch(SearchManager $search): RedirectResponse
+    {
+        if ($search->engineName() === 'database') {
+            return back()->with('status', 'Database search has no index to rebuild.');
+        }
+
+        @set_time_limit(0);
+
+        try {
+            $counts = $search->rebuild();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'The search index could not be rebuilt: '.$e->getMessage());
+        }
+
+        activity('search.rebuilt', 'Rebuilt the search index.', properties: $counts);
+
+        return back()->with('status', 'Search index rebuilt: '.array_sum($counts).' item(s).');
     }
 
     public function storageLink(): RedirectResponse

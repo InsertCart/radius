@@ -34,13 +34,13 @@
             @endif
         </div>
 
-        @if ($builderType === 'product' && Route::has('admin.builder.region'))
-            {{-- This builder only designs the description. Where the price, buttons
-                 and badges go is set once for every product, in the template. --}}
+        @if ($builderType === 'product' && ! $usesBuilder)
+            {{-- The button above opens the shared product page template. The
+                 description-only editor is still here for anyone who wants it. --}}
             <p class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
-                This designs the description only. To arrange the images, price, buy buttons
-                and badges for every product, edit the
-                <a href="{{ route('admin.builder.region', 'product') }}" class="font-medium text-indigo-600 hover:underline">product page template</a>.
+                The builder designs the product page for <strong>every</strong> product, previewed
+                with this one. To design only this product's description instead,
+                <a href="{{ route('admin.builder.edit', ['type' => 'product', 'id' => $model->id, 'description' => 1]) }}" class="font-medium text-indigo-600 hover:underline">open the description builder</a>.
             </p>
         @endif
     @endif

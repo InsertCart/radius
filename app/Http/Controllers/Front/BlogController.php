@@ -14,9 +14,10 @@ class BlogController extends Controller
 {
     public function index(Request $request): View
     {
-        $posts = Post::published()
+        // Through the search manager rather than the model scope, so the
+        // engine chosen under Settings -> Search answers here too.
+        $posts = search()->constrain(Post::published(), 'post', $request->string('q')->toString(), rank: true)
             ->with(['category', 'author'])
-            ->search($request->string('q')->toString())
             ->orderByDesc('published_at')
             ->paginate((int) setting('posts_per_page', 12))
             ->withQueryString();

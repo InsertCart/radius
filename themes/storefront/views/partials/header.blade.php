@@ -127,7 +127,7 @@
         </nav>
 
         @module('shop')
-            <form class="sf-search" method="GET" action="{{ route('shop.index') }}" role="search">
+            <form class="sf-search" method="GET" action="{{ route('shop.index') }}" role="search" data-radius-search="product">
                 <label for="sf-q" class="sf-sr">Search products</label>
                 <input type="search" name="q" id="sf-q" value="{{ request('q') }}"
                        placeholder="Search by title, author or keyword" autocomplete="off">
@@ -163,11 +163,15 @@
         {{-- The search field is hidden in the masthead on small screens, so it
              gets its own row rather than disappearing entirely. --}}
         <div class="sf-head__msearch">
-            <form method="GET" action="{{ route('shop.index') }}" role="search" class="sf-search">
+            <form method="GET" action="{{ route('shop.index') }}" role="search" class="sf-search" data-radius-search="product">
                 <label for="sf-q-mobile" class="sf-sr">Search products</label>
                 <input type="search" name="q" id="sf-q-mobile" value="{{ request('q') }}" placeholder="Search the store" autocomplete="off">
                 <button type="submit" aria-label="Search">@include('theme::partials.icon', ['name' => 'search'])</button>
             </form>
         </div>
+
+        {{-- Live results for both boxes above. Styled by the --radius-search-*
+             properties in theme.css. --}}
+        @searchScripts
     @endmodule
 </header>

@@ -18,6 +18,24 @@
     display: none !important;
 }
 
+/* Browsers don't give <button> a pointer cursor by default (only links get
+   that), so admin buttons and other clickable controls show an arrow. */
+button:not(:disabled),
+input:where([type='button'], [type='submit'], [type='reset']):not(:disabled),
+a[href],
+[role='button']:not([aria-disabled='true']),
+label[for],
+select,
+summary {
+    cursor: pointer;
+}
+
+button:disabled,
+input:where([type='button'], [type='submit'], [type='reset']):disabled,
+[aria-disabled='true'] {
+    cursor: not-allowed;
+}
+
 /* Long-form content rendered from the editor. Themes can override these. */
 .prose-content {
     line-height: 1.75;
