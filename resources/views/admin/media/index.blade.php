@@ -12,6 +12,17 @@
         </div>
     @endunless
 
+    @if (cdn()->enabled() && auth()->user()->isAdmin() && modules()->enabled('cdn'))
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+            <span class="text-slate-600">
+                Files here are served through <strong class="text-slate-900">{{ cdn()->providerName() }}</strong>.
+            </span>
+            <a href="{{ route('admin.cdn.index') }}" class="font-medium text-indigo-600 hover:underline">
+                Media storage settings
+            </a>
+        </div>
+    @endif
+
     @if ($missingAlt > 0)
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
             <span class="text-slate-600">

@@ -45,6 +45,14 @@ if (! function_exists('module_enabled')) {
     }
 }
 
+if (! function_exists('cdn')) {
+    /** Decides where media files live and which address they are served from. */
+    function cdn(): \App\Cms\Cdn\CdnManager
+    {
+        return app(\App\Cms\Cdn\CdnManager::class);
+    }
+}
+
 if (! function_exists('themes')) {
     function themes(): ThemeManager
     {
@@ -178,7 +186,7 @@ if (! function_exists('media_url')) {
 
         return str_starts_with($path, 'http') || str_starts_with($path, 'data:')
             ? $path
-            : \Illuminate\Support\Facades\Storage::disk(config('cms.media.disk'))->url($path);
+            : cdn()->urlForPath($path);
     }
 }
 

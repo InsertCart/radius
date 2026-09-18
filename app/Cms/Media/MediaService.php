@@ -2,6 +2,7 @@
 
 namespace App\Cms\Media;
 
+use App\Cms\Cdn\CdnManager;
 use App\Models\Media;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +22,12 @@ use Intervention\Image\ImageManager;
  * Image processing is optional. Without the GD extension uploads still work -
  * files are stored as they arrive, just without thumbnails - rather than the
  * whole media library failing because one extension is missing.
+ *
+ * Every upload is written to this server first and thumbnailed here, even when
+ * a storage provider is configured. Resizing needs a real local path, and four
+ * round trips to a bucket per upload would make the library painful to use.
+ * Offloading happens once, at the end, when there is something finished to
+ * send.
  */
 class MediaService
 {
@@ -28,8 +35,12 @@ class MediaService
 
     private ?bool $gdAvailable = null;
 
-    public function __construct(private UploadGuard $guard) {}
+    public function __construct(
+        private UploadGuard $guard,
+        private CdnManager $cdn,
+    ) {}
 
+    /** The disk uploads are written to before anything is offloaded. */
     public function disk(): string
     {
         return config('cms.media.disk', 'public');
@@ -96,7 +107,55 @@ class MediaService
 
         $media->save();
 
+        $this->offload($media);
+
         return $media;
+    }
+
+    /**
+     * Pushes a finished upload to the storage provider, and drops this
+     * server's copy if the owner chose not to keep one.
+     *
+     * A failure here is logged and swallowed. The file is already stored and
+     * already serveable from this server, so a bucket having a bad afternoon
+     * should not turn a successful upload into an error message - the sync
+     * screen will pick it up later.
+     */
+    private function offload(Media $media): void
+    {
+        if (! $this->cdn->offloads()) {
+            return;
+        }
+
+        $disk = Storage::disk($this->disk());
+
+        try {
+            foreach ($media->paths() as $path) {
+                $this->cdn->push($path);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[media] Could not send an upload to the storage provider; it stays on this server.', [
+                'path' => $media->path,
+                'error' => $e->getMessage(),
+            ]);
+
+            return;
+        }
+
+        $media->on_cdn = true;
+
+        if (! $this->cdn->keepsLocalCopy()) {
+            foreach ($media->paths() as $path) {
+                $disk->delete($path);
+            }
+
+            $media->has_local_copy = false;
+        }
+
+        $media->save();
+
+        // A path that was pending a moment ago no longer is.
+        $this->cdn->flushProgress();
     }
 
     /**

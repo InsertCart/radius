@@ -7,6 +7,7 @@ use App\Cms\Builder\LayoutRenderer;
 use App\Cms\Builder\RegionManager;
 use App\Cms\Builder\StyleCompiler;
 use App\Cms\Builder\StyleRegistry;
+use App\Cms\Cdn\CdnManager;
 use App\Cms\Firebase\FirebaseManager;
 use App\Cms\Mail\MailConfigurator;
 use App\Cms\Modules\ModuleManager;
@@ -46,6 +47,7 @@ class CmsServiceProvider extends ServiceProvider
             SmsManager::class,
             FirebaseManager::class,
             SearchManager::class,
+            CdnManager::class,
 
             // Visual builder.
             BlockRegistry::class,

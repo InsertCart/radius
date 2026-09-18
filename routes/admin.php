@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BuilderController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CdnController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\ContactController;
 use App\Http\Controllers\Admin\CouponController;
@@ -105,6 +106,26 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             Route::patch('media/{medium}', [MediaController::class, 'update'])->name('media.update');
             Route::delete('media/{medium}', [MediaController::class, 'destroy'])->name('media.destroy');
             Route::get('media/browse', [MediaController::class, 'browse'])->name('media.browse');
+
+            // Media storage --------------------------------------------
+            // Bucket keys are credentials, and pressing the wrong button here
+            // moves every file on the site, so this is an owner's screen.
+            Route::middleware(['module:cdn', 'staff:admin'])->prefix('cdn')->name('cdn.')->group(function () {
+                Route::get('/', [CdnController::class, 'index'])->name('index');
+
+                // The batch actions are declared before {provider} so neither
+                // "push" nor "pull" can be read as a provider slug.
+                Route::post('push', [CdnController::class, 'push'])->name('push');
+                Route::post('pull', [CdnController::class, 'pull'])->name('pull');
+
+                Route::get('{provider}', [CdnController::class, 'edit'])->name('edit');
+                Route::put('{provider}', [CdnController::class, 'update'])->name('update');
+                Route::post('{provider}/test', [CdnController::class, 'test'])
+                    ->middleware('throttle:20,1')
+                    ->name('test');
+                Route::post('{provider}/enable', [CdnController::class, 'enable'])->name('enable');
+                Route::post('{provider}/disable', [CdnController::class, 'disable'])->name('disable');
+            });
 
             // Users -----------------------------------------------------
             // Admin-only without exception: anything that can create an
@@ -218,6 +239,8 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::post('updates/check', [UpdateController::class, 'check'])->name('updates.check');
                 Route::post('updates/apply', [UpdateController::class, 'apply'])->name('updates.apply');
                 Route::get('updates/finalize', [UpdateController::class, 'finalize'])->name('updates.finalize');
+                // Catches up a database left behind by files copied in by hand.
+                Route::post('updates/finish', [UpdateController::class, 'finish'])->name('updates.finish');
                 Route::post('updates/rollback', [UpdateController::class, 'rollback'])->name('updates.rollback');
                 Route::post('updates/backup', [UpdateController::class, 'backupNow'])->name('updates.backup');
                 Route::get('updates/backups/{name}', [UpdateController::class, 'downloadBackup'])->name('updates.backups.download');

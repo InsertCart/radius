@@ -10,7 +10,7 @@ return [
     */
 
     'name' => 'Radius',
-    'version' => '1.2.3',
+    'version' => '1.2.4',
 
     /*
     |--------------------------------------------------------------------------
@@ -142,6 +142,13 @@ return [
             'description' => 'Uploads, thumbnails and file management.',
             'icon' => 'photo',
             'core' => true,
+        ],
+        'cdn' => [
+            'name' => 'Media storage & CDN',
+            'description' => 'Serve uploads from S3, Spaces, R2, Google Cloud, FTP or a pull CDN.',
+            'icon' => 'cloud',
+            'core' => false,
+            'requires' => ['media'],
         ],
         'themes' => [
             'name' => 'Themes',

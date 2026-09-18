@@ -126,6 +126,7 @@
         </header>
 
         <main class="p-4 sm:p-6">
+            <x-admin.finish-update />
             <x-admin.alerts />
             @yield('content')
         </main>

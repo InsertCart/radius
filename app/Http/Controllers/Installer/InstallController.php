@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Installer;
 
+use App\Cms\Cdn\CdnManager;
 use App\Cms\Modules\ModuleManager;
 use App\Cms\Payments\PaymentManager;
 use App\Cms\Settings\SettingsRepository;
@@ -35,6 +36,7 @@ class InstallController extends Controller
         private ModuleManager $modules,
         private ThemeManager $themes,
         private PaymentManager $payments,
+        private CdnManager $cdn,
     ) {}
 
     // Step 1: requirements ------------------------------------------------
@@ -354,6 +356,7 @@ class InstallController extends Controller
         $this->modules->sync();
         $this->payments->sync();
         $this->themes->sync();
+        $this->cdn->sync();
 
         $this->settings->seedMissingDefaults();
 

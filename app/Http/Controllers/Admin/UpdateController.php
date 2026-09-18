@@ -6,6 +6,7 @@ use App\Cms\Updates\BackupService;
 use App\Cms\Updates\UpdateApplier;
 use App\Cms\Updates\UpdateChecker;
 use App\Cms\Updates\UpdateException;
+use App\Cms\Updates\UpgradeState;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -165,6 +166,47 @@ class UpdateController extends Controller
             'steps' => $steps,
             'skipped' => $pending['skipped'] ?? [],
         ]);
+    }
+
+    /**
+     * Finish an update whose files arrived without the updater: unzipped over
+     * the site with FTP or a hosting file manager, which runs no migrations.
+     *
+     * Deliberately the same steps as finalize(), minus the bookkeeping for a
+     * pending update there is none of. The database is behind the code either
+     * way, and catching it up does not depend on how the files got there.
+     */
+    public function finish(UpgradeState $state): RedirectResponse
+    {
+        if (! $state->needsFinishing()) {
+            return redirect()->route('admin.updates.index')->with('status', 'The database is already up to date.');
+        }
+
+        $from = $state->recordedVersion() ?? 'unknown';
+
+        // A release can add or change tables, and this is the last moment at
+        // which the previous shape of the data still exists.
+        try {
+            $this->backups->dumpDatabase('before-'.cms_version());
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        try {
+            $this->applier->finalize();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'The update could not be finished: '.$e->getMessage()
+                .' A database backup was taken just before it started.');
+        }
+
+        $this->applier->stampVersion($from, cms_version());
+
+        activity('update.finished', "Finished an update from version {$from} to ".cms_version().' that was installed by hand.');
+
+        return redirect()->route('admin.updates.index')
+            ->with('status', 'Database migrated and caches cleared. This site is now fully on version '.cms_version().'.');
     }
 
     public function rollback(Request $request): RedirectResponse

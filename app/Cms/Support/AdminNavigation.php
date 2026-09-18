@@ -146,6 +146,12 @@ class AdminNavigation
         // Modules, settings and diagnostics are admin-only; editors stop at
         // content.
         if ($user->isAdmin()) {
+            // Bucket credentials, and buttons that move every file on the
+            // site. Follows the route: admin-only, and gone with the module.
+            if (modules()->enabled('cdn')) {
+                $links[] = $this->link('Media storage', 'admin.cdn.index', 'admin.cdn.*', null, 'cdn');
+            }
+
             $links[] = $this->link('Modules', 'admin.modules.index', 'admin.modules.*', null, 'modules');
             $links[] = $this->link('Settings', 'admin.settings.edit', 'admin.settings.*', null, 'settings');
             $links[] = $this->link('System', 'admin.system.index', 'admin.system.*', null, 'system');

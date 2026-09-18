@@ -177,8 +177,13 @@ abstract class Block
         ], $this->data($settings, $context)))->render();
     }
 
-    /** Shown in the editor when a block is placed but not yet filled in. */
-    protected function placeholder(string $message, array $context = []): string
+    /**
+     * Shown in the editor when a block is placed but not yet filled in.
+     *
+     * Public because the block views call it: a Blade view is compiled to a
+     * closure outside the class, so a protected method is unreachable there.
+     */
+    public function placeholder(string $message, array $context = []): string
     {
         if (! ($context['editing'] ?? false)) {
             return '';

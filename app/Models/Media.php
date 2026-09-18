@@ -13,6 +13,18 @@ class Media extends Model
     protected $fillable = [
         'name', 'file_name', 'mime_type', 'extension', 'size', 'disk', 'path',
         'width', 'height', 'alt', 'title', 'conversions', 'uploaded_by',
+        'on_cdn', 'has_local_copy',
+    ];
+
+    /**
+     * Matches the column defaults, so a record that has not been reloaded
+     * still answers honestly about where its file is. Without these a fresh
+     * upload reports null for both, which reads as "unknown" everywhere that
+     * has to choose an address.
+     */
+    protected $attributes = [
+        'on_cdn' => false,
+        'has_local_copy' => true,
     ];
 
     protected function casts(): array
@@ -22,6 +34,8 @@ class Media extends Model
             'size' => 'integer',
             'width' => 'integer',
             'height' => 'integer',
+            'on_cdn' => 'boolean',
+            'has_local_copy' => 'boolean',
         ];
     }
 
@@ -32,9 +46,14 @@ class Media extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
+    /**
+     * Where this file is served from - this server, or whichever storage
+     * provider or CDN the owner configured. The manager decides; a file that
+     * has not reached the provider yet is still served from here.
+     */
     public function getUrlAttribute(): string
     {
-        return Storage::disk($this->disk)->url($this->path);
+        return cdn()->urlForMedia($this);
     }
 
     /**
@@ -43,9 +62,15 @@ class Media extends Model
      */
     public function conversionUrl(string $size = 'thumb'): string
     {
-        $path = $this->conversions[$size] ?? null;
+        return isset($this->conversions[$size])
+            ? cdn()->urlForMedia($this, $size)
+            : $this->url;
+    }
 
-        return $path ? Storage::disk($this->disk)->url($path) : $this->url;
+    /** Every path this record owns: the original and each generated size. */
+    public function paths(): array
+    {
+        return array_values(array_merge([$this->path], array_values($this->conversions ?? [])));
     }
 
     public function isImage(): bool
@@ -65,14 +90,22 @@ class Media extends Model
         return round($bytes, $i === 0 ? 0 : 1).' '.$units[$i];
     }
 
-    /** Removes the original and every generated size from disk. */
+    /**
+     * Removes the original and every generated size, from this server and
+     * from the storage provider. Both are attempted whatever the flags say:
+     * a stale flag should not leave a file behind that the owner asked to
+     * be gone.
+     */
     public function deleteFiles(): void
     {
         $disk = Storage::disk($this->disk);
-        $disk->delete($this->path);
 
-        foreach ($this->conversions ?? [] as $path) {
+        foreach ($this->paths() as $path) {
             $disk->delete($path);
+
+            if ($this->on_cdn) {
+                cdn()->forget($path);
+            }
         }
     }
 }

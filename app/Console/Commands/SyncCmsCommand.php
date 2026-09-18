@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Cms\Cdn\CdnManager;
 use App\Cms\Modules\ModuleManager;
 use App\Cms\Payments\PaymentManager;
 use App\Cms\Settings\SettingsRepository;
@@ -25,6 +26,7 @@ class SyncCmsCommand extends Command
         PaymentManager $payments,
         ThemeManager $themes,
         SettingsRepository $settings,
+        CdnManager $cdn,
     ): int {
         if ($this->option('themes')) {
             $count = $themes->sync();
@@ -38,6 +40,9 @@ class SyncCmsCommand extends Command
 
         $this->info('Syncing payment gateways...');
         $this->line('  '.$payments->sync().' new gateway(s) registered.');
+
+        $this->info('Syncing media storage providers...');
+        $this->line('  '.$cdn->sync().' new provider(s) registered.');
 
         $this->info('Syncing themes...');
         $this->line('  '.$themes->sync().' theme(s) found.');

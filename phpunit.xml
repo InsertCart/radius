@@ -36,6 +36,10 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <!-- The update and theme directory servers are never contacted from a
+             test run, whatever the developer's .env happens to say. -->
+        <env name="CMS_UPDATE_URL" value=""/>
+        <env name="CMS_MARKETPLACE_ENABLED" value="false"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

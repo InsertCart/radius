@@ -22,6 +22,7 @@ class CmsUpdateCommand extends Command
 {
     protected $signature = 'cms:update
         {--check : Only report whether an update is available}
+        {--finish : Migrate and clear caches for a release that was copied in by hand}
         {--force : Skip the confirmation prompt}
         {--no-backup : Do not back up the database first}
         {--overwrite-edited : Replace shipped files that were edited on this site}';
@@ -30,6 +31,13 @@ class CmsUpdateCommand extends Command
 
     public function handle(UpdateChecker $checker, UpdateApplier $applier): int
     {
+        // Before the update-server check: a release unzipped over the site
+        // still has to be finished on a site that never uses the update
+        // server, or cannot reach it.
+        if ($this->option('finish')) {
+            return $this->finish($applier, app(\App\Cms\Updates\UpgradeState::class));
+        }
+
         if (! $checker->enabled()) {
             $this->error('Updates are switched off, or CMS_UPDATE_URL is not set in .env.');
 
@@ -134,6 +142,36 @@ class CmsUpdateCommand extends Command
 
         $this->newLine();
         $this->info("Updated to version {$manifest->version}.");
+
+        return self::SUCCESS;
+    }
+
+    /** Same steps the Finish the update button runs in the admin panel. */
+    private function finish(UpdateApplier $applier, \App\Cms\Updates\UpgradeState $state): int
+    {
+        if (! $state->needsFinishing()) {
+            $this->info('Nothing to finish: the database already matches version '.cms_version().'.');
+
+            return self::SUCCESS;
+        }
+
+        $from = $state->recordedVersion() ?? 'unknown';
+
+        $this->line("Finishing the update from <info>{$from}</info> to <info>".cms_version().'</info>.');
+
+        try {
+            foreach ($applier->finalize() as $label => $detail) {
+                $this->line("  {$label}: ".str_replace("\n", ' ', $detail));
+            }
+        } catch (\Throwable $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $applier->stampVersion($from, cms_version());
+
+        $this->info('Done. This site is now fully on version '.cms_version().'.');
 
         return self::SUCCESS;
     }
