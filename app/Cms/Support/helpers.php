@@ -464,3 +464,41 @@ if (! function_exists('terms_url')) {
         return \App\Models\Page::published()->where('slug', $slug)->first()?->url();
     }
 }
+
+if (! function_exists('country_name')) {
+    /**
+     * The readable name for an ISO country code. Addresses saved before the
+     * country list existed hold free text; those are handed back unchanged.
+     */
+    function country_name(?string $code): string
+    {
+        return \App\Cms\Shop\Countries::name($code);
+    }
+}
+
+if (! function_exists('format_address')) {
+    /**
+     * An address written on one line, with the country spelled out.
+     *
+     * Orders store the address as JSON, so every screen that shows one - the
+     * admin order page, the invoice, the customer's own order history - goes
+     * through here rather than imploding the raw array and printing "IN".
+     */
+    function format_address(array|string|null $address, string $separator = ', '): string
+    {
+        if (blank($address)) {
+            return '';
+        }
+
+        if (is_string($address)) {
+            return $address;
+        }
+
+        $parts = collect($address)
+            ->map(fn ($value, $key) => $key === 'country' ? country_name((string) $value) : $value)
+            ->filter(fn ($value) => filled($value) && ! is_array($value))
+            ->map(fn ($value) => trim((string) $value));
+
+        return $parts->unique()->implode($separator);
+    }
+}

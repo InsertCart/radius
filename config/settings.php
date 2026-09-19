@@ -206,7 +206,18 @@ return [
             'shop_tax_inclusive' => ['type' => 'boolean', 'label' => 'Prices already include tax', 'default' => false],
             'shop_shipping_flat' => ['type' => 'number', 'label' => 'Flat shipping fee', 'default' => 0, 'rules' => 'numeric|min:0'],
             'shop_free_shipping_over' => ['type' => 'number', 'label' => 'Free shipping over', 'default' => 0, 'rules' => 'numeric|min:0', 'help' => 'Set to 0 to disable free shipping.'],
+            'shop_selling_scope' => ['type' => 'select', 'label' => 'Sell to', 'default' => 'world', 'options' => [
+                'world' => 'The whole world',
+                'selected' => 'Only the countries I choose',
+            ]],
+            'shop_selling_countries' => ['type' => 'multiselect', 'label' => 'Countries you sell to',
+                'options' => 'countries', 'default' => [],
+                'depends' => ['shop_selling_scope' => 'selected'],
+                'help' => 'Checkout only offers these countries, and refuses an order billed or delivered anywhere else. Leave every box unticked to keep selling worldwide.'],
+
             'shop_guest_checkout' => ['type' => 'boolean', 'label' => 'Allow guest checkout', 'default' => true],
+            'shop_save_addresses' => ['type' => 'boolean', 'label' => 'Remember customer addresses', 'default' => true,
+                'help' => 'Fills checkout in from the address a signed-in customer used last time, and lets them keep an address book in their account.'],
             'shop_stock_management' => ['type' => 'boolean', 'label' => 'Track stock levels', 'default' => true],
             'shop_low_stock_threshold' => ['type' => 'number', 'label' => 'Low stock threshold', 'default' => 5],
             'shop_order_prefix' => ['type' => 'text', 'label' => 'Order number prefix', 'default' => 'ORD-'],

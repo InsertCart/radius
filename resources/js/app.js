@@ -159,6 +159,69 @@ Alpine.data('repeater', (initial = []) => ({
 }));
 
 /**
+ * Backing store for <x-form.multiselect>: a dropdown of checkboxes with a
+ * search box over them, for choosing from a list too long to scroll (the
+ * countries a shop sells to, for instance).
+ *
+ * Only the ticked values are rendered as hidden inputs, so an untouched
+ * dropdown posts nothing and the server reads that as an empty list.
+ */
+Alpine.data('multiSelect', (options = [], initial = []) => ({
+    open: false,
+    search: '',
+    options,
+    selected: initial.map((value) => String(value)),
+
+    get filtered() {
+        const term = this.search.trim().toLowerCase();
+
+        if (!term) {
+            return this.options;
+        }
+
+        return this.options.filter(
+            (option) =>
+                option.label.toLowerCase().includes(term) ||
+                option.value.toLowerCase().includes(term),
+        );
+    },
+
+    get summary() {
+        if (!this.selected.length) {
+            return null;
+        }
+
+        // Past a handful, the names stop being readable and a count is kinder.
+        const names = this.selected
+            .map((value) => this.options.find((option) => option.value === value)?.label)
+            .filter(Boolean);
+
+        return names.length > 4 ? `${names.length} selected` : names.join(', ');
+    },
+
+    isSelected(value) {
+        return this.selected.includes(value);
+    },
+
+    toggle(value) {
+        this.selected = this.isSelected(value)
+            ? this.selected.filter((existing) => existing !== value)
+            : [...this.selected, value];
+    },
+
+    /** Applies to what the search is currently showing, not the whole list. */
+    selectVisible() {
+        const visible = this.filtered.map((option) => option.value);
+
+        this.selected = [...new Set([...this.selected, ...visible])];
+    },
+
+    clear() {
+        this.selected = [];
+    },
+}));
+
+/**
  * Rich text editing for the content forms.
  *
  * Mounted after Alpine so any textarea inside an Alpine-controlled panel is

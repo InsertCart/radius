@@ -87,6 +87,11 @@ class Page extends Model implements Searchable
         ];
     }
 
+    public function isPublished(): bool
+    {
+        return $this->status === 'published';
+    }
+
     public function url(): string
     {
         return $this->is_homepage ? url('/') : safe_route('page.show', $this->slug);

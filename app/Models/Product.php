@@ -235,6 +235,11 @@ class Product extends Model implements Searchable
         return $this->getRawOriginal('description');
     }
 
+    public function isPublished(): bool
+    {
+        return $this->status === 'published';
+    }
+
     public function url(): string
     {
         return safe_route('shop.show', $this->slug);

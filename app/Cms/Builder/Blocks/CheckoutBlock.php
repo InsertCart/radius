@@ -4,7 +4,9 @@ namespace App\Cms\Builder\Blocks;
 
 use App\Cms\Builder\Control;
 use App\Cms\Payments\PaymentManager;
+use App\Cms\Shop\AddressBook;
 use App\Cms\Shop\CartService;
+use App\Cms\Shop\Countries;
 
 /**
  * The working checkout: contact details, addresses, payment method and the
@@ -74,7 +76,7 @@ class CheckoutBlock extends Block
 
             Control::dimensions('field_radius', 'Field corners')
                 ->tab(Control::TAB_STYLE)
-                ->selector('{{WRAPPER}} .cb-checkout input, {{WRAPPER}} .cb-checkout textarea', 'border-radius'),
+                ->selector('{{WRAPPER}} .cb-checkout input, {{WRAPPER}} .cb-checkout select, {{WRAPPER}} .cb-checkout textarea', 'border-radius'),
 
             Control::dimensions('summary_radius', 'Summary corners')
                 ->tab(Control::TAB_STYLE)
@@ -85,13 +87,20 @@ class CheckoutBlock extends Block
     public function data(array $settings, array $context = []): array
     {
         $cart = app(CartService::class);
+        $user = auth()->user();
+        $remembers = (bool) setting('shop_save_addresses', true);
 
         return [
             'summary' => $cart->summary(),
             'items' => $cart->cart()->items,
             'gateways' => app(PaymentManager::class)->availableFor(),
-            'user' => auth()->user(),
+            'user' => $user,
             'isEmpty' => $cart->isEmpty(),
+            // The same list and prefill the theme's own checkout uses, so a
+            // builder-made checkout page behaves identically.
+            'countries' => Countries::selling(),
+            'billing' => $remembers ? app(AddressBook::class)->prefill($user, 'billing') : [],
+            'canSaveAddress' => $remembers && $user !== null && $user->addresses()->exists(),
         ];
     }
 }

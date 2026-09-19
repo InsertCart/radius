@@ -44,6 +44,12 @@
         </x-form.field>
         @break
 
+    @case('multiselect')
+        <x-form.field :label="$label" :name="$key" :help="$help">
+            <x-form.multiselect :name="$key" :options="$options" :value="(array) $value" />
+        </x-form.field>
+        @break
+
     @case('image')
         <x-form.media :name="$key" :label="$label" :value="$value" />
         @break

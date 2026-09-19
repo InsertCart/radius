@@ -219,6 +219,8 @@ class SettingsRepository
         return match ($setting->type) {
             'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
             'number' => is_numeric($value) ? $value + 0 : 0,
+            // Stored as JSON by set(); handed back as the list the caller put in.
+            'multiselect' => is_array($decoded = json_decode((string) $value, true)) ? $decoded : [],
             default => $value,
         };
     }

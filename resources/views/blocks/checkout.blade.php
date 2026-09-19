@@ -27,7 +27,7 @@
                         </label>
                         <label>
                             <span>Phone</span>
-                            <input type="text" name="phone" value="{{ old('phone', $user?->phone) }}" @disabled($editing)>
+                            <input type="text" name="phone" value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}" @disabled($editing)>
                         </label>
                     </div>
                 </section>
@@ -37,29 +37,42 @@
                     <div class="cb-checkout__row">
                         <label class="cb-checkout__wide">
                             <span>Full name</span>
-                            <input type="text" name="billing[name]" required value="{{ old('billing.name', $user?->name) }}" @disabled($editing)>
+                            <input type="text" name="billing[name]" required value="{{ old('billing.name', $billing['name'] ?? $user?->name) }}" @disabled($editing)>
                         </label>
                         <label class="cb-checkout__wide">
                             <span>Address</span>
-                            <input type="text" name="billing[line1]" required value="{{ old('billing.line1') }}" @disabled($editing)>
+                            <input type="text" name="billing[line1]" required value="{{ old('billing.line1', $billing['line1'] ?? null) }}" @disabled($editing)>
                         </label>
                         <label>
                             <span>City</span>
-                            <input type="text" name="billing[city]" required value="{{ old('billing.city') }}" @disabled($editing)>
+                            <input type="text" name="billing[city]" required value="{{ old('billing.city', $billing['city'] ?? null) }}" @disabled($editing)>
                         </label>
                         <label>
                             <span>State / region</span>
-                            <input type="text" name="billing[state]" value="{{ old('billing.state') }}" @disabled($editing)>
+                            <input type="text" name="billing[state]" value="{{ old('billing.state', $billing['state'] ?? null) }}" @disabled($editing)>
                         </label>
                         <label>
                             <span>Postcode</span>
-                            <input type="text" name="billing[postcode]" value="{{ old('billing.postcode') }}" @disabled($editing)>
+                            <input type="text" name="billing[postcode]" value="{{ old('billing.postcode', $billing['postcode'] ?? null) }}" @disabled($editing)>
                         </label>
                         <label>
                             <span>Country</span>
-                            <input type="text" name="billing[country]" required value="{{ old('billing.country') }}" @disabled($editing)>
+                            @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
+                            <select name="billing[country]" required @disabled($editing)>
+                                <option value="">Choose a country</option>
+                                @foreach ($countries as $code => $countryName)
+                                    <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
+                                @endforeach
+                            </select>
                         </label>
                     </div>
+
+                    @if ($canSaveAddress)
+                        <label class="cb-checkout__check">
+                            <input type="checkbox" name="save_address" value="1" @disabled($editing)>
+                            <span>Save this address to my account</span>
+                        </label>
+                    @endif
                 </section>
 
                 @if ($summary['requires_shipping'])

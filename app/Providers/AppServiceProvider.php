@@ -43,6 +43,32 @@ class AppServiceProvider extends ServiceProvider
      * falls back to APP_URL, so pinning it there changes nothing except that
      * queued mail and a web request now agree on one address.
      */
+    /**
+     * Drop a trailing /public from APP_URL when the site is already answering
+     * without it.
+     *
+     * Because every generated URL is pinned to APP_URL, an APP_URL ending in
+     * /public puts that segment into every link, asset, canonical tag and
+     * og:url - while the .htaccess upstairs serves the same pages without it.
+     * Two addresses for one page, with the page itself naming the longer one as
+     * canonical: the worst of both.
+     *
+     * The shorter form is only adopted when this very request proves it works,
+     * by having arrived on it. A site genuinely reachable only at /public - a
+     * server with no rewrite rules - keeps receiving requests on that address,
+     * so nothing is stripped and its links go on working.
+     */
+    private function withoutPublicSuffix(string $url, ?string $requestRoot): string
+    {
+        $canonical = rtrim((string) preg_replace('#/public/?$#', '', $url), '/');
+
+        if ($canonical === rtrim($url, '/') || $canonical === '' || $requestRoot === null) {
+            return $url;
+        }
+
+        return $requestRoot === $canonical ? $canonical : $url;
+    }
+
     private function pinGeneratedUrlsToAppUrl(): void
     {
         $url = trim((string) config('app.url'));
@@ -50,6 +76,13 @@ class AppServiceProvider extends ServiceProvider
         if ($url === '' || ! filter_var($url, FILTER_VALIDATE_URL)) {
             return;
         }
+
+        // The request's own root is what proves the shorter address works.
+        // A console run has no request, so nothing is assumed there.
+        $url = $this->withoutPublicSuffix(
+            $url,
+            app()->runningInConsole() ? null : rtrim(request()->root(), '/'),
+        );
 
         URL::forceRootUrl($url);
 

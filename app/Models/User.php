@@ -59,6 +59,26 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Order::class);
     }
 
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class)->inPickOrder();
+    }
+
+    /**
+     * The address checkout should fill itself in with, if there is one. The
+     * flagged default wins; failing that, whichever was added most recently,
+     * so a customer with one address never has to type it a second time.
+     */
+    public function defaultAddress(string $kind = 'billing'): ?Address
+    {
+        $column = $kind === 'shipping' ? 'is_default_shipping' : 'is_default_billing';
+
+        return $this->hasMany(Address::class)
+            ->orderByDesc($column)
+            ->orderByDesc('id')
+            ->first();
+    }
+
     public function pushDevices(): HasMany
     {
         return $this->hasMany(PushDevice::class);

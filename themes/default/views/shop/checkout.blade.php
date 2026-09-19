@@ -12,7 +12,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('checkout.store') }}" x-data="{ shipToDifferent: false }">
+        <form method="POST" action="{{ route('checkout.store') }}">
             @csrf
 
             <div class="grid gap-10 lg:grid-cols-3">
@@ -28,7 +28,8 @@
                             </div>
                             <div>
                                 <label for="phone" class="mb-1 block text-sm font-medium text-slate-700">Phone</label>
-                                <input type="text" name="phone" id="phone" value="{{ old('phone', $user?->phone) }}"
+                                <input type="text" name="phone" id="phone"
+                                       value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                         </div>
@@ -43,73 +44,127 @@
 
                     <section>
                         <h2 class="mb-4 text-lg font-semibold text-slate-900">Billing address</h2>
+
+                        @if ($savedAddresses->count() > 1)
+                            {{-- Picking another saved address reloads checkout
+                                 with the fields already filled in. It posts
+                                 through the GET form at the foot of the page,
+                                 because forms cannot be nested. --}}
+                            <div class="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm">
+                                <label for="saved-address" class="text-slate-600">Use a saved address</label>
+                                <select id="saved-address" name="address" form="pick-address"
+                                        class="max-w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm">
+                                    @foreach ($savedAddresses as $saved)
+                                        <option value="{{ $saved->id }}" @selected($chosenAddressId === $saved->id)>
+                                            {{ $saved->title() }} - {{ $saved->singleLine() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" form="pick-address"
+                                        class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-medium hover:bg-slate-100">
+                                    Use this
+                                </button>
+                            </div>
+                        @endif
+
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div class="sm:col-span-2">
                                 <label class="mb-1 block text-sm font-medium text-slate-700">Full name</label>
-                                <input type="text" name="billing[name]" required value="{{ old('billing.name', $user?->name) }}"
+                                <input type="text" name="billing[name]" required autocomplete="name"
+                                       value="{{ old('billing.name', $billing['name'] ?? $user?->name) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                             <div class="sm:col-span-2">
                                 <label class="mb-1 block text-sm font-medium text-slate-700">Address</label>
-                                <input type="text" name="billing[line1]" required value="{{ old('billing.line1') }}"
+                                <input type="text" name="billing[line1]" required autocomplete="address-line1"
+                                       value="{{ old('billing.line1', $billing['line1'] ?? null) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                             <div class="sm:col-span-2">
                                 <input type="text" name="billing[line2]" placeholder="Apartment, suite (optional)"
-                                       value="{{ old('billing.line2') }}"
+                                       autocomplete="address-line2"
+                                       value="{{ old('billing.line2', $billing['line2'] ?? null) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">City</label>
-                                <input type="text" name="billing[city]" required value="{{ old('billing.city') }}"
+                                <input type="text" name="billing[city]" required autocomplete="address-level2"
+                                       value="{{ old('billing.city', $billing['city'] ?? null) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">State / region</label>
-                                <input type="text" name="billing[state]" value="{{ old('billing.state') }}"
+                                <input type="text" name="billing[state]" autocomplete="address-level1"
+                                       value="{{ old('billing.state', $billing['state'] ?? null) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">Postcode</label>
-                                <input type="text" name="billing[postcode]" value="{{ old('billing.postcode') }}"
+                                <input type="text" name="billing[postcode]" autocomplete="postal-code"
+                                       value="{{ old('billing.postcode', $billing['postcode'] ?? null) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
-                                <input type="text" name="billing[country]" required value="{{ old('billing.country') }}"
-                                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
+                                <select name="billing[country]" required autocomplete="country"
+                                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                                    <option value="">Choose a country</option>
+                                    @foreach ($countries as $code => $countryName)
+                                        <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
+
+                        @if ($canSaveAddress && $savedAddresses->isNotEmpty())
+                            <label class="mt-4 flex items-center gap-2 text-sm text-slate-600">
+                                <input type="checkbox" name="save_address" value="1" class="h-4 w-4 rounded border-slate-300">
+                                Save this address to my account
+                            </label>
+                        @endif
                     </section>
 
                     @if ($summary['requires_shipping'])
-                        <section>
-                            <label class="flex items-center gap-2 text-sm text-slate-700">
-                                <input type="checkbox" name="ship_to_different" value="1" x-model="shipToDifferent"
-                                       class="h-4 w-4 rounded border-slate-300">
+                        <section class="flex flex-wrap items-center">
+                            {{-- The checkbox is the peer that opens the panel
+                                 below it, so this works without any script. --}}
+                            <input type="checkbox" name="ship_to_different" value="1" id="ship-elsewhere"
+                                   @checked(old('ship_to_different'))
+                                   class="peer h-4 w-4 rounded border-slate-300">
+                            <label for="ship-elsewhere" class="ml-2 cursor-pointer text-sm text-slate-700">
                                 Ship to a different address
                             </label>
 
-                            <div x-show="shipToDifferent" x-cloak class="mt-4 grid gap-4 sm:grid-cols-2">
+                            <div class="mt-4 hidden w-full gap-4 sm:grid-cols-2 peer-checked:grid">
                                 <div class="sm:col-span-2">
                                     <label class="mb-1 block text-sm font-medium text-slate-700">Full name</label>
-                                    <input type="text" name="shipping[name]" value="{{ old('shipping.name') }}"
+                                    <input type="text" name="shipping[name]"
+                                           value="{{ old('shipping.name', $shipping['name'] ?? null) }}"
                                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                                 </div>
                                 <div class="sm:col-span-2">
                                     <label class="mb-1 block text-sm font-medium text-slate-700">Address</label>
-                                    <input type="text" name="shipping[line1]" value="{{ old('shipping.line1') }}"
+                                    <input type="text" name="shipping[line1]"
+                                           value="{{ old('shipping.line1', $shipping['line1'] ?? null) }}"
                                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-sm font-medium text-slate-700">City</label>
-                                    <input type="text" name="shipping[city]" value="{{ old('shipping.city') }}"
+                                    <input type="text" name="shipping[city]"
+                                           value="{{ old('shipping.city', $shipping['city'] ?? null) }}"
                                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
-                                    <input type="text" name="shipping[country]" value="{{ old('shipping.country') }}"
-                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    @php $shippingCountry = (string) old('shipping.country', $shipping['country'] ?? null); @endphp
+                                    <select name="shipping[country]"
+                                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                                        <option value="">Choose a country</option>
+                                        @foreach ($countries as $code => $countryName)
+                                            <option value="{{ $code }}" @selected($shippingCountry === (string) $code)>{{ $countryName }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                         </section>
@@ -195,6 +250,11 @@
                 </div>
             </div>
         </form>
+
+        {{-- Declared outside the checkout form, since forms cannot nest. --}}
+        @if ($savedAddresses->count() > 1)
+            <form method="GET" action="{{ route('checkout.index') }}" id="pick-address"></form>
+        @endif
     </div>
     @endregion
 @endsection

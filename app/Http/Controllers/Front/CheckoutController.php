@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Front;
 
 use App\Cms\Payments\PaymentManager;
 use App\Cms\Payments\PaymentResult;
+use App\Cms\Shop\AddressBook;
 use App\Cms\Shop\CartService;
+use App\Cms\Shop\Countries;
 use App\Cms\Shop\OrderService;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
@@ -12,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -27,9 +30,10 @@ class CheckoutController extends Controller
         private CartService $cart,
         private OrderService $orders,
         private PaymentManager $payments,
+        private AddressBook $addresses,
     ) {}
 
-    public function index(): RedirectResponse|View
+    public function index(Request $request): RedirectResponse|View
     {
         if ($this->cart->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
@@ -45,11 +49,28 @@ class CheckoutController extends Controller
 
         seo()->title('Checkout')->noindex();
 
+        $user = auth()->user();
+        $remembers = (bool) setting('shop_save_addresses', true);
+        $saved = $remembers && $user ? $user->addresses()->get() : collect();
+
+        // ?address=12 switches which saved address the form opens on. Done as
+        // a plain link rather than script, so it works on any browser - and
+        // the id is looked up inside this customer's own book.
+        $chosen = $saved->firstWhere('id', $request->integer('address'));
+
         return view(theme_view('shop.checkout', 'theme::shop.checkout'), [
             'summary' => $this->cart->summary(),
             'items' => $this->cart->cart()->items,
             'gateways' => $this->payments->availableFor(),
-            'user' => auth()->user(),
+            'user' => $user,
+            'countries' => Countries::selling(),
+            // The form opens on the address they used last rather than empty.
+            'billing' => $chosen?->toOrderArray()
+                ?? ($remembers ? $this->addresses->prefill($user, 'billing') : []),
+            'shipping' => $remembers ? $this->addresses->prefill($user, 'shipping') : [],
+            'savedAddresses' => $saved,
+            'chosenAddressId' => $chosen?->id ?? $user?->defaultAddress('billing')?->id,
+            'canSaveAddress' => $remembers && $user !== null,
         ]);
     }
 
@@ -71,15 +92,19 @@ class CheckoutController extends Controller
             'billing.city' => ['required', 'string', 'max:120'],
             'billing.state' => ['nullable', 'string', 'max:120'],
             'billing.postcode' => ['nullable', 'string', 'max:30'],
-            'billing.country' => ['required', 'string', 'max:60'],
+            'billing.country' => ['required', 'string', Rule::in(Countries::allowedCodes())],
 
             'ship_to_different' => ['nullable', 'boolean'],
             'shipping.name' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:120'],
             'shipping.line1' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:190'],
             'shipping.city' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:120'],
-            'shipping.country' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:60'],
+            'shipping.country' => ['required_if:ship_to_different,1', 'nullable', 'string', Rule::in(Countries::allowedCodes())],
 
+            'save_address' => ['nullable', 'boolean'],
             'terms' => ['accepted'],
+        ], [
+            'billing.country.in' => 'We are not able to sell to that country yet.',
+            'shipping.country.in' => 'We are not able to deliver to that country yet.',
         ]);
 
         // The gateway is checked against what is actually live, so a crafted
@@ -88,20 +113,27 @@ class CheckoutController extends Controller
             return back()->withInput()->with('error', 'That payment method is not available.');
         }
 
+        $billing = $this->addresses->normalise($validated['billing']);
+        $shipping = $request->boolean('ship_to_different')
+            ? $this->addresses->normalise($validated['shipping'])
+            : $billing;
+
         try {
             $order = $this->orders->createFromCart([
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
                 'payment_gateway' => $validated['payment_gateway'],
-                'billing_address' => $validated['billing'],
-                'shipping_address' => $request->boolean('ship_to_different')
-                    ? $validated['shipping']
-                    : $validated['billing'],
+                'billing_address' => $billing,
+                'shipping_address' => $shipping,
                 'customer_note' => $validated['customer_note'] ?? null,
             ], $request->user());
         } catch (\RuntimeException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
+
+        // Kept only once the order exists, so an address is never remembered
+        // from a checkout that failed on its way through.
+        $this->rememberAddresses($request, $billing, $shipping);
 
         // The cart is emptied here rather than after payment: the order now
         // owns the items, and leaving the cart full invites a double order.
@@ -243,6 +275,37 @@ class CheckoutController extends Controller
     }
 
     // Helpers -------------------------------------------------------------
+
+    /**
+     * Save what they just typed so the next checkout opens filled in.
+     *
+     * Guests get it in their session; signed-in customers get it in their
+     * address book. Either way it is the whole point of this feature: nobody
+     * types their own address twice.
+     */
+    private function rememberAddresses(Request $request, array $billing, array $shipping): void
+    {
+        if (! setting('shop_save_addresses', true)) {
+            return;
+        }
+
+        $user = $request->user();
+        $asked = $request->boolean('save_address');
+
+        // Checkout asks for the phone number once, above the address; saving
+        // it alongside means the courier label is complete next time too.
+        $withPhone = function (array $address) use ($request): array {
+            $address['phone'] ??= $request->input('phone');
+
+            return $address;
+        };
+
+        $this->addresses->remember($user, $withPhone($billing), 'billing', $asked);
+
+        if ($request->boolean('ship_to_different')) {
+            $this->addresses->remember($user, $withPhone($shipping), 'shipping', $asked);
+        }
+    }
 
     private function completeOrder(Order $order, PaymentResult $result): RedirectResponse
     {

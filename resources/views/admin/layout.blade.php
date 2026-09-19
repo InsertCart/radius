@@ -89,6 +89,9 @@
                 @endif
             </div>
 
+            {{-- Editors drop a contextual "View" button in here, left of View site. --}}
+            @yield('header-actions')
+
             <a href="{{ url('/') }}" target="_blank" rel="noopener"
                class="hidden rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:block">
                 View site

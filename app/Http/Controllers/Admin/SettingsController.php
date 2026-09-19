@@ -6,12 +6,14 @@ use App\Cms\Mail\MailConfigurator;
 use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
+use App\Cms\Shop\Countries;
 use App\Cms\Shop\Currencies;
 use App\Cms\Themes\ThemeManager;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -62,6 +64,13 @@ class SettingsController extends Controller
             }
 
             $rules[$key] = $this->rulesFor($field);
+
+            // Every box a multi-select can tick is known up front, so the
+            // submitted values are checked against that list rather than
+            // trusted as free text.
+            if (($field['type'] ?? 'text') === 'multiselect') {
+                $rules[$key.'.*'] = ['string', Rule::in(array_keys($this->optionsFor($field)))];
+            }
         }
 
         $validated = Validator::make($request->all(), $rules)->validate();
@@ -79,6 +88,14 @@ class SettingsController extends Controller
             // boolean has to be read from presence rather than from the array.
             if ($type === 'boolean') {
                 $values[$key] = $request->boolean($key);
+
+                continue;
+            }
+
+            // Same for a multi-select with nothing left ticked: absent means
+            // an empty list, not "leave whatever was there before".
+            if ($type === 'multiselect') {
+                $values[$key] = array_values(array_unique((array) ($validated[$key] ?? [])));
 
                 continue;
             }
@@ -156,6 +173,7 @@ class SettingsController extends Controller
         }
 
         return match ($field['type'] ?? 'text') {
+            'multiselect' => ['nullable', 'array'],
             'email' => ['nullable', 'email', 'max:190'],
             'url' => ['nullable', 'url', 'max:255'],
             'number' => ['nullable', 'numeric'],
@@ -186,12 +204,22 @@ class SettingsController extends Controller
 
             'currencies' => Currencies::options(),
 
+            'countries' => Countries::all(),
+
             'search_engines' => collect($this->search->engineNames())->mapWithKeys(fn ($name) => [$name => match ($name) {
                 'database' => 'Database (no setup, always current)',
                 'index' => 'Index (fast, no database queries)',
                 default => ucfirst($name),
             }])->all(),
         ];
+    }
+
+    /** A field's options, whether inlined or named as a shared set. */
+    private function optionsFor(array $field): array
+    {
+        $options = $field['options'] ?? [];
+
+        return is_string($options) ? ($this->optionSets()[$options] ?? []) : $options;
     }
 
     /**

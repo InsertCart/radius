@@ -1,6 +1,10 @@
 @extends('admin.layout')
 @section('title', $post->exists ? 'Edit post' : 'New post')
 
+@section('header-actions')
+    <x-admin.view-link :model="$post" />
+@endsection
+
 @section('content')
     <form method="POST"
           action="{{ $post->exists ? route('admin.posts.update', $post) : route('admin.posts.store') }}">

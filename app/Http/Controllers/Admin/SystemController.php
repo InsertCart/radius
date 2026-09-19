@@ -227,6 +227,16 @@ class SystemController extends Controller
                 .'Copy them into your server block: see nginx.conf.example in the project folder, and Security below.';
         }
 
+        // Web pages already use the short address - the request proves it
+        // works - but queued mail and scheduled jobs have no request and fall
+        // back to APP_URL, so those links still carry /public and redirect.
+        if (preg_match('#/public/?$#', (string) config('app.url'))
+            && rtrim((string) request()->root(), '/') !== rtrim((string) config('app.url'), '/')) {
+            $warnings[] = 'APP_URL in .env still ends in /public, while this site answers without it. '
+                .'Pages and sitemaps already use the short address, but links in emails do not. '
+                .'Set APP_URL to '.rtrim((string) request()->root(), '/').' to make them agree.';
+        }
+
         if (config('cms.downloads.disk') === config('cms.media.disk')) {
             $warnings[] = 'Paid downloads are set to the same disk as the media library, which is served publicly. '
                 .'Set CMS_DOWNLOADS_DISK back to "private" - otherwise anyone with the file address can download a paid product without buying it.';

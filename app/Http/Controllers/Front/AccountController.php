@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Front;
 
+use App\Cms\Shop\AddressBook;
+use App\Cms\Shop\Countries;
 use App\Cms\Shop\DownloadService;
 use App\Http\Controllers\Controller;
+use App\Models\Address;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +23,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class AccountController extends Controller
 {
-    public function __construct(private DownloadService $downloads) {}
+    public function __construct(
+        private DownloadService $downloads,
+        private AddressBook $addressBook,
+    ) {}
 
     public function dashboard(Request $request): View
     {
@@ -79,6 +85,122 @@ class AccountController extends Controller
         ])->save();
 
         return back()->with('status', 'Password changed.');
+    }
+
+    // Address book --------------------------------------------------------
+
+    public function addresses(Request $request): View
+    {
+        $this->assertAddressBookIsOn();
+
+        seo()->title('Your addresses')->noindex();
+
+        return view('theme::account.addresses', [
+            'addresses' => $request->user()->addresses()->get(),
+            'countries' => Countries::selling(),
+        ]);
+    }
+
+    public function storeAddress(Request $request): RedirectResponse
+    {
+        $this->assertAddressBookIsOn();
+
+        $validated = $request->validate($this->addressRules());
+
+        $address = $request->user()->addresses()->create(
+            $this->addressBook->normalise($validated) + ['label' => $validated['label'] ?? null]
+        );
+
+        // The first address a customer saves is the one checkout should reach
+        // for, so it becomes the default without them having to say so.
+        if ($request->boolean('make_default') || $request->user()->addresses()->count() === 1) {
+            $address->makeDefault();
+        }
+
+        return redirect()->route('account.addresses')->with('status', 'Address saved.');
+    }
+
+    public function updateAddress(Request $request, Address $address): RedirectResponse
+    {
+        $this->assertAddressBookIsOn();
+
+        $address = $this->ownAddress($request, $address);
+
+        $validated = $request->validate($this->addressRules());
+
+        $address->update(
+            $this->addressBook->normalise($validated) + ['label' => $validated['label'] ?? null]
+        );
+
+        if ($request->boolean('make_default')) {
+            $address->makeDefault();
+        }
+
+        return redirect()->route('account.addresses')->with('status', 'Address updated.');
+    }
+
+    public function makeDefaultAddress(Request $request, Address $address): RedirectResponse
+    {
+        $this->assertAddressBookIsOn();
+
+        $this->ownAddress($request, $address)->makeDefault();
+
+        return back()->with('status', 'Default address changed.');
+    }
+
+    public function destroyAddress(Request $request, Address $address): RedirectResponse
+    {
+        $this->assertAddressBookIsOn();
+
+        $address = $this->ownAddress($request, $address);
+        $wasDefault = $address->is_default_billing || $address->is_default_shipping;
+
+        $address->delete();
+
+        // Deleting the default would otherwise leave checkout with nothing to
+        // fill itself in from, so the next address in the book takes over.
+        if ($wasDefault && $next = $request->user()->addresses()->first()) {
+            $next->makeDefault();
+        }
+
+        return back()->with('status', 'Address removed.');
+    }
+
+    /**
+     * A shop that does not remember addresses has no address book, so the
+     * page and everything that writes to it are simply not there.
+     */
+    private function assertAddressBookIsOn(): void
+    {
+        abort_unless(setting('shop_save_addresses', true), 404);
+    }
+
+    /** @return array<string, array<int, mixed>> */
+    private function addressRules(): array
+    {
+        return [
+            'label' => ['nullable', 'string', 'max:60'],
+            'name' => ['required', 'string', 'max:120'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'line1' => ['required', 'string', 'max:190'],
+            'line2' => ['nullable', 'string', 'max:190'],
+            'city' => ['required', 'string', 'max:120'],
+            'state' => ['nullable', 'string', 'max:120'],
+            'postcode' => ['nullable', 'string', 'max:30'],
+            'country' => ['required', 'string', Rule::in(Countries::allowedCodes())],
+            'make_default' => ['nullable', 'boolean'],
+        ];
+    }
+
+    /**
+     * An address id in the URL is never enough on its own: a customer may only
+     * touch a row in their own book.
+     */
+    private function ownAddress(Request $request, Address $address): Address
+    {
+        abort_unless($address->user_id === $request->user()->id, 403);
+
+        return $address;
     }
 
     public function orders(Request $request): View

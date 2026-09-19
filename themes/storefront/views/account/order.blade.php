@@ -74,7 +74,7 @@
         <div class="sf-panel">
             <p class="sf-panel__title">Delivery address</p>
             <address class="sf-address sf-muted sf-small">
-                {{ collect($order->shipping_address)->filter()->implode(', ') }}
+                {{ format_address($order->shipping_address) }}
             </address>
         </div>
     @endif

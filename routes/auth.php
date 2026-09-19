@@ -95,6 +95,14 @@ Route::middleware('installed')->group(function () {
         Route::patch('password', [AccountController::class, 'updatePassword'])->name('password.update');
 
         Route::middleware('module:shop')->group(function () {
+            // The address book, so checkout never asks for the same address
+            // a second time.
+            Route::get('addresses', [AccountController::class, 'addresses'])->name('addresses');
+            Route::post('addresses', [AccountController::class, 'storeAddress'])->name('addresses.store');
+            Route::patch('addresses/{address}', [AccountController::class, 'updateAddress'])->name('addresses.update');
+            Route::patch('addresses/{address}/default', [AccountController::class, 'makeDefaultAddress'])->name('addresses.default');
+            Route::delete('addresses/{address}', [AccountController::class, 'destroyAddress'])->name('addresses.destroy');
+
             Route::get('orders', [AccountController::class, 'orders'])->name('orders');
             Route::get('orders/{order}', [AccountController::class, 'showOrder'])->name('orders.show');
             // Throttled: a purchased file is often large, and a paid account

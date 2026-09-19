@@ -35,7 +35,7 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Billed to</p>
                     <p class="mt-1 font-medium">{{ data_get($order->billing_address, 'name', $order->email) }}</p>
-                    <p class="text-slate-500">{{ collect($order->billing_address)->except('name')->filter()->implode(', ') }}</p>
+                    <p class="text-slate-500">{{ format_address(collect($order->billing_address)->except('name')->all()) }}</p>
                     <p class="text-slate-500">{{ $order->email }}</p>
                 </div>
                 <div class="text-right">

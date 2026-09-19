@@ -181,7 +181,7 @@
                         <div class="mt-4 border-t border-slate-100 pt-3">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $label }}</p>
                             <address class="mt-1 text-sm not-italic leading-relaxed text-slate-600">
-                                {{ collect($address)->filter()->implode(', ') }}
+                                {{ format_address($address) }}
                             </address>
                         </div>
                     @endif

@@ -80,7 +80,7 @@
             <div class="rounded-2xl border border-slate-200 p-6">
                 <h2 class="font-semibold text-slate-900">Shipping address</h2>
                 <address class="mt-2 text-sm not-italic leading-relaxed text-slate-600">
-                    {{ collect($order->shipping_address)->filter()->implode(', ') }}
+                    {{ format_address($order->shipping_address) }}
                 </address>
             </div>
         @endif

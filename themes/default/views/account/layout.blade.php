@@ -11,6 +11,7 @@
                         $links = array_filter([
                             'account.dashboard' => 'Overview',
                             'account.orders' => modules()->enabled('shop') ? 'Orders' : null,
+                            'account.addresses' => modules()->enabled('shop') && setting('shop_save_addresses', true) ? 'Addresses' : null,
                             'account.profile' => 'Profile',
                             'two-factor.setup' => 'Security',
                         ]);

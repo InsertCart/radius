@@ -5,6 +5,24 @@
 
     RewriteEngine On
 
+    # One address per page.
+    #
+    # The .htaccess in the folder above serves this site without /public in the
+    # address, so /welcome and /public/welcome both render the same page. Two
+    # addresses for one page split a search engine's ranking signals between
+    # them, and the one it settles on is rarely the tidy one.
+    #
+    # The rule lives here rather than with its twin upstairs because
+    # mod_rewrite does not inherit a parent folder's rules into a directory
+    # that has rules of its own - so a redirect written up there never sees the
+    # requests it is meant to catch.
+    #
+    # THE_REQUEST is the browser's original request line rather than the
+    # rewritten path, so only an address somebody actually typed is redirected;
+    # the internal rewrite upstairs cannot trigger it, and nothing loops.
+    RewriteCond %{THE_REQUEST} \s(/(?:[^\s?]*/)?)public/([^\s?]*) [NC]
+    RewriteRule ^ %1%2 [R=301,L,NE]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

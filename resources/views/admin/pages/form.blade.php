@@ -1,6 +1,10 @@
 @extends('admin.layout')
 @section('title', $page->exists ? 'Edit page' : 'New page')
 
+@section('header-actions')
+    <x-admin.view-link :model="$page" />
+@endsection
+
 @section('content')
     <form method="POST" action="{{ $page->exists ? route('admin.pages.update', $page) : route('admin.pages.store') }}">
         @csrf

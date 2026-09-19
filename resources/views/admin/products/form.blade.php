@@ -1,6 +1,10 @@
 @extends('admin.layout')
 @section('title', $product->exists ? 'Edit product' : 'New product')
 
+@section('header-actions')
+    <x-admin.view-link :model="$product" />
+@endsection
+
 @section('content')
     <form method="POST" action="{{ $product->exists ? route('admin.products.update', $product) : route('admin.products.store') }}"
           enctype="multipart/form-data"

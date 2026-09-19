@@ -67,10 +67,11 @@ The setup wizard checks all of this for you before it will continue.
 3. Open your site in a browser. The setup wizard starts automatically.
 4. Follow the four steps: server check → database → site details → admin account.
 
-Both addresses work, so `https://example.com/` and `https://example.com/public/`
-reach the same site. Pointing the document root at `public/` is still better -
-nothing outside it is then served at all - but it is not a requirement, and on
-shared hosting it is often not an option.
+Your site then answers on `https://example.com/`, and
+`https://example.com/public/...` redirects to it permanently — one address per
+page, so search engines never see two copies. Pointing the document root at
+`public/` is still better, because nothing outside it is served at all, but it
+is not a requirement and on shared hosting it is often not an option.
 
 **Never serve the project folder without its `.htaccess`.** It is what keeps
 `.env`, the source code and the uploads folder unreachable when the whole
