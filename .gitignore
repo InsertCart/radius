@@ -32,3 +32,17 @@ Thumbs.db
 
 # Written by the release workflow while it assembles the GitHub release.
 /release-notes.md
+
+# Only the two bundled themes ship with the CMS. Any other theme is installed
+# by the user (or from a package) and must never be committed.
+/themes/*
+!/themes/default
+!/themes/storefront
+/public/themes/*
+!/public/themes/.htaccess
+!/public/themes/default
+!/public/themes/storefront
+
+# Packaged theme ZIPs (cms:theme-package output).
+theme-packages/
+/*.zip
