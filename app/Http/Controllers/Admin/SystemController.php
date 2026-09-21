@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Cms\Support\ExposureProbe;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -86,6 +87,20 @@ class SystemController extends Controller
             'path' => $path,
             'size' => is_file($path) ? File::size($path) : 0,
         ]);
+    }
+
+    /** Empties the log file. The file stays in place so logging carries on. */
+    public function clearLogs(): RedirectResponse
+    {
+        $path = storage_path('logs/laravel.log');
+
+        if (is_file($path) && @file_put_contents($path, '', LOCK_EX) === false) {
+            return back()->with('error', 'The log file could not be cleared. Check that storage/logs is writable.');
+        }
+
+        activity('system.logs_cleared', 'Cleared the error log.');
+
+        return back()->with('status', 'Error log cleared.');
     }
 
     /** Reads the last $count lines without loading the whole file. */

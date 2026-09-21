@@ -29,6 +29,7 @@ class Editor {
         this.device = 'desktop';
         this.tab = 'content';
         this.dirty = false;
+        this.savedSections = boot.presets || [];
 
         this.el = {
             panel: document.getElementById('cb-panel'),
@@ -96,6 +97,7 @@ class Editor {
         // Element actions
         document.getElementById('cb-duplicate').addEventListener('click', () => this.duplicateSelected());
         document.getElementById('cb-delete').addEventListener('click', () => this.deleteSelected());
+        document.getElementById('cb-save-section').addEventListener('click', () => this.saveSelectedAsSection());
 
         document.getElementById('cb-elem-toolbar').addEventListener('click', (event) => {
             const action = event.target.closest('[data-action]')?.dataset.action;
@@ -103,6 +105,7 @@ class Editor {
 
             if (action === 'duplicate') this.duplicateSelected();
             if (action === 'delete') this.deleteSelected();
+            if (action === 'save') this.saveSelectedAsSection();
         });
 
         // Tabs
@@ -199,6 +202,8 @@ class Editor {
             this.el.widgetList.appendChild(layouts);
         }
 
+        this.renderSavedSections(term);
+
         this.boot.widgets.forEach((group) => {
             const matching = group.widgets.filter((widget) => {
                 if (!term) return true;
@@ -248,6 +253,47 @@ class Editor {
         if (!this.el.widgetList.children.length) {
             this.el.widgetList.innerHTML = '<p class="cb-empty-note">No widgets match that search.</p>';
         }
+    }
+
+    /** The admin's own saved sections, as tiles that insert a copy. */
+    renderSavedSections(term) {
+        const matching = this.savedSections.filter((preset) => !term || preset.name.toLowerCase().includes(term));
+        if (!matching.length) return;
+
+        const group = document.createElement('div');
+        group.className = 'cb-widget-group';
+        group.innerHTML = '<h3>Saved sections</h3>';
+
+        const list = document.createElement('div');
+        list.className = 'cb-saved-list';
+
+        matching.forEach((preset) => {
+            const tile = document.createElement('button');
+            tile.type = 'button';
+            tile.className = 'cb-saved-tile';
+            tile.draggable = true;
+            tile.title = 'Click to add, or drag onto the page';
+            tile.innerHTML = icon('folder');
+
+            // Names are typed by people, so they go in as text, never markup.
+            const label = document.createElement('span');
+            label.textContent = preset.name;
+            tile.appendChild(label);
+
+            tile.addEventListener('dragstart', (event) => {
+                event.dataTransfer.effectAllowed = 'copy';
+                event.dataTransfer.setData('text/plain', preset.name);
+                this.canvas.beginDrag({ kind: 'saved', preset });
+            });
+
+            tile.addEventListener('dragend', () => this.canvas.endDrag());
+            tile.addEventListener('click', () => this.insertSavedSection(preset));
+
+            list.appendChild(tile);
+        });
+
+        group.appendChild(list);
+        this.el.widgetList.appendChild(group);
     }
 
     /**
@@ -381,7 +427,86 @@ class Editor {
         return defaults;
     }
 
+    /**
+     * Insert a copy of a saved section.
+     *
+     * Always a copy with fresh ids: editing it never touches the saved
+     * section or any other page using it. Without a target it goes after
+     * the selected section, or at the end of the page.
+     */
+    insertSavedSection(preset, target = null) {
+        const section = JSON.parse(JSON.stringify(preset.data));
+        this.state.reassignIds(section);
+
+        if (!target) {
+            const selected = this.state.selection ? this.rootOf(this.state.selection) : null;
+            target = selected ? { id: selected, position: 'after', isSection: true } : { id: null };
+        }
+
+        if (!target.id) {
+            this.state.insert(section, null);
+        } else if (target.isSection) {
+            this.state.insert(section, target.id, target.position);
+        } else {
+            // Dropped on a widget or column: sections sit between sections,
+            // so it lands after the one that was dropped on.
+            this.state.insert(section, this.rootOf(target.id), 'after');
+        }
+
+        this.state.select(section.id);
+        this.setStatus(`Added "${preset.name}". Edit it, then publish.`);
+    }
+
+    /** The top-level node that contains a node. */
+    rootOf(id) {
+        let at = this.state.locate(id);
+
+        while (at?.parent) at = this.state.locate(at.parent.id);
+
+        return at?.node.id || null;
+    }
+
+    /** The section a node belongs to - the node itself when it is one. */
+    sectionOf(id) {
+        let at = this.state.locate(id);
+
+        while (at && at.node.type !== 'section') {
+            at = at.parent ? this.state.locate(at.parent.id) : null;
+        }
+
+        return at?.node || null;
+    }
+
+    /** Save the selected element's section so it can be reused anywhere. */
+    async saveSelectedAsSection() {
+        const selected = this.state.selected();
+        if (!selected) return;
+
+        const section = this.sectionOf(selected.id);
+        if (!section) return;
+
+        const name = window.prompt('Name this section so you can find it later:', '')?.trim();
+        if (!name) return;
+
+        this.setStatus('Saving section…');
+
+        try {
+            const { preset } = await this.api.savePreset(name, JSON.parse(JSON.stringify(section)));
+
+            this.savedSections.push(preset);
+            this.renderWidgetPanel(this.el.widgetSearch.value);
+            this.setStatus(`Saved "${preset.name}". Find it under Saved sections.`, 'ok');
+        } catch (error) {
+            this.setStatus(error.message, 'error');
+        }
+    }
+
     handleDrop(payload, target) {
+        if (payload.kind === 'saved') {
+            this.insertSavedSection(payload.preset, target);
+            return;
+        }
+
         if (payload.kind !== 'widget') return;
 
         const schema = this.boot.schemas[payload.type];

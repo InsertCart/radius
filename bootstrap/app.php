@@ -54,6 +54,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\MaintenanceMode::class,
             // Outside InjectRecaptcha, so a cached page keeps its script.
             \App\Http\Middleware\CachePages::class,
+            // Inside CachePages, so a cached page keeps its builder styles.
+            \App\Http\Middleware\InjectBuilderStyles::class,
             \App\Http\Middleware\InjectRecaptcha::class,
         ]);
 

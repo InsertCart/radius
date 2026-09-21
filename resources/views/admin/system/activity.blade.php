@@ -2,6 +2,20 @@
 @section('title', 'Activity log')
 
 @section('content')
+    @php $retention = \App\Models\ActivityLog::retentionDays(); @endphp
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+        <p>
+            @if ($retention > 0)
+                Entries older than <strong>{{ $retention }} {{ Str::plural('day', $retention) }}</strong> are deleted automatically to save disk space.
+            @else
+                Entries are kept forever, so this log will keep growing.
+            @endif
+        </p>
+        <a href="{{ route('admin.settings.edit', 'advanced') }}" class="font-medium text-indigo-600 hover:text-indigo-700">
+            Change in Settings &rarr;
+        </a>
+    </div>
+
     <x-admin.card bodyClass="">
         <form method="GET" class="flex flex-wrap gap-2 border-b border-slate-100 p-4">
             <select name="action" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">

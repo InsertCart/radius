@@ -1,0 +1,846 @@
+{
+    "name": "Zenith",
+    "slug": "zenith",
+    "version": "1.2.0",
+    "author": "InsertCart",
+    "author_url": "https://radiusdoc.insertcart.com",
+    "description": "A luxury editorial & modern eCommerce theme for Radius. Features obsidian dark mode, porcelain light mode, glassmorphic masthead, interactive product rails, brand pillars, and modular visual builder sections.",
+    "screenshot": "screenshot.png",
+    "supports": [
+        "blog",
+        "shop",
+        "pages",
+        "contact",
+        "newsletter",
+        "dark_mode"
+    ],
+    "menus": {
+        "header": "Main navigation",
+        "footer": "Footer links",
+        "footer_collections": "Featured collections",
+        "footer_legal": "Company & legal"
+    },
+    "regions": {
+        "announcement": "Announcement bar",
+        "header": "Site header",
+        "home": "Homepage (whole page)",
+        "hero": "Homepage hero",
+        "home_bottom": "Homepage, below sections",
+        "footer": "Site footer",
+        "before_content": "Before page content",
+        "after_content": "After page content",
+        "shop_index": "Shop listing page",
+        "cart": "Cart page",
+        "checkout": "Checkout page"
+    },
+    "builder": {
+        "styles": [
+            "css/theme.css"
+        ],
+        "scripts": [
+            "js/theme.js"
+        ],
+        "body_class": "zenith-theme"
+    },
+    "sections": {
+        "announcement": {
+            "label": "Announcement strip",
+            "icon": "info",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "badge",
+                    "label": "Badge text",
+                    "default": "NEW DROP"
+                },
+                {
+                    "type": "text",
+                    "key": "text",
+                    "label": "Message",
+                    "default": "Complimentary express shipping on all orders over $150."
+                },
+                {
+                    "type": "text",
+                    "key": "link_text",
+                    "label": "Link text (optional)",
+                    "default": "Shop Now"
+                },
+                {
+                    "type": "text",
+                    "key": "url",
+                    "label": "Link URL (optional)",
+                    "default": ""
+                },
+                {
+                    "type": "color",
+                    "key": "bg_color",
+                    "label": "Announcement background",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-announcement",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "text_color",
+                    "label": "Text colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-announcement, {{WRAPPER}} .zn-announcement span",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "badge_bg",
+                    "label": "Badge background",
+                    "tab": "style",
+                    "section": "Badge",
+                    "selector": "{{WRAPPER}} .zn-announcement__badge",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "badge_text",
+                    "label": "Badge text colour",
+                    "tab": "style",
+                    "section": "Badge",
+                    "selector": "{{WRAPPER}} .zn-announcement__badge",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "link_color",
+                    "label": "Link colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-announcement__link",
+                    "property": "color"
+                }
+            ]
+        },
+        "header": {
+            "label": "Zenith header",
+            "icon": "menu",
+            "description": "Glassmorphic masthead with navigation, live search, dark/light switch, wishlist and shopping bag.",
+            "controls": [
+                {
+                    "type": "toggle",
+                    "key": "show_search",
+                    "label": "Show live search",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_theme_toggle",
+                    "label": "Show dark/light mode toggle",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_wishlist",
+                    "label": "Show wishlist trigger",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_account",
+                    "label": "Show account icon",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_cart",
+                    "label": "Show shopping cart",
+                    "default": true
+                }
+            ]
+        },
+        "hero": {
+            "label": "Zenith hero banner",
+            "icon": "heading",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "badge",
+                    "label": "Eyebrow badge",
+                    "default": "THE 2026 EDIT"
+                },
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Headline",
+                    "default": "Elegance defined by purpose and craft."
+                },
+                {
+                    "type": "textarea",
+                    "key": "text",
+                    "label": "Description",
+                    "default": "Discover a curated synthesis of timeless aesthetics and modern utility. Built for those who value enduring quality."
+                },
+                {
+                    "type": "text",
+                    "key": "primary_label",
+                    "label": "Primary button text",
+                    "default": "Explore Collection"
+                },
+                {
+                    "type": "text",
+                    "key": "primary_url",
+                    "label": "Primary button link",
+                    "default": "",
+                    "help": "Leave empty to link directly to the shop."
+                },
+                {
+                    "type": "text",
+                    "key": "secondary_label",
+                    "label": "Secondary button text",
+                    "default": "Read Journal"
+                },
+                {
+                    "type": "text",
+                    "key": "secondary_url",
+                    "label": "Secondary button link",
+                    "default": "",
+                    "help": "Leave empty to link directly to the blog."
+                },
+                {
+                    "type": "text",
+                    "key": "stat_one_num",
+                    "label": "Stat 1 Number",
+                    "default": "100%"
+                },
+                {
+                    "type": "text",
+                    "key": "stat_one_label",
+                    "label": "Stat 1 Label",
+                    "default": "Carbon Neutral"
+                },
+                {
+                    "type": "text",
+                    "key": "stat_two_num",
+                    "label": "Stat 2 Number",
+                    "default": "24/7"
+                },
+                {
+                    "type": "text",
+                    "key": "stat_two_label",
+                    "label": "Stat 2 Label",
+                    "default": "Concierge Support"
+                },
+                {
+                    "type": "color",
+                    "key": "bg_color",
+                    "label": "Hero background colour",
+                    "tab": "style",
+                    "section": "Background",
+                    "selector": "{{WRAPPER}} .zn-hero",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "title_color",
+                    "label": "Title heading colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-hero__title",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "text_color",
+                    "label": "Description text colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-hero__text",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "badge_bg",
+                    "label": "Eyebrow badge background",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-badge--accent",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "badge_text",
+                    "label": "Eyebrow badge text colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-badge--accent",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "primary_btn_bg",
+                    "label": "Primary button background",
+                    "tab": "style",
+                    "section": "Buttons",
+                    "selector": "{{WRAPPER}} .zn-btn--primary",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "primary_btn_text",
+                    "label": "Primary button text colour",
+                    "tab": "style",
+                    "section": "Buttons",
+                    "selector": "{{WRAPPER}} .zn-btn--primary",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "secondary_btn_bg",
+                    "label": "Secondary button background",
+                    "tab": "style",
+                    "section": "Buttons",
+                    "selector": "{{WRAPPER}} .zn-btn--secondary",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "secondary_btn_text",
+                    "label": "Secondary button text colour",
+                    "tab": "style",
+                    "section": "Buttons",
+                    "selector": "{{WRAPPER}} .zn-btn--secondary",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "secondary_btn_border",
+                    "label": "Secondary button border",
+                    "tab": "style",
+                    "section": "Buttons",
+                    "selector": "{{WRAPPER}} .zn-btn--secondary",
+                    "property": "border-color"
+                },
+                {
+                    "type": "color",
+                    "key": "stats_bg",
+                    "label": "Metrics pill background",
+                    "tab": "style",
+                    "section": "Metrics Bar",
+                    "selector": "{{WRAPPER}} .zn-hero__stats",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "stats_border",
+                    "label": "Metrics pill border",
+                    "tab": "style",
+                    "section": "Metrics Bar",
+                    "selector": "{{WRAPPER}} .zn-hero__stats",
+                    "property": "border-color"
+                },
+                {
+                    "type": "color",
+                    "key": "stats_num_color",
+                    "label": "Metrics number colour",
+                    "tab": "style",
+                    "section": "Metrics Bar",
+                    "selector": "{{WRAPPER}} .zn-hero__stat-num",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "stats_label_color",
+                    "label": "Metrics label colour",
+                    "tab": "style",
+                    "section": "Metrics Bar",
+                    "selector": "{{WRAPPER}} .zn-hero__stat-label",
+                    "property": "color"
+                },
+                {
+                    "type": "slider",
+                    "key": "padding_top",
+                    "label": "Top padding",
+                    "tab": "style",
+                    "section": "Spacing",
+                    "min": 20,
+                    "max": 200,
+                    "default": 90,
+                    "selector": "{{WRAPPER}} .zn-hero",
+                    "property": "padding-top"
+                },
+                {
+                    "type": "slider",
+                    "key": "padding_bottom",
+                    "label": "Bottom padding",
+                    "tab": "style",
+                    "section": "Spacing",
+                    "min": 20,
+                    "max": 200,
+                    "default": 70,
+                    "selector": "{{WRAPPER}} .zn-hero",
+                    "property": "padding-bottom"
+                }
+            ]
+        },
+        "rail": {
+            "label": "Product showcase rail",
+            "icon": "grid",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "kicker",
+                    "label": "Section kicker",
+                    "default": "CURATED HIGHLIGHTS"
+                },
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Featured Editions"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "Hand-picked pieces crafted with precision and obsessive attention to detail."
+                },
+                {
+                    "type": "select",
+                    "key": "source",
+                    "label": "Products source",
+                    "default": "featured",
+                    "options": {
+                        "featured": "Featured items",
+                        "latest": "Latest arrivals",
+                        "sale": "Special offers & sale",
+                        "category": "From one category"
+                    }
+                },
+                {
+                    "type": "select",
+                    "key": "category",
+                    "label": "Category",
+                    "default": "",
+                    "options": "@shop_categories",
+                    "help": "Used when Products source is 'From one category'."
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "Number of products",
+                    "default": 8,
+                    "min": 2,
+                    "max": 16
+                },
+                {
+                    "type": "color",
+                    "key": "rail_bg",
+                    "label": "Section background",
+                    "tab": "style",
+                    "section": "Background",
+                    "selector": "{{WRAPPER}} .zn-rail",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "rail_title_color",
+                    "label": "Heading colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-section-head__title",
+                    "property": "color"
+                }
+            ]
+        },
+        "features": {
+            "label": "Brand value pillars",
+            "icon": "award",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "kicker",
+                    "label": "Section kicker",
+                    "default": "THE ZENITH STANDARD"
+                },
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Designed without compromise"
+                },
+                {
+                    "type": "color",
+                    "key": "features_bg",
+                    "label": "Section background",
+                    "tab": "style",
+                    "section": "Background",
+                    "selector": "{{WRAPPER}} .zn-features",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "card_bg",
+                    "label": "Card background",
+                    "tab": "style",
+                    "section": "Cards",
+                    "selector": "{{WRAPPER}} .zn-feature-card",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "card_border",
+                    "label": "Card border",
+                    "tab": "style",
+                    "section": "Cards",
+                    "selector": "{{WRAPPER}} .zn-feature-card",
+                    "property": "border-color"
+                },
+                {
+                    "type": "color",
+                    "key": "icon_bg",
+                    "label": "Icon background",
+                    "tab": "style",
+                    "section": "Cards",
+                    "selector": "{{WRAPPER}} .zn-feature-icon",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "icon_color",
+                    "label": "Icon colour",
+                    "tab": "style",
+                    "section": "Cards",
+                    "selector": "{{WRAPPER}} .zn-feature-icon",
+                    "property": "color"
+                }
+            ]
+        },
+        "categories": {
+            "label": "Category bento showcase",
+            "icon": "folder",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "kicker",
+                    "label": "Section kicker",
+                    "default": "CURATED CATEGORIES"
+                },
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Browse by Collection"
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "Number of categories",
+                    "default": 4,
+                    "min": 2,
+                    "max": 8
+                },
+                {
+                    "type": "color",
+                    "key": "categories_bg",
+                    "label": "Section background",
+                    "tab": "style",
+                    "section": "Background",
+                    "selector": "{{WRAPPER}} .zn-categories",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "cat_title_color",
+                    "label": "Heading colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-section-head__title",
+                    "property": "color"
+                }
+            ]
+        },
+        "journal": {
+            "label": "Editorial journal row",
+            "icon": "document",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "kicker",
+                    "label": "Section kicker",
+                    "default": "PERSPECTIVES & ESSAYS"
+                },
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "From the Journal"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "Behind the craft, cultural dispatches, and design notes."
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "Number of articles",
+                    "default": 3,
+                    "min": 2,
+                    "max": 6
+                },
+                {
+                    "type": "color",
+                    "key": "journal_bg",
+                    "label": "Section background",
+                    "tab": "style",
+                    "section": "Background",
+                    "selector": "{{WRAPPER}} .zn-journal",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "post_card_bg",
+                    "label": "Card background",
+                    "tab": "style",
+                    "section": "Cards",
+                    "selector": "{{WRAPPER}} .zn-post-card",
+                    "property": "background-color"
+                }
+            ]
+        },
+        "newsletter": {
+            "label": "VIP newsletter invitation",
+            "icon": "mail",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "kicker",
+                    "label": "Small kicker",
+                    "default": "PRIVATE CIRCLE"
+                },
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Receive private dispatches & early access"
+                },
+                {
+                    "type": "text",
+                    "key": "text",
+                    "label": "Subheading",
+                    "default": "Join our global community. Exclusive seasonal previews and invitations directly to your inbox."
+                },
+                {
+                    "type": "text",
+                    "key": "button_label",
+                    "label": "Button text",
+                    "default": "Join Society"
+                },
+                {
+                    "type": "color",
+                    "key": "newsletter_bg",
+                    "label": "Section background",
+                    "tab": "style",
+                    "section": "Background",
+                    "selector": "{{WRAPPER}} .zn-newsletter-section",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "newsletter_card_bg",
+                    "label": "Invitation card background",
+                    "tab": "style",
+                    "section": "Card",
+                    "selector": "{{WRAPPER}} .zn-newsletter-card",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "newsletter_btn_bg",
+                    "label": "Submit button background",
+                    "tab": "style",
+                    "section": "Button",
+                    "selector": "{{WRAPPER}} .zn-newsletter-card .zn-btn--primary",
+                    "property": "background-color"
+                }
+            ]
+        },
+        "footer": {
+            "label": "Zenith footer",
+            "icon": "layout",
+            "description": "Brand summary, newsletter, categorized navigation links, payment badges and copyright.",
+            "controls": [
+                {
+                    "type": "textarea",
+                    "key": "tagline",
+                    "label": "Brand summary / tagline",
+                    "default": "Elegance defined by purpose and craft. Curated timeless aesthetics for modern lifestyles.",
+                    "help": "Leave blank to use the site tagline from Settings -> General."
+                },
+                {
+                    "type": "text",
+                    "key": "badge_one",
+                    "label": "First badge",
+                    "default": "EST. 2026"
+                },
+                {
+                    "type": "text",
+                    "key": "badge_two",
+                    "label": "Second badge",
+                    "default": "CARBON NEUTRAL"
+                },
+                {
+                    "type": "text",
+                    "key": "col2_title",
+                    "label": "Column 2 heading",
+                    "default": "Explore"
+                },
+                {
+                    "type": "select",
+                    "key": "col2_menu",
+                    "label": "Column 2 Menu",
+                    "options": "@menus",
+                    "default": "footer"
+                },
+                {
+                    "type": "textarea",
+                    "key": "col2_links",
+                    "label": "Column 2 Custom links (optional override)",
+                    "default": "",
+                    "help": "One link per line: Title | /path. Overrides the menu if entered."
+                },
+                {
+                    "type": "text",
+                    "key": "col3_title",
+                    "label": "Column 3 heading",
+                    "default": "Collections"
+                },
+                {
+                    "type": "select",
+                    "key": "col3_source",
+                    "label": "Column 3 Source",
+                    "options": {
+                        "categories": "Shop Categories (Automatic)",
+                        "menu": "CMS Menu",
+                        "custom": "Custom links"
+                    },
+                    "default": "categories"
+                },
+                {
+                    "type": "select",
+                    "key": "col3_menu",
+                    "label": "Column 3 Menu (if source is Menu)",
+                    "options": "@menus",
+                    "default": "footer_collections"
+                },
+                {
+                    "type": "textarea",
+                    "key": "col3_links",
+                    "label": "Column 3 Custom links (if source is Custom)",
+                    "default": "",
+                    "help": "One link per line: Title | /path."
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_newsletter",
+                    "label": "Show newsletter box",
+                    "default": true
+                },
+                {
+                    "type": "text",
+                    "key": "newsletter_title",
+                    "label": "Newsletter heading",
+                    "default": "Private Circle"
+                },
+                {
+                    "type": "textarea",
+                    "key": "newsletter_text",
+                    "label": "Newsletter description",
+                    "default": "Sign up to receive private seasonal dispatches, product drops, and exclusive releases."
+                },
+                {
+                    "type": "text",
+                    "key": "newsletter_button",
+                    "label": "Newsletter button text",
+                    "default": "Join"
+                },
+                {
+                    "type": "text",
+                    "key": "copyright",
+                    "label": "Copyright text (optional)",
+                    "default": "",
+                    "help": "Leave blank to use default: © {Year} {Site Name}. All rights reserved."
+                },
+                {
+                    "type": "color",
+                    "key": "bg_color",
+                    "label": "Footer background",
+                    "tab": "style",
+                    "section": "Background",
+                    "selector": "{{WRAPPER}} .zn-footer",
+                    "property": "background-color"
+                },
+                {
+                    "type": "color",
+                    "key": "col_title_color",
+                    "label": "Column headings colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-footer__title",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "link_color",
+                    "label": "Links colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-footer__links a, {{WRAPPER}} .zn-footer__bottom a",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "text_color",
+                    "label": "Tagline & text colour",
+                    "tab": "style",
+                    "section": "Colors",
+                    "selector": "{{WRAPPER}} .zn-footer p, {{WRAPPER}} .zn-footer__bottom",
+                    "property": "color"
+                },
+                {
+                    "type": "color",
+                    "key": "border_color",
+                    "label": "Bottom divider line colour",
+                    "tab": "style",
+                    "section": "Borders",
+                    "selector": "{{WRAPPER}} .zn-footer__bottom",
+                    "property": "border-top-color"
+                },
+                {
+                    "type": "slider",
+                    "key": "padding_top",
+                    "label": "Padding Top",
+                    "tab": "style",
+                    "section": "Spacing",
+                    "unit": "px",
+                    "min": 20,
+                    "max": 160,
+                    "step": 4,
+                    "selector": "{{WRAPPER}} .zn-footer",
+                    "property": "padding-top"
+                },
+                {
+                    "type": "slider",
+                    "key": "padding_bottom",
+                    "label": "Padding Bottom",
+                    "tab": "style",
+                    "section": "Spacing",
+                    "unit": "px",
+                    "min": 20,
+                    "max": 160,
+                    "step": 4,
+                    "selector": "{{WRAPPER}} .zn-footer",
+                    "property": "padding-bottom"
+                }
+            ]
+        }
+    }
+}

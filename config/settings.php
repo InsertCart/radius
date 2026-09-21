@@ -243,6 +243,9 @@ return [
             'email_verification' => ['type' => 'boolean', 'label' => 'Require email verification', 'default' => false],
             'force_https' => ['type' => 'boolean', 'label' => 'Force HTTPS', 'default' => false],
             'admin_2fa_required' => ['type' => 'boolean', 'label' => 'Require 2FA for admin accounts', 'default' => false],
+            'activity_log_retention_days' => ['type' => 'number', 'label' => 'Delete activity log entries after (days)', 'default' => 45,
+                'rules' => 'integer|min:0|max:3650',
+                'help' => 'Older entries in System → Activity are removed automatically to save disk space. Set to 0 to keep them forever.'],
         ],
     ],
 ];

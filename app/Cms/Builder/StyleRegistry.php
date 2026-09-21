@@ -7,15 +7,19 @@ namespace App\Cms\Builder;
  * the document head.
  *
  * Regions and page layouts are rendered at different points in the template -
- * the header before the head has closed, the content long after - so the CSS
- * cannot simply be echoed where it is produced. Blocks register their
- * stylesheet here as they render, and the theme layout prints the collected
- * result through the @builderStyles directive.
+ * the header and footer regions only after the head has been printed - so the
+ * CSS cannot simply be echoed where it is produced. Blocks register their
+ * stylesheet here as they render, the theme's @builderStyles directive leaves
+ * a marker in the head, and InjectBuilderStyles swaps the marker for the
+ * collected result once the whole page has rendered.
  *
  * Keys deduplicate: a header used on every page contributes its CSS once.
  */
 class StyleRegistry
 {
+    /** Where @builderStyles stands in the head until the page has rendered. */
+    public const MARKER = '<!--cb-builder-styles-->';
+
     /** @var array<string, string> */
     private array $styles = [];
 

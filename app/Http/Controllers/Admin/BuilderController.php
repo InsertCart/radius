@@ -159,7 +159,7 @@ class BuilderController extends Controller
             'icons' => IconLibrary::grouped(),
             'tokens' => DesignToken::grouped(),
             'fonts' => config('builder.fonts'),
-            'presets' => LayoutPreset::sections()->orderBy('sort_order')->get(['id', 'name', 'category', 'thumbnail']),
+            'presets' => LayoutPreset::sections()->orderBy('sort_order')->get(['id', 'name', 'category', 'data']),
             'region' => null,
             'area' => null,
             'starters' => [],
@@ -323,23 +323,50 @@ class BuilderController extends Controller
         ]);
     }
 
-    /** Save the selected section as a reusable preset. */
+    /**
+     * Save a section as a reusable preset.
+     *
+     * The section is cleaned exactly as a saved layout is, because it will be
+     * dropped into other layouts later and must already be trustworthy.
+     */
     public function storePreset(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'category' => ['nullable', 'string', 'max:60'],
             'data' => ['required', 'array'],
+            'data.type' => ['required', 'in:section'],
+            'data.elements' => ['present', 'array'],
         ]);
+
+        $this->guardTreeSize([$validated['data']]);
+
+        $section = $this->cleanTree([$validated['data']], (bool) $request->user()?->isAdmin(), [])[0];
 
         $preset = LayoutPreset::create([
             'name' => $validated['name'],
             'category' => $validated['category'] ?? 'custom',
             'type' => 'section',
-            'data' => $validated['data'],
+            'data' => $section,
+            'sort_order' => (int) LayoutPreset::max('sort_order') + 1,
         ]);
 
-        return response()->json(['saved' => true, 'preset' => $preset->only('id', 'name', 'category')]);
+        activity('layout.preset_saved', 'Saved the section "'.$preset->name.'"', $preset);
+
+        return response()->json([
+            'saved' => true,
+            'preset' => $preset->only('id', 'name', 'category', 'data'),
+        ]);
+    }
+
+    /** Delete a saved section. Pages already using it keep their own copy. */
+    public function destroyPreset(LayoutPreset $preset): RedirectResponse
+    {
+        $preset->delete();
+
+        activity('layout.preset_deleted', 'Deleted the saved section "'.$preset->name.'"');
+
+        return back()->with('status', 'Saved section deleted. Pages that already use it are unchanged.');
     }
 
     /** Turn the builder off for a record, reverting to the classic editor. */
@@ -419,13 +446,7 @@ class BuilderController extends Controller
     // Helpers --------------------------------------------------------------
 
     /**
-     * Validate an incoming tree.
-     *
-     * Size and depth are capped because the tree arrives as JSON from the
-     * browser: without limits a crafted request could make the renderer walk
-     * an enormous or deeply nested structure.
-     *
-     * The tree is then cleaned. A layout is rendered unescaped - that is what
+     * Validate an incoming tree: check its size, then clean it. A layout is rendered unescaped - that is what
      * a page builder is - so the markup inside it has to be trustworthy by the
      * time it is stored, and the editor's own JavaScript is not what makes it
      * so. Everything arriving here is a plain HTTP request that anyone with an
@@ -437,6 +458,24 @@ class BuilderController extends Controller
 
         $tree = $request->input('tree', []);
 
+        $this->guardTreeSize($tree);
+
+        return $this->cleanTree(
+            $tree,
+            (bool) $request->user()?->isAdmin(),
+            $layout ? $this->rawHtmlAlreadyInLayout($layout) : []
+        );
+    }
+
+    /**
+     * Refuse a tree too large or too deeply nested to render safely.
+     *
+     * Size and depth are capped because the tree arrives as JSON from the
+     * browser: without limits a crafted request could make the renderer walk
+     * an enormous or deeply nested structure.
+     */
+    private function guardTreeSize(array $tree): void
+    {
         $count = 0;
         $walk = function (array $nodes, int $depth) use (&$walk, &$count) {
             if ($depth > config('builder.editor.max_depth', 6)) {
@@ -453,12 +492,6 @@ class BuilderController extends Controller
         };
 
         $walk($tree, 1);
-
-        return $this->cleanTree(
-            $tree,
-            (bool) $request->user()?->isAdmin(),
-            $layout ? $this->rawHtmlAlreadyInLayout($layout) : []
-        );
     }
 
     /**

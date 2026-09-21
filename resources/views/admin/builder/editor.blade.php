@@ -19,6 +19,7 @@
             'icons' => $icons,
             'tokens' => $tokens,
             'fonts' => $fonts,
+            'presets' => $presets,
             'area' => $area,
             'meta' => [
                 'title' => $title,
@@ -101,6 +102,9 @@
                 </button>
                 <span id="cb-settings-title">Settings</span>
                 <div class="cb-settings-head__actions">
+                    <button type="button" class="cb-icon-btn" id="cb-save-section" title="Save section for reuse" aria-label="Save section for reuse">
+                        <x-cb-icon name="folder" />
+                    </button>
                     <button type="button" class="cb-icon-btn" id="cb-duplicate" title="Duplicate" aria-label="Duplicate">
                         <x-cb-icon name="clipboard" />
                     </button>
@@ -135,10 +139,10 @@
                 <x-cb-icon name="tabs" />
             </button>
             <button type="button" class="cb-icon-btn" id="cb-undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
-                <x-cb-icon name="arrow-left" />
+                <x-cb-icon name="undo" />
             </button>
             <button type="button" class="cb-icon-btn" id="cb-redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>
-                <x-cb-icon name="arrow-right" />
+                <x-cb-icon name="redo" />
             </button>
             <span class="cb-save-state" id="cb-save-state"></span>
             <button type="button" class="cb-btn cb-btn--primary" id="cb-publish">Publish</button>
@@ -215,6 +219,7 @@
                 <div class="cb-elem-toolbar" id="cb-elem-toolbar" hidden>
                     <button type="button" data-action="drag" title="Drag" aria-label="Drag"><x-cb-icon name="spacer" /></button>
                     <button type="button" data-action="duplicate" title="Duplicate" aria-label="Duplicate"><x-cb-icon name="clipboard" /></button>
+                    <button type="button" data-action="save" title="Save section for reuse" aria-label="Save section for reuse"><x-cb-icon name="folder" /></button>
                     <button type="button" data-action="delete" title="Delete" aria-label="Delete"><x-cb-icon name="close" /></button>
                 </div>
                 <div class="cb-drop-line" id="cb-drop-line" hidden></div>

@@ -175,18 +175,28 @@
                 </p>
             </x-admin.card>
 
-            @if ($presets->isNotEmpty())
-                <x-admin.card title="Saved sections" :description="$presets->count().' reusable blocks'">
+            <x-admin.card title="Saved sections" :description="$presets->count().' reusable '.Str::plural('section', $presets->count())">
+                @if ($presets->isEmpty())
+                    <p class="text-sm text-slate-600">
+                        Select any section in the editor and click the folder icon to save it. It then
+                        appears under <strong>Saved sections</strong> in the editor's panel, ready to
+                        drop into any page.
+                    </p>
+                @else
                     <ul class="space-y-2 text-sm">
                         @foreach ($presets as $preset)
                             <li class="flex items-center justify-between gap-2">
                                 <span class="truncate text-slate-700">{{ $preset->name }}</span>
-                                <span class="shrink-0 text-xs text-slate-400">{{ $preset->category }}</span>
+                                <form method="POST" action="{{ route('admin.builder.presets.destroy', $preset) }}"
+                                      onsubmit="return confirm('Delete this saved section?\n\nPages that already use it keep their copy.')">
+                                    @csrf @method('DELETE')
+                                    <button class="shrink-0 text-xs text-rose-600 hover:underline">Delete</button>
+                                </form>
                             </li>
                         @endforeach
                     </ul>
-                </x-admin.card>
-            @endif
+                @endif
+            </x-admin.card>
         </div>
     </div>
 @endsection

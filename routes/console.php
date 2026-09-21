@@ -16,3 +16,9 @@ Schedule::command('search:rebuild')
     ->dailyAt('03:30')
     ->when(fn () => search()->engineName() !== 'database')
     ->withoutOverlapping();
+
+// Trims the admin activity log to the retention set under Settings → Advanced.
+// Without a cron entry the log tidies itself when an admin next acts instead.
+Schedule::call(fn () => \App\Models\ActivityLog::prune())
+    ->name('activity-log-prune')
+    ->dailyAt('03:00');

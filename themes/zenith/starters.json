@@ -1,0 +1,252 @@
+{
+    "announcement": [
+        {
+            "key": "zenith",
+            "label": "Zenith announcement strip",
+            "hint": "The sleek top notification bar",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "announcement"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "header": [
+        {
+            "key": "zenith",
+            "label": "Zenith header",
+            "hint": "The glassmorphic masthead",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "header"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "hero": [
+        {
+            "key": "zenith",
+            "label": "Zenith hero banner",
+            "hint": "The luxury typography hero and metrics",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "hero"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "home": [
+        {
+            "key": "zenith",
+            "label": "Zenith full homepage",
+            "hint": "Every section of the luxury homepage, ready to arrange",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "hero"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "features"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "categories"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "rail"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "journal"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "newsletter"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "footer": [
+        {
+            "key": "modular",
+            "label": "Zenith modular blocks",
+            "hint": "4 movable columns (Logo, Explore menu, Collections menu, Newsletter) that you can drag, reorder and resize",
+            "sections": [
+                {
+                    "width": "boxed",
+                    "settings": {
+                        "padding_top": { "size": 60, "unit": "px" },
+                        "padding_bottom": { "size": 40, "unit": "px" }
+                    },
+                    "columns": [
+                        {
+                            "width": 30,
+                            "widgets": [
+                                {
+                                    "type": "site-logo",
+                                    "settings": {
+                                        "width": { "size": 130, "unit": "px" }
+                                    }
+                                },
+                                {
+                                    "type": "text",
+                                    "settings": {
+                                        "content": "<p style=\"font-size: 14px; color: var(--zn-muted); line-height: 1.6; margin-top: 14px;\">Elegance defined by purpose and craft. Curated timeless aesthetics for modern lifestyles.</p>"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "width": 22,
+                            "widgets": [
+                                {
+                                    "type": "heading",
+                                    "settings": {
+                                        "text": "EXPLORE",
+                                        "tag": "h4"
+                                    }
+                                },
+                                {
+                                    "type": "menu",
+                                    "settings": {
+                                        "menu": "footer",
+                                        "layout": "vertical"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "width": 22,
+                            "widgets": [
+                                {
+                                    "type": "heading",
+                                    "settings": {
+                                        "text": "COLLECTIONS",
+                                        "tag": "h4"
+                                    }
+                                },
+                                {
+                                    "type": "menu",
+                                    "settings": {
+                                        "menu": "footer_collections",
+                                        "layout": "vertical"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "width": 26,
+                            "widgets": [
+                                {
+                                    "type": "heading",
+                                    "settings": {
+                                        "text": "PRIVATE CIRCLE",
+                                        "tag": "h4"
+                                    }
+                                },
+                                {
+                                    "type": "newsletter",
+                                    "settings": {
+                                        "heading": "",
+                                        "description": "Sign up to receive private seasonal dispatches and exclusive releases.",
+                                        "placeholder": "Your email address",
+                                        "button_text": "Join"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "width": "boxed",
+                    "settings": {
+                        "padding_top": { "size": 24, "unit": "px" },
+                        "padding_bottom": { "size": 30, "unit": "px" }
+                    },
+                    "columns": [
+                        {
+                            "width": 50,
+                            "widgets": [
+                                {
+                                    "type": "text",
+                                    "settings": {
+                                        "content": "<p style=\"font-size: 13px; color: var(--zn-muted); margin: 0;\">© 2026 Radius. All rights reserved.</p>"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "width": 50,
+                            "widgets": [
+                                {
+                                    "type": "menu",
+                                    "settings": {
+                                        "menu": "footer_legal",
+                                        "layout": "horizontal",
+                                        "align": "flex-end"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "key": "zenith",
+            "label": "Zenith theme section",
+            "hint": "The single unified theme section layout",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "footer"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

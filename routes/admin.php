@@ -195,6 +195,7 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 // "presets" is never mistaken for a layout id.
                 Route::get('presets', [BuilderController::class, 'presets'])->name('presets');
                 Route::post('presets', [BuilderController::class, 'storePreset'])->name('presets.store');
+                Route::delete('presets/{preset:id}', [BuilderController::class, 'destroyPreset'])->name('presets.destroy');
 
                 Route::patch('toggle/{type}/{id}', [BuilderController::class, 'toggle'])->name('toggle');
 
@@ -231,6 +232,7 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::get('system', [SystemController::class, 'index'])->name('system.index');
                 Route::get('system/activity', [SystemController::class, 'activity'])->name('system.activity');
                 Route::get('system/logs', [SystemController::class, 'logs'])->name('system.logs');
+                Route::delete('system/logs', [SystemController::class, 'clearLogs'])->name('system.logs.clear');
                 Route::post('system/security-check', [SystemController::class, 'checkExposure'])->name('system.security-check');
 
                 // Updates. Admin-only, and never reachable by an editor: this

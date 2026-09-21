@@ -350,6 +350,8 @@ if (! function_exists('activity')) {
                 'ip_address' => request()->ip(),
                 'user_agent' => substr((string) request()->userAgent(), 0, 255),
             ]);
+
+            ActivityLog::pruneIfDue();
         } catch (\Throwable $e) {
             report($e);
         }

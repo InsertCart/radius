@@ -205,6 +205,27 @@
 .cb-layout-preset span { background: #e2e8f0; border-radius: 3px; }
 .cb-layout-preset:hover span { background: #bfdbfe; }
 
+.cb-saved-list { display: grid; gap: 4px; }
+.cb-saved-tile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--cb-ui-line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--cb-ui-text);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: grab;
+    transition: border-color .12s ease, background .12s ease;
+}
+.cb-saved-tile:hover { border-color: var(--cb-ui-accent); background: var(--cb-ui-accent-soft); }
+.cb-saved-tile svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--cb-ui-muted); }
+.cb-saved-tile:hover svg { color: var(--cb-ui-accent); }
+.cb-saved-tile span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* Settings ---------------------------------------------------------------- */
 
 .cb-settings-head {

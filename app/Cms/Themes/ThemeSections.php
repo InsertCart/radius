@@ -39,7 +39,7 @@ class ThemeSections
     /** Control types a theme may declare, mapped to their Control factory. */
     private const CONTROL_TYPES = [
         'text', 'textarea', 'richtext', 'number', 'toggle', 'select',
-        'color', 'image', 'link', 'icon',
+        'color', 'image', 'link', 'icon', 'slider', 'dimensions',
     ];
 
     private ?array $manifest = null;
@@ -103,9 +103,52 @@ class ThemeSections
             $label = (string) ($definition['label'] ?? ucfirst(str_replace('_', ' ', $name)));
             $name = $prefixed ? ThemeSectionKeys::prefixed($key, $name) : $name;
 
-            $control = $type === 'select'
-                ? Control::select($name, $label, $this->options($definition['options'] ?? []))
-                : Control::{$type}($name, $label);
+            $control = match ($type) {
+                'select' => Control::select($name, $label, $this->options($definition['options'] ?? [])),
+                'slider' => Control::slider($name, $label),
+                'dimensions' => Control::dimensions($name, $label),
+                default => Control::{$type}($name, $label),
+            };
+
+            if (isset($definition['tab'])) {
+                $control->tab((string) $definition['tab']);
+            }
+
+            if (isset($definition['section'])) {
+                $control->section((string) $definition['section']);
+            }
+
+            if (isset($definition['selector'], $definition['property'])) {
+                $control->selector(
+                    (string) $definition['selector'],
+                    (string) $definition['property'],
+                    $definition['template'] ?? null
+                );
+            } elseif (isset($definition['selectors']) && is_array($definition['selectors'])) {
+                foreach ($definition['selectors'] as $sel) {
+                    if (isset($sel['selector'], $sel['property'])) {
+                        $control->selector(
+                            (string) $sel['selector'],
+                            (string) $sel['property'],
+                            $sel['template'] ?? null
+                        );
+                    }
+                }
+            }
+
+            if (isset($definition['units']) && is_array($definition['units'])) {
+                $control->units($definition['units']);
+            }
+
+            if (in_array($type, ['number', 'slider'], true)) {
+                isset($definition['min']) && $control->min((float) $definition['min']);
+                isset($definition['max']) && $control->max((float) $definition['max']);
+                isset($definition['step']) && $control->step((float) $definition['step']);
+            }
+
+            if (! empty($definition['responsive'])) {
+                $control->responsive(true);
+            }
 
             if (array_key_exists('default', $definition)) {
                 $control->default($definition['default']);
@@ -113,11 +156,6 @@ class ThemeSections
 
             if (isset($definition['help'])) {
                 $control->help((string) $definition['help']);
-            }
-
-            if ($type === 'number') {
-                isset($definition['min']) && $control->min((float) $definition['min']);
-                isset($definition['max']) && $control->max((float) $definition['max']);
             }
 
             $controls[] = $control;

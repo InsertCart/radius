@@ -181,7 +181,9 @@ class CmsServiceProvider extends ServiceProvider
         Blade::if('regionbuilt', fn (string $region) => app(RegionManager::class)->has($region));
 
         // The collected builder stylesheet plus any web fonts, for the head.
-        Blade::directive('builderStyles', fn () => '<?php echo app('.StyleRegistry::class.'::class)->render(); ?>');
+        // Only a marker here: InjectBuilderStyles fills it once the header and
+        // footer regions, which render after the head, have added their CSS.
+        Blade::directive('builderStyles', fn () => '<?php echo '.StyleRegistry::class.'::MARKER; ?>');
 
         // The small runtime that powers accordions, tabs, counters and
         // lightboxes. Only emitted on pages that actually contain a layout.
