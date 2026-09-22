@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiController;
 use App\Http\Controllers\Admin\BuilderController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CdnController;
@@ -222,6 +223,23 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             Route::middleware('staff:admin')->group(function () {
                 Route::get('modules', [ModuleController::class, 'index'])->name('modules.index');
                 Route::patch('modules/{slug}/toggle', [ModuleController::class, 'toggle'])->name('modules.toggle');
+            });
+
+            // Mobile API. Registering an app issues a credential that opens
+            // the storefront to a program, so this is an owner's screen and
+            // never an editor's.
+            Route::middleware(['module:api', 'staff:admin'])->prefix('api')->name('api.')->group(function () {
+                Route::get('/', [ApiController::class, 'index'])->name('index');
+                Route::put('features', [ApiController::class, 'updateFeatures'])->name('features');
+                Route::put('security', [ApiController::class, 'updateSecurity'])->name('security');
+
+                Route::post('apps', [ApiController::class, 'storeClient'])->name('apps.store');
+                Route::post('apps/{client}/secret', [ApiController::class, 'regenerateSecret'])->name('apps.secret');
+                Route::patch('apps/{client}/toggle', [ApiController::class, 'toggleClient'])->name('apps.toggle');
+                Route::delete('apps/{client}', [ApiController::class, 'destroyClient'])->name('apps.destroy');
+
+                Route::delete('sessions', [ApiController::class, 'revokeAllTokens'])->name('sessions.revoke-all');
+                Route::delete('sessions/{token}', [ApiController::class, 'revokeToken'])->name('sessions.revoke');
             });
 
             // Settings screens are admin-only; editors stop at content.

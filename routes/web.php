@@ -10,6 +10,7 @@ use App\Http\Controllers\Front\PushController;
 use App\Http\Controllers\Front\SearchController;
 use App\Http\Controllers\Front\SeoController;
 use App\Http\Controllers\Front\ShopController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -88,20 +89,28 @@ Route::middleware('installed')->group(function () {
             // The provider sends the customer back here. Both GET and POST are
             // accepted because PayU returns by form POST while the rest use GET.
             Route::match(['get', 'post'], 'return/{gateway}/{order}', [CheckoutController::class, 'handleReturn'])
-                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+                ->withoutMiddleware([ValidateCsrfToken::class])
                 ->name('return');
 
             Route::match(['get', 'post'], 'cancel/{gateway}/{order}', [CheckoutController::class, 'cancel'])
-                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+                ->withoutMiddleware([ValidateCsrfToken::class])
                 ->name('cancel');
 
             Route::get('success/{order}', [CheckoutController::class, 'success'])->name('success');
         });
 
+        // Where a mobile app sends the customer to pay. The link is signed
+        // and expires; from here on it is the ordinary checkout flow above.
+        if (modules()->enabled('api')) {
+            Route::get('pay-in-app/{order}', [CheckoutController::class, 'appHandoff'])
+                ->middleware('signed')
+                ->name('checkout.app');
+        }
+
         // Server-to-server callbacks. No CSRF token exists for these, and the
         // driver verifies the provider's signature instead.
         Route::post('webhooks/payments/{gateway}', [CheckoutController::class, 'webhook'])
-            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+            ->withoutMiddleware([ValidateCsrfToken::class])
             ->name('checkout.webhook');
     }
 

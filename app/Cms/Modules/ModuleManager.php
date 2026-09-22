@@ -10,13 +10,14 @@ use Illuminate\Support\Facades\Schema;
  * Decides which optional features are switched on.
  *
  * The enabled set is read once and cached, because it is consulted on nearly
- * every request - by the route registrar, the admin navigation and the
- * @module Blade directive. A disabled module registers no routes at all, so
- * turning one off genuinely removes work rather than just hiding links.
+ * every request - by the route registrar, the admin navigation and the Blade
+ * directive of the same name. A disabled module registers no routes at all,
+ * so turning one off genuinely removes work rather than just hiding links.
  */
 class ModuleManager
 {
     private const CACHE_KEY = 'cms.modules.enabled';
+
     private const CACHE_TTL = 86400;
 
     /** Slugs of enabled modules. Null until first load. */
@@ -37,7 +38,7 @@ class ModuleManager
 
             $modules[$slug] = array_merge($definition, [
                 'slug' => $slug,
-                'enabled' => $row ? (bool) $row->enabled : true,
+                'enabled' => $row ? (bool) $row->enabled : $this->shipsEnabled($slug),
                 'installed' => (bool) $row,
                 'config' => $row?->config ?? [],
             ]);
@@ -111,6 +112,18 @@ class ModuleManager
     public function name(string $slug): string
     {
         return config("cms.modules.{$slug}.name", ucfirst($slug));
+    }
+
+    /**
+     * Whether a module is on the first time it is seen.
+     *
+     * Almost everything here is part of running a website and arrives on. A
+     * module that opens the site to something outside it - the mobile API -
+     * says so with 'default' => false and waits to be asked for.
+     */
+    public function shipsEnabled(string $slug): bool
+    {
+        return (bool) config("cms.modules.{$slug}.default", true);
     }
 
     // Mutation ------------------------------------------------------------
@@ -199,7 +212,7 @@ class ModuleManager
             $module = Module::firstOrNew(['slug' => $slug]);
 
             if (! $module->exists) {
-                $module->enabled = true;
+                $module->enabled = $this->shipsEnabled($slug);
                 $created++;
             }
 

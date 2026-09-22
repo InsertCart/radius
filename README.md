@@ -155,11 +155,16 @@ System → System shows a checklist of anything still misconfigured.
 | SEO | Meta tags, sitemap.xml, robots.txt, schema.org, redirects | No |
 | Contact forms | Front-end form and submission inbox | No |
 | Newsletter | Subscriber capture and CSV export | No |
+| Mobile API | JSON API for a mobile app — **ships switched off** | No |
 
 Modules with dependencies are handled for you: switching off **Payments** also
 switches off **eCommerce**, because a shop with no way to take money is not a
 working shop. Nothing is ever deleted — switching a module back on restores it
 exactly as it was.
+
+Every module except the Mobile API arrives switched on, because each is part of
+running a website. The API opens the site to programs, which is nobody's
+default — see [Mobile API](#mobile-api).
 
 > After toggling modules, clear the caches (System → Maintenance) if you have
 > previously run "Optimise for production". Caching routes freezes which ones exist.
@@ -191,6 +196,122 @@ each other, and means a host only needs `curl` and `openssl`.
 provider's dashboard. Signatures are verified on every call, so an unsigned or
 replayed request is rejected. Webhooks are what confirm a payment when the
 customer closes the tab before returning to your site.
+
+---
+
+## Mobile API
+
+A JSON API for a mobile app: content, the shop, and customer accounts. It is a
+module, and the only one that **ships switched off**. A site that never builds
+an app never answers an API request — the routes are not even registered.
+
+Switch it on under **Modules**, then open **Mobile API** in the sidebar.
+
+### Nobody calls it just by knowing the address
+
+Every request must name a registered app and prove it holds that app's secret.
+There is no public mode and no endpoint that skips the check — not even the
+product list. An unauthenticated request is refused before any route,
+controller or model is reached.
+
+```
+X-Api-Key: rad_9f3c…           the app's public key
+X-Api-Secret: …                its secret, generated in the admin panel
+Authorization: Bearer …        the customer's token, for their own data
+```
+
+Register an app under **Mobile API → Apps**. The secret is shown **once**: it
+is stored encrypted for the server's own use and is never rendered again. If
+it leaks, generate a new one — every build carrying the old one stops working
+immediately.
+
+**Signed requests.** Turn on *Require signed requests* and the secret stops
+travelling at all. Each call carries an HMAC-SHA256 signature over the method,
+path, query, body, a timestamp and a nonce, so a captured request is useless
+once its window closes and nothing in it can be altered on the way. The exact
+string to sign is documented in `app/Cms/Api/RequestSigner.php`.
+
+**No cookies, no CSRF, no session.** API routes run on their own middleware
+stack with no session at all. A browser that happens to be signed in to the
+website cannot reach the API by accident, because the only thing that
+authenticates a caller is a header an app sets deliberately.
+
+### Only the parts you switch on
+
+Under **Mobile API → Endpoints**, each group is a checkbox. Anything not
+switched on answers 404 — to everyone, credentials or not.
+
+| Group | Covers | On by default |
+| --- | --- | --- |
+| Sign in & customer account | Tokens, profile, password, signed-in devices | Yes |
+| Customer registration | Sign-up, password reset, verification email | Yes |
+| Blog posts | Posts, categories, tags | Yes |
+| Post comments | Reading and leaving comments | No |
+| Pages | Published pages | Yes |
+| Shop | Products, cart, coupons, checkout, orders, addresses | No |
+| Product reviews | Reading and leaving reviews | No |
+| Search | One search across everything searchable | Yes |
+| Contact form | Sending a message to your inbox | No |
+| Newsletter | Subscribing an address | No |
+| Push notifications | Registering a device token | No |
+
+Groups know what they need. Switching the **Shop** on switches customer
+accounts and registration on with it — a shop nobody can sign up to is a shop
+nobody buys from twice. A group whose CMS module is off cannot be switched on
+at all: there is no shop API on a site with no shop.
+
+### It is the storefront, not the admin panel
+
+There is no admin endpoint. Nothing in this API publishes content, changes a
+setting, reads another customer's data or touches an order that is not the
+caller's own. Staff accounts are refused at sign-in by default, so a stolen
+app credential cannot be pointed at an admin password.
+
+Moderation is unchanged: a comment or review left through the API waits for
+approval exactly as it does on the website, and prices are always read from the
+database, never from the request.
+
+### Tokens
+
+A sign-in returns a short-lived access token and a long-lived refresh token.
+The refresh token rotates every time it is used, so a copy taken off a device
+stops working the moment the real device refreshes. Only digests are stored —
+a database dump does not let anybody sign in as a customer.
+
+Customers can see their signed-in devices and cut one off; changing a password
+signs every other device out. An admin can revoke one session, or all of them,
+from **Mobile API → Signed-in devices**.
+
+Two-factor authentication is not skipped for apps. An account with 2FA gets a
+challenge back from `/auth/login` and finishes at `/auth/two-factor`.
+
+### Paying from an app
+
+Placing an order returns either instructions (cash on delivery, bank transfer)
+or a **signed, expiring link** to open in a browser or web view. That link
+drops the customer into the same payment flow the website uses, so the
+provider's redirect, signature check and webhook have exactly one
+implementation. The app watches the order's status endpoint and closes the web
+view once it is paid.
+
+Guests get a handle on the order they just placed, derived from the order
+number with your `APP_KEY`. Without it, a guest cannot read an order at all.
+
+### A first call
+
+```bash
+curl https://example.com/api/v1/site \
+  -H "X-Api-Key: rad_9f3c…" \
+  -H "X-Api-Secret: …"
+```
+
+`/api/v1/site` is always available while the module is on, and tells the app
+which groups it may call — so switching the shop off in the admin panel makes
+the shop tab disappear from the app rather than fail in it.
+
+Rate limits, token lifetimes, guest carts and staff sign-in all live on the
+same screen. The address can be moved off `/api` with `CMS_API_PREFIX` in
+`.env` if the site already serves something there.
 
 ---
 

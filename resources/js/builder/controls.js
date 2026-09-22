@@ -877,7 +877,7 @@ export class ControlRenderer {
                 const head = document.createElement('button');
                 head.type = 'button';
                 head.className = 'cb-repeater__head';
-                head.innerHTML = `<span>${escapeHtml(item.title || item.text || item.label || `Item ${index + 1}`)}</span>`;
+                head.innerHTML = `<span>${escapeHtml(item.title || item.text || item.label || item.author || item.name || item.quote || `Item ${index + 1}`)}</span>`;
 
                 const body = document.createElement('div');
                 body.className = 'cb-repeater__body';
@@ -885,24 +885,22 @@ export class ControlRenderer {
 
                 head.addEventListener('click', () => { body.hidden = !body.hidden; });
 
+                const itemRenderer = new ControlRenderer({
+                    boot: this.boot,
+                    onChange: (nestedControl, val) => {
+                        item[nestedControl.key] = val;
+                        head.querySelector('span').textContent =
+                            item.title || item.text || item.label || item.author || item.name || item.quote || `Item ${index + 1}`;
+                        push();
+                    },
+                    openMedia: this.openMedia,
+                    openIcons: this.openIcons,
+                });
+                itemRenderer.setDevice(this.device);
+
                 (control.fields || []).forEach((field) => {
-                    const nested = this.field(field, item);
-                    if (!nested) return;
-
-                    // Nested controls write into the repeater row, not the
-                    // widget's own settings.
-                    nested.querySelectorAll('input, select, textarea').forEach((input) => {
-                        const handler = () => {
-                            item[field.key] = input.type === 'checkbox' ? input.checked : input.value;
-                            head.querySelector('span').textContent =
-                                item.title || item.text || item.label || `Item ${index + 1}`;
-                            push();
-                        };
-                        input.addEventListener('input', handler);
-                        input.addEventListener('change', handler);
-                    });
-
-                    body.appendChild(nested);
+                    const nested = itemRenderer.field(field, item);
+                    if (nested) body.appendChild(nested);
                 });
 
                 const remove = document.createElement('button');

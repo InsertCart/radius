@@ -19,6 +19,27 @@ class CartService
 {
     private ?Cart $cart = null;
 
+    /** Set when a guest cart is keyed by something other than the session. */
+    private ?string $guestKey = null;
+
+    /**
+     * Key this guest's cart by a token the caller supplies instead of by the
+     * session id.
+     *
+     * The mobile API has no session - it is authenticated by headers and
+     * starts none - so a signed-out app carries a cart token of its own and
+     * names it here. Everything below is unchanged: the token lands in the
+     * same column a session id would, and a guest cart merges into an account
+     * at sign-in exactly as it does on the website.
+     */
+    public function useGuestKey(?string $key): static
+    {
+        $this->guestKey = filled($key) ? $key : null;
+        $this->cart = null;
+
+        return $this;
+    }
+
     /** The current cart, created on first use. */
     public function cart(): Cart
     {
@@ -28,9 +49,15 @@ class CartService
 
         $cart = auth()->check()
             ? Cart::firstOrCreate(['user_id' => auth()->id()])
-            : Cart::firstOrCreate(['session_id' => session()->getId(), 'user_id' => null]);
+            : Cart::firstOrCreate(['session_id' => $this->sessionKey(), 'user_id' => null]);
 
         return $this->cart = $cart->load('items.product', 'items.variant');
+    }
+
+    /** Whatever identifies this guest: their cart token, or their session. */
+    private function sessionKey(): string
+    {
+        return $this->guestKey ?? session()->getId();
     }
 
     public function refresh(): Cart
@@ -306,7 +333,7 @@ class CartService
 
         $cart = auth()->check()
             ? Cart::where('user_id', auth()->id())->first()
-            : Cart::where('session_id', session()->getId())->whereNull('user_id')->first();
+            : Cart::where('session_id', $this->sessionKey())->whereNull('user_id')->first();
 
         return $cart ? $this->cart = $cart->load('items.product', 'items.variant') : null;
     }

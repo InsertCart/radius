@@ -144,6 +144,29 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.pay', $order->order_number);
     }
 
+    /**
+     * The door a mobile app opens for payment.
+     *
+     * An order placed through the API has no browser session behind it, so
+     * the app is handed a signed, expiring link to this instead. The
+     * signature - Laravel's, over the whole URL including its expiry - is
+     * what proves the opener just placed this order; 'signed' middleware has
+     * already checked it by the time we are here.
+     *
+     * All this does is establish the session fact the rest of checkout
+     * expects, and then step out of the way, so the payment, the provider's
+     * return and the confirmation page are the same code paths the website
+     * uses. Nothing about paying is reimplemented for apps.
+     */
+    public function appHandoff(Request $request, string $order): RedirectResponse
+    {
+        $found = Order::where('order_number', $order)->firstOrFail();
+
+        $request->session()->put('checkout.order', $found->order_number);
+
+        return redirect()->route('checkout.pay', $found->order_number);
+    }
+
     /** Starts the payment and hands the customer to the provider. */
     public function pay(Request $request, string $order): RedirectResponse|View
     {

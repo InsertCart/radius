@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Cms\Api\ApiManager;
+use App\Cms\Api\RequestSigner;
+use App\Cms\Api\TokenIssuer;
 use App\Cms\Builder\BlockRegistry;
 use App\Cms\Builder\LayoutRenderer;
 use App\Cms\Builder\RegionManager;
@@ -15,14 +18,17 @@ use App\Cms\Payments\PaymentManager;
 use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
-use App\Cms\Support\AdminNavigation;
+use App\Cms\Shop\CartService;
 use App\Cms\Sms\SmsManager;
+use App\Cms\Support\AdminNavigation;
+use App\Cms\Support\PageCache;
 use App\Cms\Themes\ThemeManager;
+use App\Cms\Themes\ThemeSections;
 use App\Models\Menu;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -41,13 +47,16 @@ class CmsServiceProvider extends ServiceProvider
             SettingsRepository::class,
             ModuleManager::class,
             ThemeManager::class,
-            \App\Cms\Themes\ThemeSections::class,
+            ThemeSections::class,
             SeoManager::class,
             PaymentManager::class,
             SmsManager::class,
             FirebaseManager::class,
             SearchManager::class,
             CdnManager::class,
+            ApiManager::class,
+            RequestSigner::class,
+            TokenIssuer::class,
 
             // Visual builder.
             BlockRegistry::class,
@@ -58,6 +67,16 @@ class CmsServiceProvider extends ServiceProvider
         ] as $service) {
             $this->app->singleton($service);
         }
+
+        // One cart per request, shared by everything that asks for it.
+        //
+        // It was a fresh instance per injection, which happened to work while
+        // every caller could find the same cart from the session id. The
+        // mobile API has no session and names the cart it means instead - and
+        // with separate instances, the controller that was told which cart
+        // and the order service that writes it disagreed: checkout found an
+        // empty basket and refused a perfectly good order.
+        $this->app->scoped(CartService::class);
     }
 
     public function boot(): void
@@ -73,7 +92,7 @@ class CmsServiceProvider extends ServiceProvider
             app(SearchManager::class)->observe();
 
             // And retire cached HTML that shows the old version.
-            app(\App\Cms\Support\PageCache::class)->watchModels();
+            app(PageCache::class)->watchModels();
         }
 
         $this->registerRateLimiters();
@@ -151,9 +170,9 @@ class CmsServiceProvider extends ServiceProvider
      *
      * @region is the bridge between hand-written templates and the editor. A
      * theme wraps a part of itself:
-     *
      *     @region('header')
      *         ... the theme's own header ...
+     *
      *     @endregion
      *
      * With no layout built for that region the markup inside simply renders,
@@ -200,6 +219,24 @@ class CmsServiceProvider extends ServiceProvider
     {
         RateLimiter::for('search', function ($request) {
             return Limit::perMinute(app(SearchManager::class)->rateLimit())->by($request->ip());
+        });
+
+        // The mobile API. Budgeted per app per IP address, so one noisy
+        // installation of an app cannot spend another's allowance, and a
+        // compromised app key cannot be used to exhaust the whole site's.
+        RateLimiter::for('api', function ($request) {
+            $client = $request->attributes->get('api_client');
+
+            return Limit::perMinute(app(ApiManager::class)->rateLimit())
+                ->by(($client?->client_id ?? 'anonymous').'|'.$request->ip());
+        });
+
+        // Sign-in, sign-up and password reset: tighter, and keyed on the IP
+        // alone, because the point is to slow down somebody working through a
+        // list of addresses.
+        RateLimiter::for('api-auth', function ($request) {
+            return Limit::perMinute(app(ApiManager::class)->authRateLimit())
+                ->by('api-auth|'.$request->ip());
         });
     }
 

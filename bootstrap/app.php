@@ -2,9 +2,27 @@
 
 use App\Cms\Support\FirstRun;
 use App\Cms\Support\RootRewrite;
+use App\Http\Middleware\Api\AuthenticateApiToken;
+use App\Http\Middleware\Api\EnsureApiFeature;
+use App\Http\Middleware\Api\ForceJsonResponse;
+use App\Http\Middleware\Api\VerifyApiClient;
+use App\Http\Middleware\CachePages;
+use App\Http\Middleware\EnsureEmailIsVerified;
+use App\Http\Middleware\EnsureInstalled;
+use App\Http\Middleware\EnsureModuleEnabled;
+use App\Http\Middleware\EnsureUserIsStaff;
+use App\Http\Middleware\HandleSeoRedirects;
+use App\Http\Middleware\InjectBuilderStyles;
+use App\Http\Middleware\InjectRecaptcha;
+use App\Http\Middleware\MaintenanceMode;
+use App\Http\Middleware\RedirectIfInstalled;
+use App\Http\Middleware\RequireTwoFactor;
+use App\Http\Middleware\VerifyRecaptcha;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Route;
 
 // Before anything else: a freshly extracted copy has no .env, and without one
@@ -32,31 +50,55 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')->group(base_path('routes/auth.php'));
             Route::middleware('web')->group(base_path('routes/admin.php'));
 
+            // The mobile API. Registered only while its module is on, and on
+            // a stack of its own: no session, no cookies, no CSRF token, so
+            // nothing here can be reached by a browser that merely happens to
+            // be signed in to the site. A request is authenticated by headers
+            // an app sets deliberately, or it is refused - see
+            // App\Http\Middleware\Api\VerifyApiClient.
+            if (modules()->enabled('api')) {
+                Route::middleware([
+                    ForceJsonResponse::class,
+                    'installed',
+                    VerifyApiClient::class,
+                    'throttle:api',
+                    SubstituteBindings::class,
+                ])
+                    ->prefix(config('api.prefix', 'api'))
+                    ->group(base_path('routes/api.php'));
+            }
+
             // Last: its catch-all must not shadow any route above it.
             Route::middleware('web')->group(base_path('routes/pages.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'installed' => \App\Http\Middleware\EnsureInstalled::class,
-            'not-installed' => \App\Http\Middleware\RedirectIfInstalled::class,
-            'module' => \App\Http\Middleware\EnsureModuleEnabled::class,
-            'staff' => \App\Http\Middleware\EnsureUserIsStaff::class,
-            '2fa' => \App\Http\Middleware\RequireTwoFactor::class,
-            'verified-email' => \App\Http\Middleware\EnsureEmailIsVerified::class,
-            'recaptcha' => \App\Http\Middleware\VerifyRecaptcha::class,
+            'installed' => EnsureInstalled::class,
+            'not-installed' => RedirectIfInstalled::class,
+            'module' => EnsureModuleEnabled::class,
+            'staff' => EnsureUserIsStaff::class,
+            '2fa' => RequireTwoFactor::class,
+            'verified-email' => EnsureEmailIsVerified::class,
+            'recaptcha' => VerifyRecaptcha::class,
+
+            // Mobile API.
+            'api.json' => ForceJsonResponse::class,
+            'api.client' => VerifyApiClient::class,
+            'api.auth' => AuthenticateApiToken::class,
+            'api.feature' => EnsureApiFeature::class,
         ]);
 
         // Order matters: redirects are resolved before anything renders, and
         // the maintenance check runs before a controller does any work.
         $middleware->web(append: [
-            \App\Http\Middleware\HandleSeoRedirects::class,
-            \App\Http\Middleware\MaintenanceMode::class,
+            HandleSeoRedirects::class,
+            MaintenanceMode::class,
             // Outside InjectRecaptcha, so a cached page keeps its script.
-            \App\Http\Middleware\CachePages::class,
+            CachePages::class,
             // Inside CachePages, so a cached page keeps its builder styles.
-            \App\Http\Middleware\InjectBuilderStyles::class,
-            \App\Http\Middleware\InjectRecaptcha::class,
+            InjectBuilderStyles::class,
+            InjectRecaptcha::class,
         ]);
 
         // Forwarded headers are only believable when something trustworthy set
@@ -82,4 +124,31 @@ return Application::configure(basePath: dirname(__DIR__))
             'current_password', 'password', 'password_confirmation',
             'two_factor_code', 'recovery_code', 'card_number', 'cvv',
         ]);
+
+        // A path under /api that matches no route never enters the API's own
+        // middleware group - ForceJsonResponse included - so without this,
+        // a typo'd endpoint or an unmatched method got Laravel's ordinary
+        // HTML error page instead of JSON. An API should never hand a client
+        // a page to parse, matched route or not.
+        $exceptions->shouldRenderJsonWhen(function ($request, Throwable $e) {
+            return $request->is(trim((string) config('api.prefix', 'api'), '/').'/*')
+                || $request->expectsJson();
+        });
+
+        // The rate limiter throws before any API controller runs, so its
+        // response would otherwise be whatever Laravel's default exception
+        // rendering produces for it: no 'error' code to branch on - breaking
+        // the one promise every other failure in this API keeps - and, with
+        // APP_DEBUG on, a stack trace in the body. The Retry-After header
+        // Laravel already computed is kept as it was.
+        $exceptions->render(function (ThrottleRequestsException $e, $request) {
+            if (! $request->is(trim((string) config('api.prefix', 'api'), '/').'/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => 'Too many requests. Please slow down and try again shortly.',
+                'error' => 'rate_limited',
+            ], 429, $e->getHeaders());
+        });
     })->create();

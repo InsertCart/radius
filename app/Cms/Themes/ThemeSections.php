@@ -39,7 +39,8 @@ class ThemeSections
     /** Control types a theme may declare, mapped to their Control factory. */
     private const CONTROL_TYPES = [
         'text', 'textarea', 'richtext', 'number', 'toggle', 'select',
-        'color', 'image', 'link', 'icon', 'slider', 'dimensions',
+        'color', 'image', 'link', 'icon', 'slider', 'dimensions', 'repeater',
+        'choose', 'background', 'border', 'shadow', 'gallery', 'code', 'typography',
     ];
 
     private ?array $manifest = null;
@@ -105,8 +106,14 @@ class ThemeSections
 
             $control = match ($type) {
                 'select' => Control::select($name, $label, $this->options($definition['options'] ?? [])),
+                'choose' => Control::choose($name, $label, $definition['options'] ?? []),
                 'slider' => Control::slider($name, $label),
                 'dimensions' => Control::dimensions($name, $label),
+                'repeater' => Control::repeater(
+                    $name,
+                    $label,
+                    $this->buildRepeaterFields($definition['fields'] ?? [])
+                ),
                 default => Control::{$type}($name, $label),
             };
 
@@ -202,6 +209,53 @@ class ThemeSections
         } catch (\Throwable $e) {
             return [];
         }
+    }
+
+    /** @return Control[] */
+    private function buildRepeaterFields(array $fields): array
+    {
+        $controls = [];
+
+        foreach ($fields as $field) {
+            $type = $field['type'] ?? 'text';
+            $key = (string) ($field['key'] ?? '');
+
+            if (! in_array($type, self::CONTROL_TYPES, true) || ! preg_match('/^[a-z0-9_]+$/', $key)) {
+                continue;
+            }
+
+            $label = (string) ($field['label'] ?? ucfirst(str_replace('_', ' ', $key)));
+
+            $ctrl = match ($type) {
+                'select' => Control::select($key, $label, $this->options($field['options'] ?? [])),
+                'choose' => Control::choose($key, $label, $field['options'] ?? []),
+                'slider' => Control::slider($key, $label),
+                'dimensions' => Control::dimensions($key, $label),
+                default => Control::{$type}($key, $label),
+            };
+
+            if (in_array($type, ['number', 'slider'], true)) {
+                isset($field['min']) && $ctrl->min((float) $field['min']);
+                isset($field['max']) && $ctrl->max((float) $field['max']);
+                isset($field['step']) && $ctrl->step((float) $field['step']);
+            }
+
+            if (isset($field['placeholder'])) {
+                $ctrl->placeholder((string) $field['placeholder']);
+            }
+
+            if (array_key_exists('default', $field)) {
+                $ctrl->default($field['default']);
+            }
+
+            if (isset($field['help'])) {
+                $ctrl->help((string) $field['help']);
+            }
+
+            $controls[] = $ctrl;
+        }
+
+        return $controls;
     }
 
     // Starters -------------------------------------------------------------

@@ -185,7 +185,7 @@ export function compile(nodes, controlsFor) {
 
             // Combinators survive: the selector is written by a block class,
             // and the only user-controlled part is the already-validated id.
-            const selector = mapping.selector.replace('{{WRAPPER}}', `.cb-${id}`).replace(/[{}<;]/g, '');
+            const selector = mapping.selector.replaceAll('{{WRAPPER}}', `.cb-${id}`).replace(/[{}<;]/g, '');
 
             Object.entries(rendered).forEach(([property, declaration]) => {
                 add(media, selector, property, declaration);

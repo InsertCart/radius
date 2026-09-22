@@ -1,12 +1,20 @@
 <?php
 
+use App\Cms\Api\ApiManager;
+use App\Cms\Builder\Blocks\Block;
+use App\Cms\Cdn\CdnManager;
 use App\Cms\Modules\ModuleManager;
 use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
+use App\Cms\Shop\Countries;
 use App\Cms\Themes\ThemeManager;
+use App\Cms\Themes\ThemeSections;
 use App\Models\ActivityLog;
+use App\Models\Page;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,11 +53,19 @@ if (! function_exists('module_enabled')) {
     }
 }
 
+if (! function_exists('api')) {
+    /** The mobile API: what it exposes, and on what terms. */
+    function api(): ApiManager
+    {
+        return app(ApiManager::class);
+    }
+}
+
 if (! function_exists('cdn')) {
     /** Decides where media files live and which address they are served from. */
-    function cdn(): \App\Cms\Cdn\CdnManager
+    function cdn(): CdnManager
     {
-        return app(\App\Cms\Cdn\CdnManager::class);
+        return app(CdnManager::class);
     }
 }
 
@@ -122,7 +138,7 @@ if (! function_exists('theme_section')) {
      */
     function theme_section(string $key, array $settings = []): string
     {
-        $sections = app(\App\Cms\Themes\ThemeSections::class);
+        $sections = app(ThemeSections::class);
         $section = $sections->get($key);
 
         if (! $section) {
@@ -152,7 +168,7 @@ if (! function_exists('safe_url')) {
      */
     function safe_url(mixed $url): string
     {
-        return \App\Cms\Builder\Blocks\Block::safeUrl($url);
+        return Block::safeUrl($url);
     }
 }
 
@@ -326,7 +342,7 @@ if (! function_exists('to_minor_units')) {
 
 if (! function_exists('from_minor_units')) {
     /** Convert stored minor units back into a value for an admin form. */
-    function from_minor_units(int|null $minorUnits): string
+    function from_minor_units(?int $minorUnits): string
     {
         return number_format(((int) $minorUnits) / 100, 2, '.', '');
     }
@@ -352,7 +368,7 @@ if (! function_exists('activity')) {
             ]);
 
             ActivityLog::pruneIfDue();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
         }
     }
@@ -394,7 +410,7 @@ if (! function_exists('format_date')) {
             return '';
         }
 
-        return \Illuminate\Support\Carbon::parse($date)
+        return Carbon::parse($date)
             ->timezone(setting('timezone', config('app.timezone')))
             ->format($format ?? setting('date_format', 'd M Y'));
     }
@@ -411,13 +427,13 @@ if (! function_exists('safe_route')) {
      */
     function safe_route(string $name, mixed $parameters = [], string $fallback = '#'): string
     {
-        if (! \Illuminate\Support\Facades\Route::has($name)) {
+        if (! Route::has($name)) {
             return $fallback;
         }
 
         try {
             return route($name, $parameters);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return $fallback;
         }
     }
@@ -463,7 +479,7 @@ if (! function_exists('terms_url')) {
             return null;
         }
 
-        return \App\Models\Page::published()->where('slug', $slug)->first()?->url();
+        return Page::published()->where('slug', $slug)->first()?->url();
     }
 }
 
@@ -474,7 +490,7 @@ if (! function_exists('country_name')) {
      */
     function country_name(?string $code): string
     {
-        return \App\Cms\Shop\Countries::name($code);
+        return Countries::name($code);
     }
 }
 

@@ -10,7 +10,7 @@ return [
     */
 
     'name' => 'Radius',
-    'version' => '1.2.7',
+    'version' => '1.2.8',
 
     /*
     |--------------------------------------------------------------------------
@@ -90,7 +90,8 @@ return [
     | panel; a disabled module registers no routes, no menu entries and no view
     | composers, so it costs nothing at runtime.
     |
-    | 'core' modules cannot be disabled.
+    | 'core' modules cannot be disabled. A module marked 'default' => false
+    | arrives switched off, and stays off until somebody turns it on.
     */
 
     'modules' => [
@@ -173,6 +174,17 @@ return [
             'description' => 'Email subscriber capture and export.',
             'icon' => 'inbox',
             'core' => false,
+        ],
+        'api' => [
+            'name' => 'Mobile API',
+            'description' => 'A JSON API for a mobile app: content, shop and customer accounts. Off until you turn it on, and then only the parts you choose.',
+            'icon' => 'api',
+            'core' => false,
+
+            // The only module that ships off. Everything else here is part of
+            // running a website; this one opens the site to programs, and
+            // that is nobody's default.
+            'default' => false,
         ],
     ],
 
