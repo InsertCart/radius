@@ -474,6 +474,30 @@ class MobileApiEndpointsTest extends TestCase
             ->assertJsonValidationErrors('billing.name');
     }
 
+    public function test_checkout_tells_the_app_which_fields_to_ask_for_and_enforces_them(): void
+    {
+        settings()->set('checkout_field_phone', 'required');
+        settings()->set('checkout_field_state', 'hidden');
+
+        $product = $this->product();
+        $token = $this->withHeaders($this->h())->postJson('/api/v1/cart/items', ['product_id' => $product->id])->json('data.token');
+
+        $this->withHeaders($this->h() + ['X-Cart-Token' => $token])
+            ->getJson('/api/v1/checkout')
+            ->assertOk()
+            ->assertJsonPath('data.fields.phone', 'required')
+            ->assertJsonPath('data.fields.state', 'hidden')
+            ->assertJsonPath('data.fields.email', 'required');
+
+        $this->withHeaders($this->h() + ['X-Cart-Token' => $token])
+            ->postJson('/api/v1/checkout', [
+                'email' => 'g@example.test', 'payment_gateway' => 'cod', 'terms' => true,
+                'billing' => ['name' => 'G', 'line1' => '1 Road', 'city' => 'Pune', 'country' => 'IN'],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('phone');
+    }
+
     public function test_checkout_store_with_empty_cart_is_refused(): void
     {
         $this->withHeaders($this->h())

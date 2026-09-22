@@ -499,6 +499,125 @@
     .cb-reviews__grid--form { grid-template-columns: 1fr; }
 }
 
+/* Cart and checkout -------------------------------------------------------
+   These two widgets are the working shop, dropped into pages a theme knows
+   nothing about, so they carry a complete skeleton of their own: without it
+   a builder-made checkout renders as a run of bare labels and inputs. Colours
+   come from the tokens, so the site's Design settings still apply. */
+
+.cb-cart, .cb-checkout { color: var(--cb-color-text); font-size: .9375rem; }
+.cb-cart h3, .cb-checkout h3 { margin: 0 0 1rem; font-size: 1.0625rem; font-weight: 700; color: var(--cb-color-heading); }
+.cb-cart ul, .cb-checkout ul { margin: 0; padding: 0; list-style: none; }
+
+.cb-cart input[type="text"], .cb-cart input[type="number"],
+.cb-checkout input[type="text"], .cb-checkout input[type="email"],
+.cb-checkout select, .cb-checkout textarea {
+    width: 100%; min-width: 0; box-sizing: border-box;
+    padding: .65rem .8rem; border: 1px solid var(--cb-color-border);
+    border-radius: .5rem; background: var(--cb-color-surface); color: inherit; font: inherit;
+}
+.cb-cart input:focus, .cb-checkout input:focus, .cb-checkout select:focus, .cb-checkout textarea:focus {
+    outline: 2px solid var(--cb-color-primary); outline-offset: -1px; border-color: transparent;
+}
+.cb-cart :disabled, .cb-checkout :disabled { cursor: not-allowed; }
+
+/* Both summaries share one look: a bordered card with a totals list. */
+.cb-cart__summary, .cb-checkout__summary {
+    align-self: start; padding: 1.5rem;
+    border: 1px solid var(--cb-color-border); border-radius: .75rem; background: var(--cb-color-surface);
+}
+.cb-cart__summary dl, .cb-checkout__summary dl { margin: 0 0 1.25rem; }
+.cb-cart__summary dl > div, .cb-checkout__summary dl > div { display: flex; justify-content: space-between; gap: 1rem; padding: .4rem 0; }
+.cb-cart__summary dt, .cb-checkout__summary dt { color: var(--cb-color-muted); }
+.cb-cart__summary dd, .cb-checkout__summary dd { margin: 0; font-weight: 600; text-align: right; }
+.cb-cart__total, .cb-checkout__total { margin-top: .5rem; padding-top: .9rem !important; border-top: 1px solid var(--cb-color-border); }
+.cb-cart__total dt, .cb-cart__total dd, .cb-checkout__total dt, .cb-checkout__total dd { font-size: 1.125rem; font-weight: 700; color: var(--cb-color-heading); }
+
+.cb-cart--empty, .cb-checkout--empty {
+    display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    padding: 3rem 1.5rem; text-align: center;
+    border: 1px dashed var(--cb-color-border); border-radius: .75rem;
+}
+.cb-cart--empty p, .cb-checkout--empty p { margin: 0; }
+
+/* Cart */
+.cb-cart__grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--cb-gap); }
+.cb-cart__items { border-top: 1px solid var(--cb-color-border); }
+.cb-cart__item { display: flex; gap: 1rem; padding: 1.1rem 0; border-bottom: 1px solid var(--cb-color-border); }
+.cb-cart__media { flex: none; width: 84px; height: 84px; overflow: hidden; border-radius: .5rem; background: var(--cb-color-border); }
+.cb-cart__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cb-cart__details { flex: 1; min-width: 0; }
+.cb-cart__details p { margin: 0; }
+.cb-cart__name { font-weight: 600; }
+.cb-cart__name a { color: var(--cb-color-heading); text-decoration: none; }
+.cb-cart__unit, .cb-cart__note { margin-top: .2rem !important; font-size: .8125rem; color: var(--cb-color-muted); }
+.cb-cart__warning { margin-top: .3rem !important; font-size: .8125rem; color: #dc2626; }
+.cb-cart__controls { display: flex; align-items: center; gap: .75rem; margin-top: .6rem; }
+.cb-cart__controls form { margin: 0; }
+.cb-cart__controls input { width: 72px !important; padding: .4rem .5rem !important; }
+.cb-cart__controls button, .cb-cart__coupon button {
+    padding: 0; border: 0; background: none; font: inherit; font-size: .8125rem;
+    color: var(--cb-color-muted); text-decoration: underline; cursor: pointer;
+}
+.cb-cart__line { margin: 0; font-weight: 700; color: var(--cb-color-heading); white-space: nowrap; }
+.cb-cart__discount dd { color: #16a34a; }
+.cb-cart__coupon { display: flex; gap: .5rem; margin: 0 0 1rem; }
+.cb-cart__coupon input + button {
+    flex: none; padding: 0 1rem; border: 1px solid var(--cb-color-border); border-radius: .5rem;
+    color: var(--cb-color-heading); font-weight: 600; text-decoration: none;
+}
+.cb-cart__continue { display: block; margin-top: .9rem; text-align: center; font-size: .875rem; color: var(--cb-color-muted); }
+.cb-cart__issues { margin-bottom: 1rem; padding: .9rem 1rem; border-radius: .5rem; background: #fef2f2; color: #991b1b; font-size: .875rem; }
+
+/* Checkout */
+.cb-checkout form { display: grid; gap: var(--cb-gap); margin: 0; }
+.cb-checkout--two-column form { grid-template-columns: minmax(0, 1fr) 360px; }
+.cb-checkout__main { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.cb-checkout__section { padding: 1.5rem; border: 1px solid var(--cb-color-border); border-radius: .75rem; background: var(--cb-color-surface); }
+.cb-checkout__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.cb-checkout__wide { grid-column: 1 / -1; }
+.cb-checkout label:not(.cb-checkout__check):not(.cb-checkout__method) { display: flex; flex-direction: column; gap: .35rem; }
+.cb-checkout label:not(.cb-checkout__check):not(.cb-checkout__method) > span { font-size: .8125rem; font-weight: 600; color: var(--cb-color-heading); }
+.cb-checkout label > span small { font-size: .75rem; font-weight: 400; color: var(--cb-color-muted); }
+.cb-checkout textarea { resize: vertical; }
+/* The other-address fields stay folded away until their box is ticked. */
+.cb-checkout__shipping { display: none; margin-top: 1rem; }
+.cb-checkout__shipto:has(> .cb-checkout__check input:checked) .cb-checkout__shipping { display: grid; }
+.cb-checkout__check { display: flex; align-items: flex-start; gap: .6rem; margin-top: 1rem; cursor: pointer; }
+.cb-checkout__section > .cb-checkout__check:first-child { margin-top: 0; }
+.cb-checkout__check input, .cb-checkout__method input { flex: none; width: 1rem; height: 1rem; margin: .2rem 0 0; accent-color: var(--cb-color-primary); }
+.cb-checkout__methods { display: flex; flex-direction: column; gap: .6rem; }
+.cb-checkout__method {
+    display: flex; align-items: flex-start; gap: .75rem; padding: 1rem;
+    border: 1px solid var(--cb-color-border); border-radius: .6rem; cursor: pointer;
+}
+.cb-checkout__method:has(input:checked) { border-color: var(--cb-color-primary); box-shadow: 0 0 0 1px var(--cb-color-primary); }
+.cb-checkout__method span { display: flex; flex-direction: column; gap: .15rem; }
+.cb-checkout__method strong { color: var(--cb-color-heading); }
+.cb-checkout__method small { font-size: .8125rem; color: var(--cb-color-muted); }
+.cb-checkout__summary ul { margin-bottom: 1rem; padding-bottom: .75rem; border-bottom: 1px solid var(--cb-color-border); }
+.cb-checkout__summary li { display: flex; justify-content: space-between; gap: 1rem; padding: .35rem 0; font-size: .875rem; }
+.cb-checkout__summary li span:last-child { font-weight: 600; white-space: nowrap; }
+.cb-checkout__summary .cb-checkout__check { margin: 0 0 1rem; font-size: .875rem; }
+.cb-checkout__submit:disabled { opacity: .6; filter: none; transform: none; }
+.cb-checkout__note { margin: .9rem 0 0; font-size: .75rem; text-align: center; color: var(--cb-color-muted); }
+.cb-checkout__warning { margin: 0 0 1rem; padding: .9rem 1rem; border-radius: .5rem; background: #fffbeb; color: #92400e; font-size: .875rem; }
+
+/* The order summary stays in view while a long form scrolls past it. */
+@media (min-width: 1025px) {
+    .cb-checkout--two-column .cb-checkout__summary { position: sticky; top: 1.5rem; }
+}
+
+@media (max-width: 1024px) {
+    .cb-cart__grid, .cb-checkout--two-column form { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 767px) {
+    .cb-checkout__row { grid-template-columns: 1fr; }
+    .cb-checkout__section, .cb-cart__summary, .cb-checkout__summary { padding: 1.1rem; }
+    .cb-cart__media { width: 64px; height: 64px; }
+}
+
 /* Lightbox ---------------------------------------------------------------- */
 
 .cb-lightbox {

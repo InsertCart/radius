@@ -6,6 +6,7 @@ use App\Cms\Builder\Control;
 use App\Cms\Payments\PaymentManager;
 use App\Cms\Shop\AddressBook;
 use App\Cms\Shop\CartService;
+use App\Cms\Shop\CheckoutFields;
 use App\Cms\Shop\Countries;
 
 /**
@@ -100,6 +101,9 @@ class CheckoutBlock extends Block
             // builder-made checkout page behaves identically.
             'countries' => Countries::selling(),
             'billing' => $remembers ? app(AddressBook::class)->prefill($user, 'billing') : [],
+            'shipping' => $remembers ? app(AddressBook::class)->prefill($user, 'shipping') : [],
+            // Settings -> Checkout: which fields to draw and which to insist on.
+            'checkoutFields' => app(CheckoutFields::class),
             'canSaveAddress' => $remembers && $user !== null && $user->addresses()->exists(),
         ];
     }

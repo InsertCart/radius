@@ -8,6 +8,7 @@ use App\Cms\Payments\PaymentManager;
 use App\Cms\Payments\PaymentResult;
 use App\Cms\Shop\AddressBook;
 use App\Cms\Shop\CartService;
+use App\Cms\Shop\CheckoutFields;
 use App\Cms\Shop\Countries;
 use App\Cms\Shop\OrderService;
 use App\Http\Controllers\Api\ApiController;
@@ -17,7 +18,6 @@ use App\Models\PaymentGateway;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Validation\Rule;
 
 /**
  * Checkout, and the hand-off to whoever takes the money.
@@ -46,6 +46,7 @@ class CheckoutController extends ApiController
         private PaymentManager $payments,
         private AddressBook $addresses,
         private ApiManager $api,
+        private CheckoutFields $fields,
     ) {}
 
     /** Everything the checkout screen needs before anybody types anything. */
@@ -64,6 +65,9 @@ class CheckoutController extends ApiController
             ),
             'guest_checkout' => (bool) setting('shop_guest_checkout', true),
             'requires_shipping' => $this->cart->requiresShipping(),
+            // required / optional / hidden for each form field, so the app
+            // draws the same form the website does.
+            'fields' => $this->fields->toArray(),
             'payment_methods' => $this->payments->availableFor()
                 ->map(fn (PaymentGateway $gateway) => [
                     'slug' => $gateway->slug,
@@ -105,32 +109,13 @@ class CheckoutController extends ApiController
             return $this->fail($issues[0], 409, 'cart_stale');
         }
 
-        $validated = $request->validate([
-            'email' => ['required', 'email', 'max:190'],
-            'phone' => ['nullable', 'string', 'max:30'],
+        // The same field choices the website's checkout follows (Settings ->
+        // Checkout), so an app cannot place an order the site would refuse.
+        $validated = $request->validate($this->fields->rules() + [
             'payment_gateway' => ['required', 'string', 'max:40'],
-            'customer_note' => ['nullable', 'string', 'max:1000'],
-
-            'billing.name' => ['required', 'string', 'max:120'],
-            'billing.line1' => ['required', 'string', 'max:190'],
-            'billing.line2' => ['nullable', 'string', 'max:190'],
-            'billing.city' => ['required', 'string', 'max:120'],
-            'billing.state' => ['nullable', 'string', 'max:120'],
-            'billing.postcode' => ['nullable', 'string', 'max:30'],
-            'billing.country' => ['required', 'string', Rule::in(Countries::allowedCodes())],
-
-            'ship_to_different' => ['nullable', 'boolean'],
-            'shipping.name' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:120'],
-            'shipping.line1' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:190'],
-            'shipping.city' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:120'],
-            'shipping.country' => ['required_if:ship_to_different,1', 'nullable', 'string', Rule::in(Countries::allowedCodes())],
-
             'save_address' => ['nullable', 'boolean'],
             'terms' => ['accepted'],
-        ], [
-            'billing.country.in' => 'We are not able to sell to that country yet.',
-            'shipping.country.in' => 'We are not able to deliver to that country yet.',
-        ]);
+        ], $this->fields->messages());
 
         // Checked against what is actually live, so a crafted request cannot
         // pick a disabled or half-configured provider.
@@ -139,8 +124,8 @@ class CheckoutController extends ApiController
         }
 
         $billing = $this->addresses->normalise($validated['billing']);
-        $shipping = $request->boolean('ship_to_different')
-            ? $this->addresses->normalise($validated['shipping'])
+        $shipping = $request->boolean('ship_to_different') && $this->fields->asksForAddress()
+            ? $this->addresses->normalise($validated['shipping'] ?? [])
             : $billing;
 
         try {
@@ -277,14 +262,16 @@ class CheckoutController extends ApiController
         $asked = $request->boolean('save_address');
 
         $withPhone = function (array $address) use ($request): array {
-            $address['phone'] ??= $request->input('phone');
+            if ($this->fields->shows('phone')) {
+                $address['phone'] ??= $request->input('phone');
+            }
 
             return $address;
         };
 
         $this->addresses->remember($user, $withPhone($billing), 'billing', $asked);
 
-        if ($request->boolean('ship_to_different')) {
+        if ($request->boolean('ship_to_different') && $this->fields->asksForAddress()) {
             $this->addresses->remember($user, $withPhone($shipping), 'shipping', $asked);
         }
     }

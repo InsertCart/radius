@@ -3,6 +3,10 @@
 @section('content')
     @region('checkout')
 
+    {{-- Which fields to ask for, and which to insist on, is set under
+         Settings -> Checkout. The server enforces the same choice. --}}
+    @php $checkoutFields ??= app(\App\Cms\Shop\CheckoutFields::class); @endphp
+
     <div class="sf-wrap">
         <p class="sf-steps"><b>Bag</b> <span>&rsaquo;</span> <b>Details</b> <span>&rsaquo;</span> Payment</p>
 
@@ -30,11 +34,13 @@
                                 <input type="email" name="email" id="email" required class="sf-input"
                                        value="{{ old('email', $user?->email) }}" autocomplete="email">
                             </div>
-                            <div>
-                                <label for="phone" class="sf-label">Phone</label>
-                                <input type="text" name="phone" id="phone" class="sf-input"
-                                       value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}" autocomplete="tel">
-                            </div>
+                            @if ($checkoutFields->shows('phone'))
+                                <div>
+                                    <label for="phone" class="sf-label">Phone</label>
+                                    <input type="text" name="phone" id="phone" class="sf-input" @required($checkoutFields->requires('phone'))
+                                           value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}" autocomplete="tel">
+                                </div>
+                            @endif
                         </div>
 
                         @guest
@@ -46,7 +52,7 @@
                     </div>
 
                     <div class="sf-panel">
-                        <p class="sf-panel__title">Billing address</p>
+                        <p class="sf-panel__title">{{ $checkoutFields->asksForAddress() ? 'Billing address' : 'Your details' }}</p>
 
                         @if ($savedAddresses->count() > 1)
                             {{-- Choosing another saved address reloads checkout with
@@ -73,41 +79,53 @@
                                 <input type="text" name="billing[name]" id="billing-name" required class="sf-input"
                                        value="{{ old('billing.name', $billing['name'] ?? $user?->name) }}" autocomplete="name">
                             </div>
-                            <div class="sf-span2">
-                                <label for="billing-line1" class="sf-label">Address</label>
-                                <input type="text" name="billing[line1]" id="billing-line1" required class="sf-input"
-                                       value="{{ old('billing.line1', $billing['line1'] ?? null) }}" autocomplete="address-line1">
-                            </div>
-                            <div class="sf-span2">
-                                <label for="billing-line2" class="sf-label">Apartment, suite (optional)</label>
-                                <input type="text" name="billing[line2]" id="billing-line2" class="sf-input"
-                                       value="{{ old('billing.line2', $billing['line2'] ?? null) }}" autocomplete="address-line2">
-                            </div>
-                            <div>
-                                <label for="billing-city" class="sf-label">City</label>
-                                <input type="text" name="billing[city]" id="billing-city" required class="sf-input"
-                                       value="{{ old('billing.city', $billing['city'] ?? null) }}" autocomplete="address-level2">
-                            </div>
-                            <div>
-                                <label for="billing-state" class="sf-label">State / region</label>
-                                <input type="text" name="billing[state]" id="billing-state" class="sf-input"
-                                       value="{{ old('billing.state', $billing['state'] ?? null) }}" autocomplete="address-level1">
-                            </div>
-                            <div>
-                                <label for="billing-postcode" class="sf-label">Postcode</label>
-                                <input type="text" name="billing[postcode]" id="billing-postcode" class="sf-input"
-                                       value="{{ old('billing.postcode', $billing['postcode'] ?? null) }}" autocomplete="postal-code">
-                            </div>
-                            <div>
-                                <label for="billing-country" class="sf-label">Country</label>
-                                @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
-                                <select name="billing[country]" id="billing-country" required class="sf-select" autocomplete="country">
-                                    <option value="">Choose a country</option>
-                                    @foreach ($countries as $code => $countryName)
-                                        <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            @if ($checkoutFields->shows('line1'))
+                                <div class="sf-span2">
+                                    <label for="billing-line1" class="sf-label">Address</label>
+                                    <input type="text" name="billing[line1]" id="billing-line1" @required($checkoutFields->requires('line1')) class="sf-input"
+                                           value="{{ old('billing.line1', $billing['line1'] ?? null) }}" autocomplete="address-line1">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('line2'))
+                                <div class="sf-span2">
+                                    <label for="billing-line2" class="sf-label">Apartment, suite{{ $checkoutFields->requires('line2') ? '' : ' (optional)' }}</label>
+                                    <input type="text" name="billing[line2]" id="billing-line2" @required($checkoutFields->requires('line2')) class="sf-input"
+                                           value="{{ old('billing.line2', $billing['line2'] ?? null) }}" autocomplete="address-line2">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('city'))
+                                <div>
+                                    <label for="billing-city" class="sf-label">City</label>
+                                    <input type="text" name="billing[city]" id="billing-city" @required($checkoutFields->requires('city')) class="sf-input"
+                                           value="{{ old('billing.city', $billing['city'] ?? null) }}" autocomplete="address-level2">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('state'))
+                                <div>
+                                    <label for="billing-state" class="sf-label">State / region</label>
+                                    <input type="text" name="billing[state]" id="billing-state" @required($checkoutFields->requires('state')) class="sf-input"
+                                           value="{{ old('billing.state', $billing['state'] ?? null) }}" autocomplete="address-level1">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('postcode'))
+                                <div>
+                                    <label for="billing-postcode" class="sf-label">Postcode</label>
+                                    <input type="text" name="billing[postcode]" id="billing-postcode" @required($checkoutFields->requires('postcode')) class="sf-input"
+                                           value="{{ old('billing.postcode', $billing['postcode'] ?? null) }}" autocomplete="postal-code">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('country'))
+                                <div>
+                                    <label for="billing-country" class="sf-label">Country</label>
+                                    @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
+                                    <select name="billing[country]" id="billing-country" @required($checkoutFields->requires('country')) class="sf-select" autocomplete="country">
+                                        <option value="">Choose a country</option>
+                                        @foreach ($countries as $code => $countryName)
+                                            <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
                         </div>
 
                         @if ($canSaveAddress && $savedAddresses->isNotEmpty())
@@ -118,7 +136,7 @@
                         @endif
                     </div>
 
-                    @if ($summary['requires_shipping'])
+                    @if ($summary['requires_shipping'] && $checkoutFields->asksForAddress())
                         <div class="sf-panel">
                             @php $shipsElsewhere = (bool) old('ship_to_different'); @endphp
                             <label class="sf-check">
@@ -140,26 +158,57 @@
                                         <input type="text" name="shipping[name]" id="shipping-name" class="sf-input"
                                                value="{{ old('shipping.name', $shipping['name'] ?? null) }}">
                                     </div>
-                                    <div class="sf-span2">
-                                        <label for="shipping-line1" class="sf-label">Address</label>
-                                        <input type="text" name="shipping[line1]" id="shipping-line1" class="sf-input"
-                                               value="{{ old('shipping.line1', $shipping['line1'] ?? null) }}">
-                                    </div>
-                                    <div>
-                                        <label for="shipping-city" class="sf-label">City</label>
-                                        <input type="text" name="shipping[city]" id="shipping-city" class="sf-input"
-                                               value="{{ old('shipping.city', $shipping['city'] ?? null) }}">
-                                    </div>
-                                    <div>
-                                        <label for="shipping-country" class="sf-label">Country</label>
-                                        @php $shippingCountry = (string) old('shipping.country', $shipping['country'] ?? null); @endphp
-                                        <select name="shipping[country]" id="shipping-country" class="sf-select">
-                                            <option value="">Choose a country</option>
-                                            @foreach ($countries as $code => $countryName)
-                                                <option value="{{ $code }}" @selected($shippingCountry === (string) $code)>{{ $countryName }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                    {{-- No required attributes in here: the panel is
+                                         collapsed until ticked, and a hidden required
+                                         field would stop the form. The server insists
+                                         on them once it is ticked. --}}
+                                    @if ($checkoutFields->shows('line1'))
+                                        <div class="sf-span2">
+                                            <label for="shipping-line1" class="sf-label">Address</label>
+                                            <input type="text" name="shipping[line1]" id="shipping-line1" class="sf-input"
+                                                   value="{{ old('shipping.line1', $shipping['line1'] ?? null) }}">
+                                        </div>
+                                    @endif
+                                    @if ($checkoutFields->shows('line2'))
+                                        <div class="sf-span2">
+                                            <label for="shipping-line2" class="sf-label">Apartment, suite{{ $checkoutFields->requires('line2') ? '' : ' (optional)' }}</label>
+                                            <input type="text" name="shipping[line2]" id="shipping-line2" class="sf-input"
+                                                   value="{{ old('shipping.line2', $shipping['line2'] ?? null) }}">
+                                        </div>
+                                    @endif
+                                    @if ($checkoutFields->shows('city'))
+                                        <div>
+                                            <label for="shipping-city" class="sf-label">City</label>
+                                            <input type="text" name="shipping[city]" id="shipping-city" class="sf-input"
+                                                   value="{{ old('shipping.city', $shipping['city'] ?? null) }}">
+                                        </div>
+                                    @endif
+                                    @if ($checkoutFields->shows('state'))
+                                        <div>
+                                            <label for="shipping-state" class="sf-label">State / region</label>
+                                            <input type="text" name="shipping[state]" id="shipping-state" class="sf-input"
+                                                   value="{{ old('shipping.state', $shipping['state'] ?? null) }}">
+                                        </div>
+                                    @endif
+                                    @if ($checkoutFields->shows('postcode'))
+                                        <div>
+                                            <label for="shipping-postcode" class="sf-label">Postcode</label>
+                                            <input type="text" name="shipping[postcode]" id="shipping-postcode" class="sf-input"
+                                                   value="{{ old('shipping.postcode', $shipping['postcode'] ?? null) }}">
+                                        </div>
+                                    @endif
+                                    @if ($checkoutFields->shows('country'))
+                                        <div>
+                                            <label for="shipping-country" class="sf-label">Country</label>
+                                            @php $shippingCountry = (string) old('shipping.country', $shipping['country'] ?? null); @endphp
+                                            <select name="shipping[country]" id="shipping-country" class="sf-select">
+                                                <option value="">Choose a country</option>
+                                                @foreach ($countries as $code => $countryName)
+                                                    <option value="{{ $code }}" @selected($shippingCountry === (string) $code)>{{ $countryName }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -183,10 +232,12 @@
                         </div>
                     </div>
 
-                    <div class="sf-panel">
-                        <label for="customer_note" class="sf-label">Order notes (optional)</label>
-                        <textarea name="customer_note" id="customer_note" rows="3" class="sf-textarea">{{ old('customer_note') }}</textarea>
-                    </div>
+                    @if ($checkoutFields->shows('customer_note'))
+                        <div class="sf-panel">
+                            <label for="customer_note" class="sf-label">Order notes{{ $checkoutFields->requires('customer_note') ? '' : ' (optional)' }}</label>
+                            <textarea name="customer_note" id="customer_note" rows="3" @required($checkoutFields->requires('customer_note')) class="sf-textarea">{{ old('customer_note') }}</textarea>
+                        </div>
+                    @endif
                 </div>
 
                 <div>

@@ -230,6 +230,26 @@ return [
         ],
     ],
 
+    // Read through App\Cms\Shop\CheckoutFields, which also enforces them on
+    // the server - a hidden field is dropped, a required one refused if blank.
+    'checkout' => [
+        'label' => 'Checkout',
+        'icon' => 'credit-card',
+        'module' => 'shop',
+        'fields' => [
+            'checkout_fields_notice' => ['type' => 'notice', 'label' => 'Checkout fields',
+                'help' => 'Choose what checkout asks your customers for. Email address and full name are always required. Country stays required while you sell only to chosen countries. If every address field is hidden, the "ship to a different address" option is removed too - useful for a shop that only sells downloads. The bundled themes and the builder Checkout widget follow these settings; a third-party theme must support them before you make a field it does not show required.'],
+            'checkout_field_phone' => ['type' => 'select', 'label' => 'Phone', 'default' => 'optional', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+            'checkout_field_line1' => ['type' => 'select', 'label' => 'Street address', 'default' => 'required', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+            'checkout_field_line2' => ['type' => 'select', 'label' => 'Apartment, suite, unit', 'default' => 'optional', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+            'checkout_field_city' => ['type' => 'select', 'label' => 'City', 'default' => 'required', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+            'checkout_field_state' => ['type' => 'select', 'label' => 'State / region', 'default' => 'optional', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+            'checkout_field_postcode' => ['type' => 'select', 'label' => 'Postcode / ZIP', 'default' => 'optional', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+            'checkout_field_country' => ['type' => 'select', 'label' => 'Country', 'default' => 'required', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+            'checkout_field_customer_note' => ['type' => 'select', 'label' => 'Order notes', 'default' => 'optional', 'options' => 'checkout_field_modes', 'rules' => 'in:required,optional,hidden'],
+        ],
+    ],
+
     'advanced' => [
         'label' => 'Advanced',
         'icon' => 'wrench',

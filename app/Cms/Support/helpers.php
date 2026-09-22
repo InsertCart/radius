@@ -520,3 +520,34 @@ if (! function_exists('format_address')) {
         return $parts->unique()->implode($separator);
     }
 }
+
+if (! function_exists('embed_video_url')) {
+    /**
+     * Convert standard YouTube or Vimeo URLs into iframe embed URLs.
+     */
+    function embed_video_url(?string $url): string
+    {
+        if (blank($url)) {
+            return '';
+        }
+
+        $url = trim((string) $url);
+
+        // Already an embed URL or player URL
+        if (str_contains($url, 'youtube.com/embed/') || str_contains($url, 'youtube-nocookie.com/embed/') || str_contains($url, 'player.vimeo.com/video/')) {
+            return Block::safeUrl($url);
+        }
+
+        // YouTube: watch?v=ID, youtu.be/ID, shorts/ID
+        if (preg_match('/(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_\-]{11})/i', $url, $matches)) {
+            return 'https://www.youtube-nocookie.com/embed/'.$matches[1].'?autoplay=1&rel=0';
+        }
+
+        // Vimeo: vimeo.com/ID
+        if (preg_match('/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^\/]*\/videos\/|album\/(?:\d+\/)?video\/|video\/)?(\d+)/i', $url, $matches)) {
+            return 'https://player.vimeo.com/video/'.$matches[1].'?autoplay=1';
+        }
+
+        return Block::safeUrl($url);
+    }
+}

@@ -17,54 +17,63 @@
         <form method="POST" action="{{ safe_route('checkout.store', [], '#') }}">
             @csrf
 
+            {{-- Which fields to ask for, and which to insist on, is set under
+                 Settings -> Checkout; the server enforces the same choice. --}}
+            @php
+                $addressFields = [
+                    'line1' => ['Address', 'address-line1'],
+                    'line2' => ['Apartment, suite', 'address-line2'],
+                    'city' => ['City', 'address-level2'],
+                    'state' => ['State / region', 'address-level1'],
+                    'postcode' => ['Postcode', 'postal-code'],
+                    'country' => ['Country', 'country'],
+                ];
+            @endphp
+
             <div class="cb-checkout__main">
                 <section class="cb-checkout__section">
                     <h3>Contact</h3>
                     <div class="cb-checkout__row">
                         <label>
                             <span>Email address</span>
-                            <input type="email" name="email" required value="{{ old('email', $user?->email) }}" @disabled($editing)>
+                            <input type="email" name="email" required autocomplete="email" value="{{ old('email', $user?->email) }}" @disabled($editing)>
                         </label>
-                        <label>
-                            <span>Phone</span>
-                            <input type="text" name="phone" value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}" @disabled($editing)>
-                        </label>
+                        @if ($checkoutFields->shows('phone'))
+                            <label>
+                                <span>Phone @unless ($checkoutFields->requires('phone'))<small>(optional)</small>@endunless</span>
+                                <input type="text" name="phone" autocomplete="tel" @required($checkoutFields->requires('phone'))
+                                       value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}" @disabled($editing)>
+                            </label>
+                        @endif
                     </div>
                 </section>
 
                 <section class="cb-checkout__section">
-                    <h3>Billing address</h3>
+                    <h3>{{ $checkoutFields->asksForAddress() ? 'Billing address' : 'Your details' }}</h3>
                     <div class="cb-checkout__row">
                         <label class="cb-checkout__wide">
                             <span>Full name</span>
-                            <input type="text" name="billing[name]" required value="{{ old('billing.name', $billing['name'] ?? $user?->name) }}" @disabled($editing)>
+                            <input type="text" name="billing[name]" required autocomplete="name" value="{{ old('billing.name', $billing['name'] ?? $user?->name) }}" @disabled($editing)>
                         </label>
-                        <label class="cb-checkout__wide">
-                            <span>Address</span>
-                            <input type="text" name="billing[line1]" required value="{{ old('billing.line1', $billing['line1'] ?? null) }}" @disabled($editing)>
-                        </label>
-                        <label>
-                            <span>City</span>
-                            <input type="text" name="billing[city]" required value="{{ old('billing.city', $billing['city'] ?? null) }}" @disabled($editing)>
-                        </label>
-                        <label>
-                            <span>State / region</span>
-                            <input type="text" name="billing[state]" value="{{ old('billing.state', $billing['state'] ?? null) }}" @disabled($editing)>
-                        </label>
-                        <label>
-                            <span>Postcode</span>
-                            <input type="text" name="billing[postcode]" value="{{ old('billing.postcode', $billing['postcode'] ?? null) }}" @disabled($editing)>
-                        </label>
-                        <label>
-                            <span>Country</span>
-                            @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
-                            <select name="billing[country]" required @disabled($editing)>
-                                <option value="">Choose a country</option>
-                                @foreach ($countries as $code => $countryName)
-                                    <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
-                                @endforeach
-                            </select>
-                        </label>
+
+                        @foreach ($addressFields as $field => [$label, $autocomplete])
+                            @continue (! $checkoutFields->shows($field))
+                            <label @class(['cb-checkout__wide' => in_array($field, ['line1', 'line2'], true)])>
+                                <span>{{ $label }} @unless ($checkoutFields->requires($field))<small>(optional)</small>@endunless</span>
+                                @if ($field === 'country')
+                                    @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
+                                    <select name="billing[country]" autocomplete="country" @required($checkoutFields->requires('country')) @disabled($editing)>
+                                        <option value="">Choose a country</option>
+                                        @foreach ($countries as $code => $countryName)
+                                            <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <input type="text" name="billing[{{ $field }}]" autocomplete="{{ $autocomplete }}" @required($checkoutFields->requires($field))
+                                           value="{{ old('billing.'.$field, $billing[$field] ?? null) }}" @disabled($editing)>
+                                @endif
+                            </label>
+                        @endforeach
                     </div>
 
                     @if ($canSaveAddress)
@@ -75,12 +84,43 @@
                     @endif
                 </section>
 
-                @if ($summary['requires_shipping'])
-                    <section class="cb-checkout__section">
+                @if ($summary['requires_shipping'] && $checkoutFields->asksForAddress())
+                    <section class="cb-checkout__section cb-checkout__shipto">
                         <label class="cb-checkout__check">
-                            <input type="checkbox" name="ship_to_different" value="1" @disabled($editing)>
+                            <input type="checkbox" name="ship_to_different" value="1" @checked(old('ship_to_different')) @disabled($editing)>
                             <span>Ship to a different address</span>
                         </label>
+
+                        {{-- Opened by the checkbox above in CSS, so it needs no
+                             script. No required attributes in here: a hidden
+                             required field would stop the form, so the server
+                             insists on them only once the box is ticked. --}}
+                        <div class="cb-checkout__row cb-checkout__shipping">
+                            <label class="cb-checkout__wide">
+                                <span>Full name</span>
+                                <input type="text" name="shipping[name]" autocomplete="shipping name"
+                                       value="{{ old('shipping.name', $shipping['name'] ?? null) }}" @disabled($editing)>
+                            </label>
+
+                            @foreach ($addressFields as $field => [$label, $autocomplete])
+                                @continue (! $checkoutFields->shows($field))
+                                <label @class(['cb-checkout__wide' => in_array($field, ['line1', 'line2'], true)])>
+                                    <span>{{ $label }} @unless ($checkoutFields->requires($field))<small>(optional)</small>@endunless</span>
+                                    @if ($field === 'country')
+                                        @php $shippingCountry = (string) old('shipping.country', $shipping['country'] ?? null); @endphp
+                                        <select name="shipping[country]" autocomplete="shipping country" @disabled($editing)>
+                                            <option value="">Choose a country</option>
+                                            @foreach ($countries as $code => $countryName)
+                                                <option value="{{ $code }}" @selected($shippingCountry === (string) $code)>{{ $countryName }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <input type="text" name="shipping[{{ $field }}]" autocomplete="shipping {{ $autocomplete }}"
+                                               value="{{ old('shipping.'.$field, $shipping[$field] ?? null) }}" @disabled($editing)>
+                                    @endif
+                                </label>
+                            @endforeach
+                        </div>
                     </section>
                 @endif
 
@@ -102,11 +142,14 @@
                     </div>
                 </section>
 
-                @if (! empty($settings['show_notes']))
+                {{-- The widget's "Ask for order notes" switch can drop the field
+                     while it is optional. Once the shop makes notes required
+                     it always shows: without it no order could be placed. --}}
+                @if (! empty($settings['show_notes']) && $checkoutFields->shows('customer_note') || $checkoutFields->requires('customer_note'))
                     <section class="cb-checkout__section">
                         <label>
-                            <span>Order notes (optional)</span>
-                            <textarea name="customer_note" rows="3" @disabled($editing)>{{ old('customer_note') }}</textarea>
+                            <span>Order notes @unless ($checkoutFields->requires('customer_note'))<small>(optional)</small>@endunless</span>
+                            <textarea name="customer_note" rows="3" @required($checkoutFields->requires('customer_note')) @disabled($editing)>{{ old('customer_note') }}</textarea>
                         </label>
                     </section>
                 @endif

@@ -6,6 +6,7 @@ use App\Cms\Payments\PaymentManager;
 use App\Cms\Payments\PaymentResult;
 use App\Cms\Shop\AddressBook;
 use App\Cms\Shop\CartService;
+use App\Cms\Shop\CheckoutFields;
 use App\Cms\Shop\Countries;
 use App\Cms\Shop\OrderService;
 use App\Http\Controllers\Controller;
@@ -31,6 +32,7 @@ class CheckoutController extends Controller
         private OrderService $orders,
         private PaymentManager $payments,
         private AddressBook $addresses,
+        private CheckoutFields $fields,
     ) {}
 
     public function index(Request $request): RedirectResponse|View
@@ -71,6 +73,7 @@ class CheckoutController extends Controller
             'savedAddresses' => $saved,
             'chosenAddressId' => $chosen?->id ?? $user?->defaultAddress('billing')?->id,
             'canSaveAddress' => $remembers && $user !== null,
+            'checkoutFields' => $this->fields,
         ]);
     }
 
@@ -80,32 +83,13 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-        $validated = $request->validate([
-            'email' => ['required', 'email', 'max:190'],
-            'phone' => ['nullable', 'string', 'max:30'],
+        // Which fields are asked for, and which must be filled, is the shop's
+        // choice (Settings -> Checkout); the rules for them come from there.
+        $validated = $request->validate($this->fields->rules() + [
             'payment_gateway' => ['required', 'string', 'max:40'],
-            'customer_note' => ['nullable', 'string', 'max:1000'],
-
-            'billing.name' => ['required', 'string', 'max:120'],
-            'billing.line1' => ['required', 'string', 'max:190'],
-            'billing.line2' => ['nullable', 'string', 'max:190'],
-            'billing.city' => ['required', 'string', 'max:120'],
-            'billing.state' => ['nullable', 'string', 'max:120'],
-            'billing.postcode' => ['nullable', 'string', 'max:30'],
-            'billing.country' => ['required', 'string', Rule::in(Countries::allowedCodes())],
-
-            'ship_to_different' => ['nullable', 'boolean'],
-            'shipping.name' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:120'],
-            'shipping.line1' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:190'],
-            'shipping.city' => ['required_if:ship_to_different,1', 'nullable', 'string', 'max:120'],
-            'shipping.country' => ['required_if:ship_to_different,1', 'nullable', 'string', Rule::in(Countries::allowedCodes())],
-
             'save_address' => ['nullable', 'boolean'],
             'terms' => ['accepted'],
-        ], [
-            'billing.country.in' => 'We are not able to sell to that country yet.',
-            'shipping.country.in' => 'We are not able to deliver to that country yet.',
-        ]);
+        ], $this->fields->messages());
 
         // The gateway is checked against what is actually live, so a crafted
         // form cannot select a disabled or unconfigured provider.
@@ -114,8 +98,8 @@ class CheckoutController extends Controller
         }
 
         $billing = $this->addresses->normalise($validated['billing']);
-        $shipping = $request->boolean('ship_to_different')
-            ? $this->addresses->normalise($validated['shipping'])
+        $shipping = $request->boolean('ship_to_different') && $this->fields->asksForAddress()
+            ? $this->addresses->normalise($validated['shipping'] ?? [])
             : $billing;
 
         try {
@@ -318,14 +302,16 @@ class CheckoutController extends Controller
         // Checkout asks for the phone number once, above the address; saving
         // it alongside means the courier label is complete next time too.
         $withPhone = function (array $address) use ($request): array {
-            $address['phone'] ??= $request->input('phone');
+            if ($this->fields->shows('phone')) {
+                $address['phone'] ??= $request->input('phone');
+            }
 
             return $address;
         };
 
         $this->addresses->remember($user, $withPhone($billing), 'billing', $asked);
 
-        if ($request->boolean('ship_to_different')) {
+        if ($request->boolean('ship_to_different') && $this->fields->asksForAddress()) {
             $this->addresses->remember($user, $withPhone($shipping), 'shipping', $asked);
         }
     }

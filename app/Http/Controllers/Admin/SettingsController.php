@@ -206,6 +206,12 @@ class SettingsController extends Controller
 
             'countries' => Countries::all(),
 
+            'checkout_field_modes' => [
+                'required' => 'Required',
+                'optional' => 'Optional',
+                'hidden' => 'Hidden',
+            ],
+
             'search_engines' => collect($this->search->engineNames())->mapWithKeys(fn ($name) => [$name => match ($name) {
                 'database' => 'Database (no setup, always current)',
                 'index' => 'Index (fast, no database queries)',

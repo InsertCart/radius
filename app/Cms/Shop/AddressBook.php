@@ -75,7 +75,10 @@ class AddressBook
 
         session([self::GUEST_KEY.'.'.$kind => $address]);
 
-        if (! $user) {
+        // The address book needs a whole address. A shop that has hidden the
+        // city or country at checkout still remembers the rest for next time
+        // above, but has nothing here worth saving.
+        if (! $user || blank($address['city'] ?? null) || blank($address['country'] ?? null)) {
             return null;
         }
 

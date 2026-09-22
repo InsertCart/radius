@@ -3,6 +3,10 @@
 @section('content')
     @region('checkout')
 
+    {{-- Which fields to ask for, and which to insist on, is set under
+         Settings -> Checkout. The server enforces the same choice. --}}
+    @php $checkoutFields ??= app(\App\Cms\Shop\CheckoutFields::class); @endphp
+
     <div class="mx-auto max-w-5xl px-4 py-14">
         <h1 class="mb-8 text-3xl font-bold tracking-tight text-slate-900">Checkout</h1>
 
@@ -26,12 +30,14 @@
                                        value="{{ old('email', $user?->email) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
-                            <div>
-                                <label for="phone" class="mb-1 block text-sm font-medium text-slate-700">Phone</label>
-                                <input type="text" name="phone" id="phone"
-                                       value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}"
-                                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                            </div>
+                            @if ($checkoutFields->shows('phone'))
+                                <div>
+                                    <label for="phone" class="mb-1 block text-sm font-medium text-slate-700">Phone</label>
+                                    <input type="text" name="phone" id="phone" autocomplete="tel" @required($checkoutFields->requires('phone'))
+                                           value="{{ old('phone', $billing['phone'] ?? $user?->phone) }}"
+                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                </div>
+                            @endif
                         </div>
                         @guest
                             <p class="mt-2 text-xs text-slate-500">
@@ -43,7 +49,7 @@
                     </section>
 
                     <section>
-                        <h2 class="mb-4 text-lg font-semibold text-slate-900">Billing address</h2>
+                        <h2 class="mb-4 text-lg font-semibold text-slate-900">{{ $checkoutFields->asksForAddress() ? 'Billing address' : 'Your details' }}</h2>
 
                         @if ($savedAddresses->count() > 1)
                             {{-- Picking another saved address reloads checkout
@@ -74,47 +80,60 @@
                                        value="{{ old('billing.name', $billing['name'] ?? $user?->name) }}"
                                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             </div>
-                            <div class="sm:col-span-2">
-                                <label class="mb-1 block text-sm font-medium text-slate-700">Address</label>
-                                <input type="text" name="billing[line1]" required autocomplete="address-line1"
-                                       value="{{ old('billing.line1', $billing['line1'] ?? null) }}"
-                                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                            </div>
-                            <div class="sm:col-span-2">
-                                <input type="text" name="billing[line2]" placeholder="Apartment, suite (optional)"
-                                       autocomplete="address-line2"
-                                       value="{{ old('billing.line2', $billing['line2'] ?? null) }}"
-                                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-sm font-medium text-slate-700">City</label>
-                                <input type="text" name="billing[city]" required autocomplete="address-level2"
-                                       value="{{ old('billing.city', $billing['city'] ?? null) }}"
-                                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-sm font-medium text-slate-700">State / region</label>
-                                <input type="text" name="billing[state]" autocomplete="address-level1"
-                                       value="{{ old('billing.state', $billing['state'] ?? null) }}"
-                                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-sm font-medium text-slate-700">Postcode</label>
-                                <input type="text" name="billing[postcode]" autocomplete="postal-code"
-                                       value="{{ old('billing.postcode', $billing['postcode'] ?? null) }}"
-                                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
-                                @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
-                                <select name="billing[country]" required autocomplete="country"
-                                        class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-                                    <option value="">Choose a country</option>
-                                    @foreach ($countries as $code => $countryName)
-                                        <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            @if ($checkoutFields->shows('line1'))
+                                <div class="sm:col-span-2">
+                                    <label class="mb-1 block text-sm font-medium text-slate-700">Address</label>
+                                    <input type="text" name="billing[line1]" @required($checkoutFields->requires('line1')) autocomplete="address-line1"
+                                           value="{{ old('billing.line1', $billing['line1'] ?? null) }}"
+                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('line2'))
+                                <div class="sm:col-span-2">
+                                    <input type="text" name="billing[line2]" @required($checkoutFields->requires('line2'))
+                                           placeholder="Apartment, suite{{ $checkoutFields->requires('line2') ? '' : ' (optional)' }}"
+                                           autocomplete="address-line2"
+                                           value="{{ old('billing.line2', $billing['line2'] ?? null) }}"
+                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('city'))
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium text-slate-700">City</label>
+                                    <input type="text" name="billing[city]" @required($checkoutFields->requires('city')) autocomplete="address-level2"
+                                           value="{{ old('billing.city', $billing['city'] ?? null) }}"
+                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('state'))
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium text-slate-700">State / region</label>
+                                    <input type="text" name="billing[state]" @required($checkoutFields->requires('state')) autocomplete="address-level1"
+                                           value="{{ old('billing.state', $billing['state'] ?? null) }}"
+                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('postcode'))
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium text-slate-700">Postcode</label>
+                                    <input type="text" name="billing[postcode]" @required($checkoutFields->requires('postcode')) autocomplete="postal-code"
+                                           value="{{ old('billing.postcode', $billing['postcode'] ?? null) }}"
+                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                </div>
+                            @endif
+                            @if ($checkoutFields->shows('country'))
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
+                                    @php $billingCountry = (string) old('billing.country', $billing['country'] ?? null); @endphp
+                                    <select name="billing[country]" @required($checkoutFields->requires('country')) autocomplete="country"
+                                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                                        <option value="">Choose a country</option>
+                                        @foreach ($countries as $code => $countryName)
+                                            <option value="{{ $code }}" @selected($billingCountry === (string) $code)>{{ $countryName }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
                         </div>
 
                         @if ($canSaveAddress && $savedAddresses->isNotEmpty())
@@ -125,7 +144,7 @@
                         @endif
                     </section>
 
-                    @if ($summary['requires_shipping'])
+                    @if ($summary['requires_shipping'] && $checkoutFields->asksForAddress())
                         <section class="flex flex-wrap items-center">
                             {{-- The checkbox is the peer that opens the panel
                                  below it, so this works without any script. --}}
@@ -143,29 +162,63 @@
                                            value="{{ old('shipping.name', $shipping['name'] ?? null) }}"
                                            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                                 </div>
-                                <div class="sm:col-span-2">
-                                    <label class="mb-1 block text-sm font-medium text-slate-700">Address</label>
-                                    <input type="text" name="shipping[line1]"
-                                           value="{{ old('shipping.line1', $shipping['line1'] ?? null) }}"
-                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                                </div>
-                                <div>
-                                    <label class="mb-1 block text-sm font-medium text-slate-700">City</label>
-                                    <input type="text" name="shipping[city]"
-                                           value="{{ old('shipping.city', $shipping['city'] ?? null) }}"
-                                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                                </div>
-                                <div>
-                                    <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
-                                    @php $shippingCountry = (string) old('shipping.country', $shipping['country'] ?? null); @endphp
-                                    <select name="shipping[country]"
-                                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
-                                        <option value="">Choose a country</option>
-                                        @foreach ($countries as $code => $countryName)
-                                            <option value="{{ $code }}" @selected($shippingCountry === (string) $code)>{{ $countryName }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
+                                {{-- No required attributes in here: the panel is
+                                     hidden until ticked, and a hidden required
+                                     field would stop the form. The server
+                                     insists on them once it is ticked. --}}
+                                @if ($checkoutFields->shows('line1'))
+                                    <div class="sm:col-span-2">
+                                        <label class="mb-1 block text-sm font-medium text-slate-700">Address</label>
+                                        <input type="text" name="shipping[line1]"
+                                               value="{{ old('shipping.line1', $shipping['line1'] ?? null) }}"
+                                               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    </div>
+                                @endif
+                                @if ($checkoutFields->shows('line2'))
+                                    <div class="sm:col-span-2">
+                                        <input type="text" name="shipping[line2]"
+                                               placeholder="Apartment, suite{{ $checkoutFields->requires('line2') ? '' : ' (optional)' }}"
+                                               value="{{ old('shipping.line2', $shipping['line2'] ?? null) }}"
+                                               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    </div>
+                                @endif
+                                @if ($checkoutFields->shows('city'))
+                                    <div>
+                                        <label class="mb-1 block text-sm font-medium text-slate-700">City</label>
+                                        <input type="text" name="shipping[city]"
+                                               value="{{ old('shipping.city', $shipping['city'] ?? null) }}"
+                                               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    </div>
+                                @endif
+                                @if ($checkoutFields->shows('state'))
+                                    <div>
+                                        <label class="mb-1 block text-sm font-medium text-slate-700">State / region</label>
+                                        <input type="text" name="shipping[state]"
+                                               value="{{ old('shipping.state', $shipping['state'] ?? null) }}"
+                                               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    </div>
+                                @endif
+                                @if ($checkoutFields->shows('postcode'))
+                                    <div>
+                                        <label class="mb-1 block text-sm font-medium text-slate-700">Postcode</label>
+                                        <input type="text" name="shipping[postcode]"
+                                               value="{{ old('shipping.postcode', $shipping['postcode'] ?? null) }}"
+                                               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    </div>
+                                @endif
+                                @if ($checkoutFields->shows('country'))
+                                    <div>
+                                        <label class="mb-1 block text-sm font-medium text-slate-700">Country</label>
+                                        @php $shippingCountry = (string) old('shipping.country', $shipping['country'] ?? null); @endphp
+                                        <select name="shipping[country]"
+                                                class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                                            <option value="">Choose a country</option>
+                                            @foreach ($countries as $code => $countryName)
+                                                <option value="{{ $code }}" @selected($shippingCountry === (string) $code)>{{ $countryName }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
                             </div>
                         </section>
                     @endif
@@ -189,11 +242,15 @@
                         </div>
                     </section>
 
-                    <section>
-                        <label for="customer_note" class="mb-1 block text-sm font-medium text-slate-700">Order notes (optional)</label>
-                        <textarea name="customer_note" id="customer_note" rows="3"
-                                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('customer_note') }}</textarea>
-                    </section>
+                    @if ($checkoutFields->shows('customer_note'))
+                        <section>
+                            <label for="customer_note" class="mb-1 block text-sm font-medium text-slate-700">
+                                Order notes{{ $checkoutFields->requires('customer_note') ? '' : ' (optional)' }}
+                            </label>
+                            <textarea name="customer_note" id="customer_note" rows="3" @required($checkoutFields->requires('customer_note'))
+                                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('customer_note') }}</textarea>
+                        </section>
+                    @endif
                 </div>
 
                 <div>

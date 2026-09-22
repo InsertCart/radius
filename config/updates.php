@@ -214,6 +214,8 @@ return [
             'storage/app/update-last.json',
             // This site's own content, and rebuilt on demand anyway.
             'storage/app/search-index',
+            // Throwaway developer scripts: never product code.
+            'scratch',
         ],
 
         /*
