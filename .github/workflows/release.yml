@@ -112,4 +112,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${{ steps.version.outputs.value }}"
-          gh release create "${GITHUB_REF_NAME}" --title "$version" --notes-file release-notes.md "storage/app/private/releases/radius-${version}.zip"
+
+          cp "storage/app/private/releases/radius-${version}.zip" radius.zip
+
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "$version" \
+            --notes-file release-notes.md \
+            radius.zip

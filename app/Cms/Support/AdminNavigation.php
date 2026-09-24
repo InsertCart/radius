@@ -158,6 +158,12 @@ class AdminNavigation
                 $links[] = $this->link('Mobile API', 'admin.api.index', 'admin.api.*', null, 'api');
             }
 
+            // Moving content in and out, including from WordPress. Follows
+            // the route: admin-only, and gone with the module.
+            if (modules()->enabled('transfer')) {
+                $links[] = $this->link('Import & export', 'admin.transfer.index', 'admin.transfer.*', null, 'transfer');
+            }
+
             $links[] = $this->link('Modules', 'admin.modules.index', 'admin.modules.*', null, 'modules');
             $links[] = $this->link('Settings', 'admin.settings.edit', 'admin.settings.*', null, 'settings');
             $links[] = $this->link('System', 'admin.system.index', 'admin.system.*', null, 'system');

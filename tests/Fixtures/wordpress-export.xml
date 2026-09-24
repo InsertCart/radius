@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0"
+	xmlns:excerpt="http://wordpress.org/export/1.2/excerpt/"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:wp="http://wordpress.org/export/1.2/"
+>
+<channel>
+	<title>The Old Blog</title>
+	<link>https://oldblog.test</link>
+	<description>Notes from before</description>
+	<wp:wxr_version>1.2</wp:wxr_version>
+	<wp:base_site_url>https://oldblog.test</wp:base_site_url>
+	<wp:base_blog_url>https://oldblog.test</wp:base_blog_url>
+
+	<wp:author>
+		<wp:author_id>1</wp:author_id>
+		<wp:author_login><![CDATA[jo]]></wp:author_login>
+		<wp:author_email><![CDATA[jo@oldblog.test]]></wp:author_email>
+		<wp:author_display_name><![CDATA[Jo Rivers]]></wp:author_display_name>
+	</wp:author>
+
+	<wp:category>
+		<wp:term_id>2</wp:term_id>
+		<wp:category_nicename><![CDATA[writing]]></wp:category_nicename>
+		<wp:category_parent><![CDATA[]]></wp:category_parent>
+		<wp:cat_name><![CDATA[Writing]]></wp:cat_name>
+		<wp:category_description><![CDATA[Words about words.]]></wp:category_description>
+	</wp:category>
+
+	<wp:category>
+		<wp:term_id>3</wp:term_id>
+		<wp:category_nicename><![CDATA[essays]]></wp:category_nicename>
+		<wp:category_parent><![CDATA[writing]]></wp:category_parent>
+		<wp:cat_name><![CDATA[Essays]]></wp:cat_name>
+	</wp:category>
+
+	<wp:tag>
+		<wp:term_id>4</wp:term_id>
+		<wp:tag_slug><![CDATA[longform]]></wp:tag_slug>
+		<wp:tag_name><![CDATA[Longform]]></wp:tag_name>
+	</wp:tag>
+
+	<wp:term>
+		<wp:term_id>5</wp:term_id>
+		<wp:term_taxonomy><![CDATA[product_cat]]></wp:term_taxonomy>
+		<wp:term_slug><![CDATA[stationery]]></wp:term_slug>
+		<wp:term_parent><![CDATA[]]></wp:term_parent>
+		<wp:term_name><![CDATA[Stationery]]></wp:term_name>
+	</wp:term>
+
+	<wp:term>
+		<wp:term_id>6</wp:term_id>
+		<wp:term_taxonomy><![CDATA[nav_menu]]></wp:term_taxonomy>
+		<wp:term_slug><![CDATA[primary]]></wp:term_slug>
+		<wp:term_name><![CDATA[Primary]]></wp:term_name>
+	</wp:term>
+
+	<item>
+		<title><![CDATA[Cover photo]]></title>
+		<link>https://oldblog.test/cover-photo/</link>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[]]></content:encoded>
+		<excerpt:encoded><![CDATA[]]></excerpt:encoded>
+		<wp:post_id>10</wp:post_id>
+		<wp:post_date><![CDATA[2019-04-02 09:15:00]]></wp:post_date>
+		<wp:post_name><![CDATA[cover-photo]]></wp:post_name>
+		<wp:status><![CDATA[inherit]]></wp:status>
+		<wp:post_parent>20</wp:post_parent>
+		<wp:menu_order>0</wp:menu_order>
+		<wp:post_type><![CDATA[attachment]]></wp:post_type>
+		<wp:attachment_url><![CDATA[https://oldblog.test/wp-content/uploads/2019/04/cover.jpg]]></wp:attachment_url>
+	</item>
+
+	<item>
+		<title><![CDATA[On writing slowly]]></title>
+		<link>https://oldblog.test/on-writing-slowly/</link>
+		<pubDate>Tue, 02 Apr 2019 09:20:00 +0000</pubDate>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[First line of the essay.
+
+Second paragraph, with an [caption id="x"]illustrated caption[/caption] inside it.
+
+<img src="https://oldblog.test/wp-content/uploads/2019/04/cover-300x200.jpg" alt="Cover" />]]></content:encoded>
+		<excerpt:encoded><![CDATA[A short essay about taking your time.]]></excerpt:encoded>
+		<wp:post_id>20</wp:post_id>
+		<wp:post_date><![CDATA[2019-04-02 09:20:00]]></wp:post_date>
+		<wp:post_name><![CDATA[on-writing-slowly]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>0</wp:post_parent>
+		<wp:menu_order>0</wp:menu_order>
+		<wp:post_type><![CDATA[post]]></wp:post_type>
+		<wp:post_password><![CDATA[]]></wp:post_password>
+		<category domain="category" nicename="essays"><![CDATA[Essays]]></category>
+		<category domain="post_tag" nicename="longform"><![CDATA[Longform]]></category>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_thumbnail_id]]></wp:meta_key>
+			<wp:meta_value><![CDATA[10]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:comment>
+			<wp:comment_id>100</wp:comment_id>
+			<wp:comment_author><![CDATA[Sam]]></wp:comment_author>
+			<wp:comment_author_email><![CDATA[sam@reader.test]]></wp:comment_author_email>
+			<wp:comment_date><![CDATA[2019-04-03 11:00:00]]></wp:comment_date>
+			<wp:comment_content><![CDATA[This rang true.]]></wp:comment_content>
+			<wp:comment_approved><![CDATA[1]]></wp:comment_approved>
+			<wp:comment_type><![CDATA[]]></wp:comment_type>
+			<wp:comment_parent>0</wp:comment_parent>
+		</wp:comment>
+		<wp:comment>
+			<wp:comment_id>101</wp:comment_id>
+			<wp:comment_author><![CDATA[Jo Rivers]]></wp:comment_author>
+			<wp:comment_author_email><![CDATA[jo@oldblog.test]]></wp:comment_author_email>
+			<wp:comment_date><![CDATA[2019-04-03 12:00:00]]></wp:comment_date>
+			<wp:comment_content><![CDATA[Thank you, Sam.]]></wp:comment_content>
+			<wp:comment_approved><![CDATA[1]]></wp:comment_approved>
+			<wp:comment_parent>100</wp:comment_parent>
+		</wp:comment>
+		<wp:comment>
+			<wp:comment_id>102</wp:comment_id>
+			<wp:comment_author><![CDATA[Somewhere Else]]></wp:comment_author>
+			<wp:comment_content><![CDATA[A link notification.]]></wp:comment_content>
+			<wp:comment_approved><![CDATA[1]]></wp:comment_approved>
+			<wp:comment_type><![CDATA[pingback]]></wp:comment_type>
+			<wp:comment_parent>0</wp:comment_parent>
+		</wp:comment>
+	</item>
+
+	<item>
+		<title><![CDATA[A post in the bin]]></title>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[Nobody wants this.]]></content:encoded>
+		<wp:post_id>21</wp:post_id>
+		<wp:post_date><![CDATA[2019-05-02 09:20:00]]></wp:post_date>
+		<wp:post_name><![CDATA[a-post-in-the-bin]]></wp:post_name>
+		<wp:status><![CDATA[trash]]></wp:status>
+		<wp:post_type><![CDATA[post]]></wp:post_type>
+	</item>
+
+	<item>
+		<title><![CDATA[About]]></title>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[<!-- wp:paragraph --><p>Who we are.</p><!-- /wp:paragraph -->]]></content:encoded>
+		<wp:post_id>30</wp:post_id>
+		<wp:post_date><![CDATA[2018-01-05 08:00:00]]></wp:post_date>
+		<wp:post_name><![CDATA[about]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>0</wp:post_parent>
+		<wp:menu_order>1</wp:menu_order>
+		<wp:post_type><![CDATA[page]]></wp:post_type>
+	</item>
+
+	<item>
+		<title><![CDATA[The team]]></title>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[Just the two of us.]]></content:encoded>
+		<wp:post_id>31</wp:post_id>
+		<wp:post_date><![CDATA[2018-01-06 08:00:00]]></wp:post_date>
+		<wp:post_name><![CDATA[the-team]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>30</wp:post_parent>
+		<wp:menu_order>2</wp:menu_order>
+		<wp:post_type><![CDATA[page]]></wp:post_type>
+	</item>
+
+	<item>
+		<title><![CDATA[Notebook]]></title>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[A good notebook.]]></content:encoded>
+		<excerpt:encoded><![CDATA[Hardback, 120 pages.]]></excerpt:encoded>
+		<wp:post_id>40</wp:post_id>
+		<wp:post_date><![CDATA[2021-02-01 10:00:00]]></wp:post_date>
+		<wp:post_name><![CDATA[notebook]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>0</wp:post_parent>
+		<wp:menu_order>0</wp:menu_order>
+		<wp:post_type><![CDATA[product]]></wp:post_type>
+		<category domain="product_cat" nicename="stationery"><![CDATA[Stationery]]></category>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_sku]]></wp:meta_key>
+			<wp:meta_value><![CDATA[NB-01]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_regular_price]]></wp:meta_key>
+			<wp:meta_value><![CDATA[12.50]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_sale_price]]></wp:meta_key>
+			<wp:meta_value><![CDATA[9.99]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_manage_stock]]></wp:meta_key>
+			<wp:meta_value><![CDATA[yes]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_stock]]></wp:meta_key>
+			<wp:meta_value><![CDATA[14]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_weight]]></wp:meta_key>
+			<wp:meta_value><![CDATA[0.35]]></wp:meta_value>
+		</wp:postmeta>
+	</item>
+
+	<item>
+		<title><![CDATA[About]]></title>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[]]></content:encoded>
+		<wp:post_id>50</wp:post_id>
+		<wp:post_date><![CDATA[2018-02-01 08:00:00]]></wp:post_date>
+		<wp:post_name><![CDATA[50]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>0</wp:post_parent>
+		<wp:menu_order>1</wp:menu_order>
+		<wp:post_type><![CDATA[nav_menu_item]]></wp:post_type>
+		<category domain="nav_menu" nicename="primary"><![CDATA[Primary]]></category>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_menu_item_type]]></wp:meta_key>
+			<wp:meta_value><![CDATA[post_type]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_menu_item_object]]></wp:meta_key>
+			<wp:meta_value><![CDATA[page]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_menu_item_object_id]]></wp:meta_key>
+			<wp:meta_value><![CDATA[30]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_menu_item_menu_item_parent]]></wp:meta_key>
+			<wp:meta_value><![CDATA[0]]></wp:meta_value>
+		</wp:postmeta>
+	</item>
+
+	<item>
+		<title><![CDATA[Our writing]]></title>
+		<dc:creator><![CDATA[jo]]></dc:creator>
+		<content:encoded><![CDATA[]]></content:encoded>
+		<wp:post_id>51</wp:post_id>
+		<wp:post_date><![CDATA[2018-02-01 08:01:00]]></wp:post_date>
+		<wp:post_name><![CDATA[51]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_parent>0</wp:post_parent>
+		<wp:menu_order>2</wp:menu_order>
+		<wp:post_type><![CDATA[nav_menu_item]]></wp:post_type>
+		<category domain="nav_menu" nicename="primary"><![CDATA[Primary]]></category>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_menu_item_type]]></wp:meta_key>
+			<wp:meta_value><![CDATA[custom]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_menu_item_url]]></wp:meta_key>
+			<wp:meta_value><![CDATA[https://oldblog.test/blog/]]></wp:meta_value>
+		</wp:postmeta>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_menu_item_menu_item_parent]]></wp:meta_key>
+			<wp:meta_value><![CDATA[50]]></wp:meta_value>
+		</wp:postmeta>
+	</item>
+</channel>
+</rss>

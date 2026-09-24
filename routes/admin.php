@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\ThemeController;
 use App\Http\Controllers\Admin\ThemeMarketplaceController;
 use App\Http\Controllers\Admin\ToolsController;
+use App\Http\Controllers\Admin\TransferController;
 use App\Http\Controllers\Admin\UpdateController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -273,6 +274,24 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::post('tools/sms/test', [ToolsController::class, 'testSms'])->name('tools.sms.test');
                 Route::post('tools/push/test', [ToolsController::class, 'testPush'])->name('tools.push.test');
                 Route::post('tools/search/rebuild', [ToolsController::class, 'rebuildSearch'])->name('tools.search.rebuild');
+
+                // Import & export. Admin-only for the same reason the updater
+                // is: an import writes content, can create accounts, and
+                // fetches files from an address somebody else chose.
+                Route::middleware('module:transfer')->prefix('import-export')->name('transfer.')->group(function () {
+                    Route::get('/', [TransferController::class, 'index'])->name('index');
+                    Route::post('export', [TransferController::class, 'export'])->name('export');
+
+                    Route::post('upload', [TransferController::class, 'upload'])
+                        ->middleware('throttle:20,1')
+                        ->name('upload');
+
+                    // A parked upload: read and described first, applied only
+                    // when the person says so.
+                    Route::get('review/{token}', [TransferController::class, 'review'])->name('review');
+                    Route::post('review/{token}', [TransferController::class, 'run'])->name('run');
+                    Route::delete('review/{token}', [TransferController::class, 'discard'])->name('discard');
+                });
             });
         });
     });

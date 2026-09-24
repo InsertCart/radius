@@ -10,7 +10,7 @@ return [
     */
 
     'name' => 'Radius',
-    'version' => '1.2.9',
+    'version' => '1.3.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -173,6 +173,12 @@ return [
             'name' => 'Newsletter',
             'description' => 'Email subscriber capture and export.',
             'icon' => 'inbox',
+            'core' => false,
+        ],
+        'transfer' => [
+            'name' => 'Import & export',
+            'description' => 'Move content in and out as a portable bundle, and import a WordPress site.',
+            'icon' => 'transfer',
             'core' => false,
         ],
         'api' => [

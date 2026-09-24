@@ -94,6 +94,7 @@ echo "{}" > storage/installed
 | SEO | Meta tags, sitemap.xml, robots.txt, schema.org, redirects | No |
 | Contact forms | Front-end form and submission inbox | No |
 | Newsletter | Subscriber capture and CSV export | No |
+| Import & export | Content bundles in and out, plus a WordPress importer | No |
 | Mobile API | JSON API for a mobile app — **ships switched off** | No |
 
 Dependencies are handled for you (e.g. switching off Payments also switches off
@@ -276,6 +277,9 @@ php artisan cms:sync               # register new modules/gateways/settings afte
 php artisan cms:sync --themes      # re-scan the themes folder
 php artisan cms:demo               # install sample posts, pages and products
 php artisan cms:demo --remove      # delete that sample content again
+php artisan cms:export             # export content as a portable bundle
+php artisan cms:import <file>      # import a Radius export bundle
+php artisan cms:import-wordpress <file.xml> --media   # import a WordPress export
 php artisan cms:marketplace-entry <zip> --url=<folder>  # print a theme directory listing for a ZIP
 php artisan cms:release            # build a distributable release ZIP
 php artisan optimize:clear         # clear all caches

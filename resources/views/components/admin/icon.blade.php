@@ -54,6 +54,9 @@
 
         'updates' => '<path d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"/>',
 
+        // Two arrows crossing: content going out and coming in.
+        'transfer' => '<path d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>',
+
         // Fallback: a neutral marker, so an unmapped entry still lines up with
         // the rest of the menu instead of losing its indent.
         'default' => '<circle cx="12" cy="12" r="8.25"/><path d="M12 12h.008v.008H12V12Z"/>',
