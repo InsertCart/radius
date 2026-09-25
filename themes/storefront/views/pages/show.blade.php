@@ -20,7 +20,7 @@
              rather than escaped. When a visual layout has been built for this
              page the accessor returns that instead, which is why no theme
              change is needed to support the builder. --}}
-        <div class="prose-content">{!! $page->content !!}</div>
+        <div class="prose-content">{!! rich_content($page->content) !!}</div>
 
         @region('after_content')@endregion
     </article>

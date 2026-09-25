@@ -34,7 +34,7 @@
             <img src="{{ $post->imageUrl() }}" alt="{{ $post->title }}" class="sf-article__cover">
         @endif
 
-        <div class="prose-content">{!! $post->content !!}</div>
+        <div class="prose-content">{!! rich_content($post->content) !!}</div>
 
         @if ($post->tags->isNotEmpty())
             <div class="sf-tags">

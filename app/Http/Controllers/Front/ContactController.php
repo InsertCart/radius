@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Front;
 
+use App\Cms\Forms\ContactFormSchema;
 use App\Http\Controllers\Controller;
 use App\Models\ContactSubmission;
 use Illuminate\Http\RedirectResponse;
@@ -20,29 +21,38 @@ class ContactController extends Controller
 
     public function submit(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:190'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'subject' => ['nullable', 'string', 'max:190'],
-            'message' => ['required', 'string', 'min:10', 'max:5000'],
-            // Honeypot; bots fill it, humans never see it.
-            'website' => ['nullable', 'size:0'],
-        ]);
+        // What the form asked for, as the form itself declared it. A request
+        // carrying no token - a theme's own page - gets the built-in schema,
+        // and so does one whose token will not decrypt.
+        $schema = ContactFormSchema::fromToken($request->input(ContactFormSchema::TOKEN_INPUT))
+            ?? ContactFormSchema::legacy();
+
+        $validated = $request->validate(
+            ContactFormSchema::rules($schema),
+            [],
+            ContactFormSchema::attributes($schema)
+        );
+
+        $extra = ContactFormSchema::extraValues($schema, $validated);
 
         $submission = ContactSubmission::create([
-            'name' => $validated['name'],
+            'name' => $validated['name'] ?? '',
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'subject' => $validated['subject'] ?? null,
-            'message' => $validated['message'],
+            'message' => $validated['message'] ?? '',
             'status' => 'new',
+            'extra' => $extra ?: null,
             'ip_address' => $request->ip(),
         ]);
 
         $this->notifyOwner($submission);
 
-        return back()->with('status', 'Thanks for getting in touch. We will reply shortly.');
+        return back()
+            ->with('status', $schema['success'])
+            // Which form on the page was posted, so a page carrying several
+            // of them shows the confirmation under the right one.
+            ->with('contact_form', $request->input('_form'));
     }
 
     /** Best effort: a mail failure must not lose the submission itself. */
@@ -54,13 +64,19 @@ class ContactController extends Controller
             return;
         }
 
+        $body = 'New message from '.($submission->name ?: 'someone')." <{$submission->email}>\n\n"
+            ."Subject: {$submission->subject}\n\n{$submission->message}";
+
+        foreach ($submission->extra ?? [] as $answer) {
+            $body .= "\n\n{$answer['label']}: {$answer['value']}";
+        }
+
         try {
             Mail::raw(
-                "New message from {$submission->name} <{$submission->email}>\n\n"
-                ."Subject: {$submission->subject}\n\n{$submission->message}",
+                $body,
                 fn ($message) => $message
                     ->to($to)
-                    ->replyTo($submission->email, $submission->name)
+                    ->replyTo($submission->email, $submission->name ?: null)
                     ->subject('Contact form: '.($submission->subject ?: 'New message'))
             );
         } catch (\Throwable $e) {

@@ -30,7 +30,7 @@
             <img src="{{ $post->imageUrl() }}" alt="{{ $post->title }}" class="mb-8 w-full rounded-2xl">
         @endif
 
-        <div class="prose-content text-slate-700">{!! $post->content !!}</div>
+        <div class="prose-content text-slate-700">{!! rich_content($post->content) !!}</div>
 
         @if ($post->tags->isNotEmpty())
             <div class="mt-10 flex flex-wrap gap-2 border-t border-slate-100 pt-6">

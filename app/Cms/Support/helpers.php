@@ -3,6 +3,7 @@
 use App\Cms\Api\ApiManager;
 use App\Cms\Builder\Blocks\Block;
 use App\Cms\Cdn\CdnManager;
+use App\Cms\Embeds\EmbedManager;
 use App\Cms\Modules\ModuleManager;
 use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
@@ -549,5 +550,28 @@ if (! function_exists('embed_video_url')) {
         }
 
         return Block::safeUrl($url);
+    }
+}
+
+if (! function_exists('embeds')) {
+    /** The embed engine: what a pasted link becomes on the public site. */
+    function embeds(): EmbedManager
+    {
+        return app(EmbedManager::class);
+    }
+}
+
+if (! function_exists('rich_content')) {
+    /**
+     * Editor content, ready to print.
+     *
+     * Every theme and every widget that renders a post, page or product body
+     * goes through here, so a link an author left on its own line becomes the
+     * video, post or track it points at. Content with nothing to embed is
+     * handed straight back.
+     */
+    function rich_content(?string $html): string
+    {
+        return embeds()->rewrite($html);
     }
 }

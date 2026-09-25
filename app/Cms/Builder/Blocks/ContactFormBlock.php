@@ -3,6 +3,7 @@
 namespace App\Cms\Builder\Blocks;
 
 use App\Cms\Builder\Control;
+use App\Cms\Forms\ContactFormSchema;
 
 /**
  * The site's contact form, posting to the same endpoint and inbox as the
@@ -55,6 +56,46 @@ class ContactFormBlock extends Block
             Control::text('success_text', 'Message after sending')
                 ->default('Thanks for getting in touch. We will reply shortly.'),
 
+            // Required fields ---------------------------------------------
+            Control::toggle('require_name', 'Name is required')
+                ->section('Required fields')->default(true),
+
+            Control::toggle('require_phone', 'Phone is required')
+                ->section('Required fields')->when('show_phone', true),
+
+            Control::toggle('require_subject', 'Subject is required')
+                ->section('Required fields')->when('show_subject', true),
+
+            Control::toggle('require_message', 'Message is required')
+                ->section('Required fields')->default(true),
+
+            Control::notice('required_note', 'The email address always stays required')
+                ->section('Required fields')
+                ->help('It is the address every reply goes to, and the one the inbox is searched on.'),
+
+            // Extra fields -------------------------------------------------
+            Control::repeater('extra_fields', 'Extra fields', [
+                Control::text('label', 'Label')->default('New field'),
+
+                Control::select('type', 'Type', ContactFormSchema::TYPES)
+                    ->default('text'),
+
+                Control::textarea('options', 'Choices, one per line')
+                    ->when('type', 'select')
+                    ->placeholder("Sales\nSupport\nSomething else"),
+
+                Control::text('placeholder', 'Placeholder'),
+
+                Control::toggle('required', 'Required'),
+
+                Control::choose('width', 'Width', [
+                    'full' => ['label' => 'Full width', 'icon' => 'align-stretch'],
+                    'half' => ['label' => 'Half width', 'icon' => 'grid'],
+                ])->default('full'),
+            ])
+                ->section('Extra fields')
+                ->help('Answers arrive with the message and are listed under it in the inbox.'),
+
             Control::choose('button_align', 'Button alignment', [
                 'flex-start' => ['label' => 'Left', 'icon' => 'align-left'],
                 'center' => ['label' => 'Centre', 'icon' => 'align-center'],
@@ -71,12 +112,27 @@ class ContactFormBlock extends Block
 
             Control::dimensions('field_radius', 'Field corners')
                 ->tab(Control::TAB_STYLE)
-                ->selector('{{WRAPPER}} .cb-form input, {{WRAPPER}} .cb-form textarea', 'border-radius'),
+                ->selector('{{WRAPPER}} .cb-form input, {{WRAPPER}} .cb-form textarea, {{WRAPPER}} .cb-form select', 'border-radius'),
 
             Control::color('button_bg', 'Button background')
                 ->tab(Control::TAB_STYLE)
                 ->default('var(--cb-color-primary, #2563eb)')
                 ->selector('{{WRAPPER}} .cb-form button', 'background-color'),
+        ];
+    }
+
+    /**
+     * The form carries its own schema, encrypted, so the shared endpoint
+     * validates what this widget actually asked for rather than whatever
+     * field names turn up in the request.
+     */
+    public function data(array $settings, array $context = []): array
+    {
+        $schema = ContactFormSchema::fromSettings($settings);
+
+        return [
+            'schema' => $schema,
+            'schemaToken' => ContactFormSchema::token($schema),
         ];
     }
 }

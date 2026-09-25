@@ -108,6 +108,21 @@ return [
         ],
     ],
 
+    'embeds' => [
+        'label' => 'Embeds',
+        'icon' => 'video',
+        'fields' => [
+            'embeds_notice' => ['type' => 'notice', 'label' => 'How embeds work',
+                'help' => 'Paste a link on a line of its own in a post, page or product description and visitors see the thing it points at - a YouTube or Vimeo player, an Instagram post, a tweet, a Spotify album, a map, a Google Doc. A link with words around it stays an ordinary link, so nothing you have already written changes. Links are recognised from the address alone, so no request is ever made to the provider while a page renders.'],
+            'embeds_enabled' => ['type' => 'boolean', 'label' => 'Turn pasted links into embeds', 'default' => true],
+            'embeds_privacy' => ['type' => 'boolean', 'label' => 'Use privacy-preserving players', 'default' => true,
+                'help' => 'Embeds YouTube through youtube-nocookie.com and asks Vimeo not to track the visitor. Turn this off only if a provider misbehaves through it.'],
+            'embeds_providers' => ['type' => 'multiselect', 'label' => 'Providers to embed',
+                'options' => 'embed_providers', 'default' => [],
+                'help' => 'Leave every box unticked to embed all of them. Tick some to allow only those - a link from any other provider is left as a plain link.'],
+        ],
+    ],
+
     'mail' => [
         'label' => 'Email',
         'icon' => 'envelope',

@@ -190,7 +190,7 @@
                             </button>
                             <div class="sf-acc__panel is-open" id="sf-acc-desc">
                                 @if ($product->description)
-                                    <div class="prose-content">{!! $product->description !!}</div>
+                                    <div class="prose-content">{!! rich_content($product->description) !!}</div>
                                 @else
                                     <p>{{ $product->short_description }}</p>
                                 @endif

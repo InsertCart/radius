@@ -7,5 +7,5 @@
 @if (trim(strip_tags($content)) === '')
     {!! $block->placeholder('Add some text', $context) !!}
 @else
-    <div class="cb-text prose-content">{!! $content !!}</div>
+    <div class="cb-text prose-content">{!! rich_content($content) !!}</div>
 @endif

@@ -92,6 +92,18 @@ class IconLibrary
         'headphones' => '<path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/>',
         'mic' => '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/>',
 
+        // Alignment and layout controls
+        'align-left' => '<path d="M4 5h16M4 10h10M4 15h16M4 20h10"/>',
+        'align-center' => '<path d="M4 5h16M7 10h10M4 15h16M7 20h10"/>',
+        'align-right' => '<path d="M4 5h16M10 10h10M4 15h16M10 20h10"/>',
+        'align-justify' => '<path d="M4 5h16M4 10h16M4 15h16M4 20h16"/>',
+        'align-stretch' => '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12h8M10.5 9.5L8 12l2.5 2.5M13.5 9.5L16 12l-2.5 2.5"/>',
+        'align-top' => '<path d="M4 4h16"/><rect x="7" y="7" width="4" height="14" rx="1.5"/><rect x="13" y="7" width="4" height="8" rx="1.5"/>',
+        'align-middle' => '<path d="M3 12h18"/><rect x="7" y="4" width="4" height="16" rx="1.5"/><rect x="13" y="7" width="4" height="10" rx="1.5"/>',
+        'align-bottom' => '<path d="M4 20h16"/><rect x="7" y="3" width="4" height="14" rx="1.5"/><rect x="13" y="9" width="4" height="8" rx="1.5"/>',
+        'boxed' => '<rect x="2" y="4" width="20" height="16" rx="2"/><rect x="6" y="8" width="12" height="8" rx="1"/>',
+        'full' => '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20v8H2z"/>',
+
         // Editor UI
         'heading' => '<path d="M6 4v16M18 4v16M6 12h12"/>',
         'text' => '<path d="M4 6h16M4 12h16M4 18h10"/>',

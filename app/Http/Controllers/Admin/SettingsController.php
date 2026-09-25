@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Cms\Embeds\EmbedRegistry;
 use App\Cms\Mail\MailConfigurator;
 use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
@@ -10,6 +11,7 @@ use App\Cms\Shop\Countries;
 use App\Cms\Shop\Currencies;
 use App\Cms\Themes\ThemeManager;
 use App\Http\Controllers\Controller;
+use App\Models\Theme;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -196,11 +198,13 @@ class SettingsController extends Controller
                 ->mapWithKeys(fn ($zone) => [$zone => $zone])
                 ->all(),
 
-            'themes' => \App\Models\Theme::orderBy('name')
+            'themes' => Theme::orderBy('name')
                 ->pluck('name', 'slug')
                 ->all(),
 
             'schema_types' => SeoManager::SCHEMA_TYPES,
+
+            'embed_providers' => EmbedRegistry::labels(),
 
             'currencies' => Currencies::options(),
 

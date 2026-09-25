@@ -107,6 +107,7 @@ export class RichTextEditor {
                 this.button('createLink', 'Insert link', 'link', () => this.insertLink(), 'Ctrl+K'),
                 this.button('unlink', 'Remove link', 'unlink', () => this.exec('unlink')),
                 this.button('image', 'Insert image', 'image', () => this.insertImage()),
+                this.button('embed', 'Embed a link', 'embed', () => this.insertEmbed()),
                 this.button('insertHorizontalRule', 'Divider', 'divider', () => this.exec('insertHorizontalRule')),
             ],
             [
@@ -225,6 +226,39 @@ export class RichTextEditor {
         } else {
             this.exec('createLink', url);
         }
+    }
+
+    /**
+     * A link on a line of its own, which the site turns into the video, post or
+     * track it points at when the page is rendered.
+     *
+     * Not previewed here on purpose. The list of providers lives on the server,
+     * and a second copy in the editor would drift out of step with it - while
+     * what gets stored is the link either way, so nothing is lost by leaving
+     * the decision to the page.
+     */
+    insertEmbed() {
+        const url = window.prompt(
+            'Paste a link to embed. YouTube, Vimeo, Instagram, X, TikTok, Facebook, LinkedIn, '
+            + 'Reddit, Spotify, SoundCloud, Google Maps, Docs and more.',
+            'https://'
+        );
+
+        if (url === null) return;
+
+        const link = url.trim();
+
+        if (link === '') return;
+
+        if (!/^https?:\/\/\S+$/i.test(link) || !this.isSafeUrl(link)) {
+            this.notify('That is not a web address, so nothing was added.', 'error');
+            return;
+        }
+
+        // Alone in its own paragraph: that is the signal the site looks for, so
+        // a link written into a sentence stays an ordinary link.
+        this.insertHtml(`<p>${this.escape(link)}</p><p><br></p>`);
+        this.notify('Link added on its own line. It becomes an embed on the published page.');
     }
 
     insertImage() {
@@ -954,6 +988,7 @@ export class RichTextEditor {
             undo: '<svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7"/></svg>',
             redo: '<svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-3-7"/></svg>',
             code: '<svg viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>',
+            embed: '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9.5l4.5 2.5L10 14.5z"/></svg>',
         };
 
         return icons[name] || `<span class="rt__letter">${name}</span>`;

@@ -22,6 +22,19 @@
 
             <div class="py-5">
                 <p class="whitespace-pre-line text-sm leading-relaxed text-slate-700">{{ $submission->message }}</p>
+
+                @if (filled($submission->extra))
+                    {{-- Answers to the form's own extra fields, labelled as
+                         they were when the message was sent. --}}
+                    <dl class="mt-5 divide-y divide-slate-100 rounded-lg border border-slate-200 text-sm">
+                        @foreach ($submission->extra as $answer)
+                            <div class="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5">
+                                <dt class="w-40 shrink-0 font-medium text-slate-500">{{ $answer['label'] ?? '' }}</dt>
+                                <dd class="min-w-0 flex-1 whitespace-pre-line text-slate-700">{{ $answer['value'] ?? '' }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                @endif
             </div>
 
             <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-4">

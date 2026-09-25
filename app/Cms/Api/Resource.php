@@ -62,7 +62,9 @@ class Resource
         }
 
         return $data + [
-            'content' => (string) $post->content,
+            // Embeds are resolved here too, so an app showing the body in a
+            // web view gets the same players the website does.
+            'content' => rich_content($post->content),
             'allow_comments' => (bool) $post->allow_comments,
             'comment_count' => $post->approvedComments()->count(),
             'tags' => $post->relationLoaded('tags')
@@ -89,7 +91,7 @@ class Resource
         }
 
         return $data + [
-            'content' => (string) $page->content,
+            'content' => rich_content($page->content),
             'seo' => self::seo($page),
         ];
     }
@@ -162,7 +164,7 @@ class Resource
         }
 
         return $data + [
-            'description' => (string) $product->description,
+            'description' => rich_content($product->description),
             'gallery' => $product->relationLoaded('gallery')
                 ? $product->gallery->map(fn ($medium) => [
                     'url' => $medium->url,

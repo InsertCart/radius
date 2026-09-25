@@ -61,3 +61,51 @@ input:where([type='button'], [type='submit'], [type='reset']):disabled,
     overflow-x: auto;
     margin-bottom: 1rem;
 }
+
+/* Embeds ------------------------------------------------------------------
+   Written by App\Cms\Embeds\EmbedManager from a link an author pasted on a
+   line of its own. Kept here rather than in a theme so every theme, and the
+   builder's own text widget, style embeds the same way.
+
+   The provider is on the element as .cms-embed--youtube and data-embed, so a
+   theme can single one out without this file needing to know about it. */
+.cms-embed {
+    /* Centred, because providers with a design width of their own - a social
+       card, a vertical video - get a max-width inline from the manager rather
+       than being stretched across the column. */
+    margin: 1.75rem auto;
+    max-width: 100%;
+}
+
+/* A responsive box that keeps its shape: players, slides, maps. */
+.cms-embed__ratio { position: relative; width: 100%; overflow: hidden; border-radius: 0.75rem; background: #000; }
+.cms-embed__ratio::before { content: ''; display: block; padding-top: 56.25%; }
+.cms-embed__ratio--4-3::before { padding-top: 75%; }
+.cms-embed__ratio--1-1::before { padding-top: 100%; }
+.cms-embed__ratio--21-9::before { padding-top: 42.85%; }
+.cms-embed__ratio--9-16::before { padding-top: 177.7%; }
+.cms-embed__ratio > iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+/* Laid out by the provider at a height it chose, so the frame is sized rather
+   than shaped. The height comes from an inline style on the iframe. */
+.cms-embed--card > iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 0.75rem;
+    /* Instagram and Facebook cards come with their own white background and
+       border; the radius alone would leave square corners showing through. */
+    overflow: hidden;
+    background: transparent;
+}
+
+/* A link straight to a file. */
+.cms-embed--media > video { display: block; width: 100%; border-radius: 0.75rem; background: #000; }
+.cms-embed--media > audio { display: block; width: 100%; }
+
+/* Sized by the provider's own script once it loads. Until then the markup is a
+   blockquote holding the link, which is why it is given readable spacing
+   rather than being hidden: with scripts blocked the visitor still sees where
+   the post was going. */
+.cms-embed--script { display: flex; justify-content: center; }
+.cms-embed--script > blockquote { margin: 0; border: 0; padding: 0; font-style: normal; }

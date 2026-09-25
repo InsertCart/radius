@@ -367,12 +367,26 @@
 
 .cb-form { display: flex; flex-direction: column; gap: 16px; }
 .cb-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+/* A full width field owns its row, whether or not it has a neighbour. */
+.cb-form__row--single { grid-template-columns: 1fr; }
 .cb-form__field { display: flex; flex-direction: column; gap: .3rem; font-size: .875rem; color: var(--cb-color-text); }
-.cb-form input, .cb-form textarea, .cb-newsletter input {
+.cb-form input, .cb-form textarea, .cb-form select, .cb-newsletter input {
     padding: .65rem .8rem; border: 1px solid var(--cb-color-border);
     border-radius: .5rem; font: inherit; background: #fff; color: inherit;
 }
 .cb-form__actions { display: flex; }
+
+/* A checkbox reads as one line, not as a label stacked above a tick box. */
+.cb-form__field--check label { display: flex; align-items: flex-start; gap: .55rem; cursor: pointer; }
+.cb-form__field--check input { width: 1rem; height: 1rem; margin-top: .15rem; padding: 0; flex: none; }
+
+.cb-form__req { margin-left: .15rem; color: #dc2626; font-style: normal; }
+.cb-form__error { margin: 0; font-size: .8125rem; color: #dc2626; }
+.cb-form input[aria-invalid="true"], .cb-form textarea[aria-invalid="true"] { border-color: #dc2626; }
+.cb-form__status {
+    margin: 0; padding: .7rem .9rem; border-radius: .5rem; font-size: .875rem;
+    background: rgba(22, 163, 74, .1); color: #15803d;
+}
 
 /* The honeypot must be unreachable, not merely invisible: display:none alone
    is a pattern some bots know to skip. */

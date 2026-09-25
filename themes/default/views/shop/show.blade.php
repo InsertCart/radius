@@ -116,7 +116,7 @@
         @if ($product->description)
             <section class="mt-16 border-t border-slate-100 pt-10">
                 <h2 class="text-xl font-bold text-slate-900">Description</h2>
-                <div class="prose-content mt-4 max-w-3xl text-slate-700">{!! $product->description !!}</div>
+                <div class="prose-content mt-4 max-w-3xl text-slate-700">{!! rich_content($product->description) !!}</div>
             </section>
         @endif
 

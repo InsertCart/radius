@@ -50,6 +50,6 @@ class ProductDescriptionBlock extends ProductBlock
     {
         // The per-product builder may have designed this description. When it
         // has not, fall back to the stored HTML, then the short description.
-        return ['body' => (string) ($product->description ?: e((string) $product->short_description))];
+        return ['body' => rich_content($product->description) ?: e((string) $product->short_description)];
     }
 }

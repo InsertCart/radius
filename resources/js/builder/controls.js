@@ -891,6 +891,9 @@ export class ControlRenderer {
                         item[nestedControl.key] = val;
                         head.querySelector('span').textContent =
                             item.title || item.text || item.label || item.author || item.name || item.quote || `Item ${index + 1}`;
+                        // A nested control can depend on a sibling - choices
+                        // only matter for a dropdown - so re-check on change.
+                        itemRenderer.applyConditions(body, item);
                         push();
                     },
                     openMedia: this.openMedia,
@@ -902,6 +905,8 @@ export class ControlRenderer {
                     const nested = itemRenderer.field(field, item);
                     if (nested) body.appendChild(nested);
                 });
+
+                itemRenderer.applyConditions(body, item);
 
                 const remove = document.createElement('button');
                 remove.type = 'button';

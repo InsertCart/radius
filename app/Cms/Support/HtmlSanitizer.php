@@ -2,11 +2,13 @@
 
 namespace App\Cms\Support;
 
+use App\Cms\Embeds\EmbedRegistry;
 use DOMAttr;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
 use DOMXPath;
+use Illuminate\Support\Str;
 
 /**
  * Cleans HTML coming from the rich text editor before it is stored.
@@ -43,7 +45,7 @@ class HtmlSanitizer
         'tr' => [], 'th' => ['colspan', 'rowspan', 'scope'], 'td' => ['colspan', 'rowspan'],
         'div' => ['class', 'style'],
         'span' => ['class', 'style'],
-        'iframe' => ['src', 'width', 'height', 'title', 'allow', 'allowfullscreen', 'loading', 'frameborder'],
+        'iframe' => ['src', 'width', 'height', 'title', 'allow', 'allowfullscreen', 'loading', 'frameborder', 'referrerpolicy', 'class', 'style'],
     ];
 
     /**
@@ -63,12 +65,22 @@ class HtmlSanitizer
     /** URL schemes a link or image may use. */
     private const ALLOWED_SCHEMES = ['http', 'https', 'mailto', 'tel'];
 
-    /** Hosts an iframe may embed from, so an embed cannot be pointed anywhere. */
+    /**
+     * Hosts an iframe may embed from, so an embed cannot be pointed anywhere.
+     *
+     * Only the handful the builder's own widgets emit are listed here. Every
+     * other embeddable host comes from the embed providers, which have to name
+     * their frame hosts anyway - so adding a provider is enough, and the two
+     * lists cannot drift apart and start refusing each other's markup.
+     */
     private const ALLOWED_FRAME_HOSTS = [
         'youtube.com', 'www.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com',
         'player.vimeo.com', 'www.google.com', 'maps.google.com',
         'www.openstreetmap.org', 'open.spotify.com', 'w.soundcloud.com',
     ];
+
+    /** @var string[]|null */
+    private ?array $frameHosts = null;
 
     public function clean(?string $html): string
     {
@@ -319,7 +331,25 @@ class HtmlSanitizer
 
         $host = strtolower((string) parse_url($src, PHP_URL_HOST));
 
-        return in_array($host, self::ALLOWED_FRAME_HOSTS, true);
+        return in_array($host, $this->frameHosts(), true);
+    }
+
+    /**
+     * The builder's hosts, every embed provider's, and anything the site owner
+     * added to config/embeds.php.
+     *
+     * @return string[]
+     */
+    private function frameHosts(): array
+    {
+        return $this->frameHosts ??= array_values(array_unique(array_map(
+            'strtolower',
+            array_merge(
+                self::ALLOWED_FRAME_HOSTS,
+                EmbedRegistry::frameHosts(),
+                array_filter((array) config('embeds.frame_hosts', []), 'is_string'),
+            )
+        )));
     }
 
     /** Plain text, for excerpts and meta descriptions. */
@@ -328,6 +358,6 @@ class HtmlSanitizer
         $text = trim(html_entity_decode(strip_tags((string) $html), ENT_QUOTES, 'UTF-8'));
         $text = preg_replace('/\s+/', ' ', $text);
 
-        return $limit > 0 ? \Illuminate\Support\Str::limit($text, $limit) : $text;
+        return $limit > 0 ? Str::limit($text, $limit) : $text;
     }
 }

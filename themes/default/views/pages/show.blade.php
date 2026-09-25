@@ -16,7 +16,7 @@
              HTML rather than escaped. When a visual layout has been built
              for this page, the accessor returns that instead - which is why
              a theme needs no changes to support the builder. --}}
-        <div class="prose-content text-slate-700">{!! $page->content !!}</div>
+        <div class="prose-content text-slate-700">{!! rich_content($page->content) !!}</div>
 
         @region('after_content')@endregion
     </article>

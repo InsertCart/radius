@@ -11,6 +11,8 @@ use App\Cms\Builder\RegionManager;
 use App\Cms\Builder\StyleCompiler;
 use App\Cms\Builder\StyleRegistry;
 use App\Cms\Cdn\CdnManager;
+use App\Cms\Embeds\EmbedManager;
+use App\Cms\Embeds\EmbedRegistry;
 use App\Cms\Firebase\FirebaseManager;
 use App\Cms\Mail\MailConfigurator;
 use App\Cms\Modules\ModuleManager;
@@ -54,6 +56,8 @@ class CmsServiceProvider extends ServiceProvider
             FirebaseManager::class,
             SearchManager::class,
             CdnManager::class,
+            EmbedRegistry::class,
+            EmbedManager::class,
             ApiManager::class,
             RequestSigner::class,
             TokenIssuer::class,
@@ -156,6 +160,10 @@ class CmsServiceProvider extends ServiceProvider
 
         // Emits the full SEO head block: title, meta, Open Graph, JSON-LD.
         Blade::directive('seoHead', fn () => '<?php echo seo()->render(); ?>');
+
+        // Editor content with pasted links turned into embeds. Themes use
+        // this wherever they print a post, page or product body.
+        Blade::directive('richContent', fn ($expression) => "<?php echo rich_content({$expression}); ?>");
 
         // The live search script, once per page, only when live results are
         // on. Search forms put this next to themselves, so a theme never has
