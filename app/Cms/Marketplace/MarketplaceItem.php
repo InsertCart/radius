@@ -40,6 +40,8 @@ class MarketplaceItem
         public readonly ?string $updatedAt,
         public readonly float $price,
         public readonly bool $requiresLicense,
+        public readonly ?string $purchaseUrl,
+        public readonly ?string $currency,
         public readonly array $raw,
     ) {}
 
@@ -100,6 +102,10 @@ class MarketplaceItem
             updatedAt: self::text($data['updated_at'] ?? null),
             price: is_numeric($data['price'] ?? null) ? (float) $data['price'] : 0.0,
             requiresLicense: (bool) ($data['requires_license'] ?? false),
+            // Where a paid item is bought. The CMS never takes the payment: the
+            // buyer purchases on the publisher's site and uploads the ZIP.
+            purchaseUrl: self::linkUrl($data['purchase_url'] ?? null),
+            currency: is_string($data['currency'] ?? null) && preg_match('/^[A-Z]{3}$/', $data['currency']) ? $data['currency'] : null,
             raw: $data,
         );
     }
@@ -113,6 +119,16 @@ class MarketplaceItem
     public function isFree(): bool
     {
         return $this->price <= 0 && ! $this->requiresLicense;
+    }
+
+    /** "USD 29.00", or null for a free item. */
+    public function priceLabel(): ?string
+    {
+        if ($this->price <= 0) {
+            return null;
+        }
+
+        return ($this->currency ?? 'USD').' '.number_format($this->price, 2);
     }
 
     /** Whether this CMS is new enough for the theme. */

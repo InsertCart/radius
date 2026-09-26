@@ -81,6 +81,11 @@ class PageCache
             http_build_query($query),
             app()->getLocale(),
             config('cms.version'),
+            // A theme can be previewed for one request without being
+            // activated. That page must never be served as the real one -
+            // not even a preview of the active theme, which a plugin may
+            // have decorated with a toolbar.
+            themes()->activeSlug().(themes()->previewing() ? ':preview' : ''),
         ]));
     }
 

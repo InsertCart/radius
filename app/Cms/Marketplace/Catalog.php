@@ -24,7 +24,12 @@ class Catalog
     /**
      * @throws MarketplaceException when the document as a whole is unusable
      */
-    public static function fromArray(array $data): self
+    /**
+     * @param  bool  $includePaid  keep paid listings. The theme directory cannot sell,
+     *                             so it drops them; the plugin directory lists them
+     *                             with a link to where they are bought.
+     */
+    public static function fromArray(array $data, bool $includePaid = false): self
     {
         $format = (int) ($data['format'] ?? 1);
         $supported = (int) config('marketplace.supported_format', 1);
@@ -32,7 +37,7 @@ class Catalog
         // The one thing never guessed at: a structure this release predates.
         if ($format > $supported) {
             throw new MarketplaceException(
-                "The theme directory uses a newer format (version {$format}) than this release of the CMS "
+                "The directory uses a newer format (version {$format}) than this release of the CMS "
                 ."understands (version {$supported}). Update the CMS to browse it."
             );
         }
@@ -40,7 +45,7 @@ class Catalog
         $entries = $data['items'] ?? $data['themes'] ?? null;
 
         if (! is_array($entries)) {
-            throw new MarketplaceException('The theme directory did not contain a list of themes.');
+            throw new MarketplaceException('The directory did not contain a list of items.');
         }
 
         $items = [];
@@ -48,9 +53,9 @@ class Catalog
         foreach ($entries as $entry) {
             $item = MarketplaceItem::tryFromArray($entry);
 
-            // Unusable entries are skipped, and so are paid ones, which this
-            // release cannot install. The first listing of a slug wins.
-            if ($item === null || ! $item->isFree() || isset($items[$item->slug])) {
+            // Unusable entries are skipped, and so are paid ones unless asked
+            // for. The first listing of a slug wins.
+            if ($item === null || (! $includePaid && ! $item->isFree()) || isset($items[$item->slug])) {
                 continue;
             }
 

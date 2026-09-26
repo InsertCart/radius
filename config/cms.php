@@ -219,6 +219,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Plugins
+    |--------------------------------------------------------------------------
+    | Separately distributed add-ons, each a folder in plugins/ with a
+    | plugin.json and a service provider. Unlike a module, a plugin is not part
+    | of the release: it is installed, switched on and uninstalled on its own,
+    | and an update of the CMS never touches the plugins folder.
+    |
+    | A plugin is PHP and runs with the same rights as the CMS itself, so
+    | installing one is deploying code. Uploading is an administrator's action,
+    | and CMS_PLUGIN_UPLOADS=false removes the upload form for sites that would
+    | rather only take plugins copied onto the server by hand.
+    |
+    | CMS_PLUGINS_SAFE_MODE=true loads no plugin at all, whatever the admin
+    | panel says - the way back in when a plugin has broken the site.
+    */
+
+    'plugins' => [
+        'path' => base_path('plugins'),
+        'allow_upload' => env('CMS_PLUGIN_UPLOADS', true),
+        'safe_mode' => env('CMS_PLUGINS_SAFE_MODE', false),
+        'max_upload_kb' => 20480, // 20 MB
+
+        // Namespace every plugin's PHP classes must live under, so a plugin
+        // can never declare a class that shadows one of the CMS's own.
+        'namespace' => 'RadiusPlugins',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Media
     |--------------------------------------------------------------------------
     */

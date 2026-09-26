@@ -43,6 +43,15 @@ Thumbs.db
 !/public/themes/default
 !/public/themes/storefront
 
+# Plugins are installed per site and distributed on their own - never in
+# this repository, and never in a release. Only the folder guard is kept.
+# Plugins developed here (theme-preview included) live in plugins/ locally
+# and are versioned in their own repositories.
+/plugins/*
+!/plugins/.htaccess
+/public/plugins/*
+!/public/plugins/.htaccess
+
 # Packaged theme ZIPs (cms:theme-package output).
 theme-packages/
 /*.zip

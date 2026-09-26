@@ -17,6 +17,8 @@ use App\Cms\Firebase\FirebaseManager;
 use App\Cms\Mail\MailConfigurator;
 use App\Cms\Modules\ModuleManager;
 use App\Cms\Payments\PaymentManager;
+use App\Cms\Plugins\Hooks;
+use App\Cms\Plugins\PluginManager;
 use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
@@ -48,6 +50,8 @@ class CmsServiceProvider extends ServiceProvider
         foreach ([
             SettingsRepository::class,
             ModuleManager::class,
+            PluginManager::class,
+            Hooks::class,
             ThemeManager::class,
             ThemeSections::class,
             SeoManager::class,
@@ -81,6 +85,14 @@ class CmsServiceProvider extends ServiceProvider
         // and the order service that writes it disagreed: checkout found an
         // empty basket and refused a perfectly good order.
         $this->app->scoped(CartService::class);
+
+        // Plugins register now, while the CMS does, so their routes,
+        // middleware and views are in place before any request is handled -
+        // and so their providers boot alongside everything else. Not before
+        // installation: there is no database to say which are switched on.
+        if ($this->isInstalled()) {
+            $this->app->make(PluginManager::class)->registerEnabled($this->app);
+        }
     }
 
     public function boot(): void
@@ -154,6 +166,9 @@ class CmsServiceProvider extends ServiceProvider
 
         // @staff ... @endstaff
         Blade::if('staff', fn () => auth()->check() && auth()->user()->isStaff());
+
+        // Output from plugins at a named spot: @hook('admin.themes.actions', $theme).
+        Blade::directive('hook', fn ($expression) => "<?php echo app(".Hooks::class."::class)->render({$expression}); ?>");
 
         // {!! money helper as a directive for terse theme markup !!}
         Blade::directive('money', fn ($expression) => "<?php echo e(money({$expression})); ?>");

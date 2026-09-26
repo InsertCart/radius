@@ -22,6 +22,14 @@ return [
     // their own catalogue.
     'catalogue_url' => env('CMS_MARKETPLACE_URL', 'https://www.insertcart.com/marketplace/themes.json'),
 
+    // The plugin directory: the same catalogue format, listing plugins instead
+    // of themes. System -> Browse plugins reads it. Empty turns that screen off
+    // while leaving the theme directory alone.
+    'plugins_catalogue_url' => env('CMS_PLUGIN_MARKETPLACE_URL', 'https://www.insertcart.com/marketplace/modules.json'),
+
+    // Matches the limit on uploading a plugin by hand (cms.plugins.max_upload_kb).
+    'plugins_max_download_bytes' => 20 * 1024 * 1024,
+
     // How long the catalogue is remembered. It is only fetched while an
     // administrator is using the marketplace, or when a theme installed from it
     // needs checking for updates.

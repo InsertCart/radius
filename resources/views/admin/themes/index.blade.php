@@ -77,6 +77,8 @@
                                         </form>
                                     @endunless
                                 @endunless
+
+                                @hook('admin.themes.actions', $theme)
                             </div>
                         </div>
                     </div>
@@ -85,6 +87,8 @@
         </div>
 
         <div class="space-y-6">
+            @hook('admin.themes.sidebar')
+
             @if ($marketplaceEnabled)
                 <x-admin.card title="Find a theme" description="Free themes from the theme directory, installed in one click">
                     <a href="{{ route('admin.themes.marketplace.index') }}"

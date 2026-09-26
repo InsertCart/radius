@@ -25,6 +25,34 @@ class CatalogClient
     private const CACHE_KEY = 'cms.marketplace.catalog';
     private const CHECKED_KEY = 'cms.marketplace.checked_at';
 
+    /** What this directory lists, in words an admin reads: "theme directory". */
+    protected function label(): string
+    {
+        return 'theme directory';
+    }
+
+    /** The config key holding the catalogue's address. */
+    protected function urlConfigKey(): string
+    {
+        return 'marketplace.catalogue_url';
+    }
+
+    /** Whether paid listings are shown. Themes cannot be sold through the CMS. */
+    protected function includePaid(): bool
+    {
+        return false;
+    }
+
+    protected function cacheKey(): string
+    {
+        return self::CACHE_KEY;
+    }
+
+    protected function checkedKey(): string
+    {
+        return self::CHECKED_KEY;
+    }
+
     public function enabled(): bool
     {
         return (bool) config('marketplace.enabled', true) && filled($this->url());
@@ -32,7 +60,7 @@ class CatalogClient
 
     public function url(): ?string
     {
-        $url = trim((string) config('marketplace.catalogue_url', ''));
+        $url = trim((string) config($this->urlConfigKey(), ''));
 
         return $url !== '' ? $url : null;
     }
@@ -47,14 +75,14 @@ class CatalogClient
             return null;
         }
 
-        $payload = Cache::remember(self::CACHE_KEY, $this->ttl(), function () {
+        $payload = Cache::remember($this->cacheKey(), $this->ttl(), function () {
             try {
                 $catalog = $this->fetch();
-                Cache::put(self::CHECKED_KEY, now()->toIso8601String(), now()->addYear());
+                Cache::put($this->checkedKey(), now()->toIso8601String(), now()->addYear());
 
                 return ['data' => $catalog->raw, 'error' => null];
             } catch (\Throwable $e) {
-                Log::warning('[marketplace] Could not load the theme directory: '.$e->getMessage());
+                Log::warning("[marketplace] Could not load the {$this->label()}: ".$e->getMessage());
 
                 // Cached as a failure so an unreachable directory is not
                 // retried on every page load. Only messages written for site
@@ -63,7 +91,7 @@ class CatalogClient
                     'data' => null,
                     'error' => $e instanceof MarketplaceException
                         ? $e->getMessage()
-                        : 'The theme directory could not be loaded.',
+                        : 'The '.$this->label().' could not be loaded.',
                 ];
             }
         });
@@ -73,7 +101,7 @@ class CatalogClient
         }
 
         try {
-            return Catalog::fromArray($payload['data']);
+            return Catalog::fromArray($payload['data'], $this->includePaid());
         } catch (MarketplaceException $e) {
             return null;
         }
@@ -82,7 +110,7 @@ class CatalogClient
     /** Why cached() came back empty, if it did. */
     public function lastError(): ?string
     {
-        $payload = Cache::get(self::CACHE_KEY);
+        $payload = Cache::get($this->cacheKey());
 
         return is_array($payload) ? ($payload['error'] ?? null) : null;
     }
@@ -98,11 +126,11 @@ class CatalogClient
         $url = $this->url();
 
         if (! $url) {
-            throw new MarketplaceException('No theme directory address has been configured. Set CMS_MARKETPLACE_URL in your .env file.');
+            throw new MarketplaceException('No '.$this->label().' address has been configured. Set it in config/marketplace.php or your .env file.');
         }
 
         if (strtolower((string) parse_url($url, PHP_URL_SCHEME)) !== 'https' && config('marketplace.require_https', true)) {
-            throw new MarketplaceException('The theme directory address must start with https://.');
+            throw new MarketplaceException('The '.$this->label().' address must start with https://.');
         }
 
         try {
@@ -111,20 +139,20 @@ class CatalogClient
                 ->withUserAgent(config('cms.name', 'CMS').'/'.cms_version())
                 ->get($url);
         } catch (\Throwable $e) {
-            throw new MarketplaceException('The theme directory could not be reached. Check your connection and try again.');
+            throw new MarketplaceException('The '.$this->label().' could not be reached. Check your connection and try again.');
         }
 
         if ($response->failed()) {
-            throw new MarketplaceException("The theme directory answered with an error ({$response->status()}).");
+            throw new MarketplaceException("The {$this->label()} answered with an error ({$response->status()}).");
         }
 
         $data = JsonDocument::decode($response->body());
 
         if (! is_array($data)) {
-            throw new MarketplaceException('The theme directory address did not return a valid catalogue. Check that it points at a JSON file.');
+            throw new MarketplaceException('The '.$this->label().' address did not return a valid catalogue. Check that it points at a JSON file.');
         }
 
-        return Catalog::fromArray($data);
+        return Catalog::fromArray($data, $this->includePaid());
     }
 
     /** Fetch, cache and return. Backs the Refresh button. */
@@ -132,20 +160,20 @@ class CatalogClient
     {
         $catalog = $this->fetch();
 
-        Cache::put(self::CACHE_KEY, ['data' => $catalog->raw, 'error' => null], $this->ttl());
-        Cache::put(self::CHECKED_KEY, now()->toIso8601String(), now()->addYear());
+        Cache::put($this->cacheKey(), ['data' => $catalog->raw, 'error' => null], $this->ttl());
+        Cache::put($this->checkedKey(), now()->toIso8601String(), now()->addYear());
 
         return $catalog;
     }
 
     public function lastCheckedAt(): ?string
     {
-        return Cache::get(self::CHECKED_KEY);
+        return Cache::get($this->checkedKey());
     }
 
     public function flush(): void
     {
-        Cache::forget(self::CACHE_KEY);
+        Cache::forget($this->cacheKey());
     }
 
     /**

@@ -22,6 +22,9 @@ class ThemeManager
 
     private ?Theme $active = null;
 
+    /** A theme shown for this request only, instead of the active one. */
+    private ?Theme $preview = null;
+
     private ?bool $tableExists = null;
 
     public function path(string $sub = ''): string
@@ -29,9 +32,16 @@ class ThemeManager
         return rtrim(config('cms.themes.path').DIRECTORY_SEPARATOR.ltrim($sub, '/\\'), DIRECTORY_SEPARATOR);
     }
 
-    /** The theme the public site is currently rendered with. */
+    /**
+     * The theme this request is rendered with: the previewed theme when one
+     * has been set, otherwise the one the site owner activated.
+     */
     public function active(): ?Theme
     {
+        if ($this->preview) {
+            return $this->preview;
+        }
+
         if ($this->active) {
             return $this->active;
         }
@@ -63,6 +73,79 @@ class ThemeManager
     }
 
     /**
+     * Renders the rest of this request with another installed theme, without
+     * activating it. Nothing is stored: the next request is back on the
+     * active theme unless it asks again.
+     *
+     * Everything that asks which theme is active - views, theme_asset(),
+     * builder regions, theme sections - follows, because they all ask here.
+     * Call it before anything has rendered.
+     *
+     * @return bool false when there is no usable theme by that name
+     */
+    public function preview(string $slug): bool
+    {
+        if (! $this->hasTable()) {
+            return false;
+        }
+
+        $theme = Theme::where('slug', $slug)->first();
+
+        if (! $theme || ! $theme->existsOnDisk()) {
+            return false;
+        }
+
+        $this->preview = $theme;
+        $this->registerViewNamespace();
+
+        // Anything that already worked out the theme's regions or sections
+        // for this request did it for the other theme.
+        foreach ([\App\Cms\Builder\RegionManager::class, ThemeSections::class] as $service) {
+            app()->forgetInstance($service);
+        }
+
+        return true;
+    }
+
+    /**
+     * Back to the active theme. Whoever started a preview ends it once the
+     * response is built, so nothing carries over into a later request served
+     * by the same process - a queue worker, Octane, or a test.
+     */
+    public function endPreview(): void
+    {
+        if (! $this->preview) {
+            return;
+        }
+
+        $this->preview = null;
+        $this->registerViewNamespace();
+
+        foreach ([\App\Cms\Builder\RegionManager::class, ThemeSections::class] as $service) {
+            app()->forgetInstance($service);
+        }
+    }
+
+    /** Slug of the theme being previewed in this request, or null. */
+    public function previewing(): ?string
+    {
+        return $this->preview?->slug;
+    }
+
+    /** The theme the site owner activated, whatever this request is previewing. */
+    public function activatedSlug(): string
+    {
+        $preview = $this->preview;
+        $this->preview = null;
+
+        try {
+            return $this->activeSlug();
+        } finally {
+            $this->preview = $preview;
+        }
+    }
+
+    /**
      * Points the "theme::" view namespace at the active theme, then the
      * default theme, then the application's own views.
      */
@@ -83,7 +166,11 @@ class ThemeManager
 
         $paths[] = resource_path('views/theme');
 
-        View::addNamespace('theme', $paths);
+        // Replaced rather than added to, so a theme previewed mid-request
+        // takes precedence over the one registered at boot - and the finder
+        // forgets any view it already found under the old paths.
+        View::replaceNamespace('theme', $paths);
+        View::getFinder()->flush();
     }
 
     public function activate(string $slug): void

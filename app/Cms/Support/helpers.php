@@ -5,6 +5,7 @@ use App\Cms\Builder\Blocks\Block;
 use App\Cms\Cdn\CdnManager;
 use App\Cms\Embeds\EmbedManager;
 use App\Cms\Modules\ModuleManager;
+use App\Cms\Plugins\PluginManager;
 use App\Cms\Search\SearchManager;
 use App\Cms\Seo\SeoManager;
 use App\Cms\Settings\SettingsRepository;
@@ -44,6 +45,21 @@ if (! function_exists('modules')) {
     function modules(): ModuleManager
     {
         return app(ModuleManager::class);
+    }
+}
+
+if (! function_exists('plugins')) {
+    function plugins(): PluginManager
+    {
+        return app(PluginManager::class);
+    }
+}
+
+if (! function_exists('plugin_asset')) {
+    /** URL for a file in a plugin's published assets/ folder. */
+    function plugin_asset(string $slug, string $file): string
+    {
+        return asset('plugins/'.$slug.'/'.ltrim($file, '/'));
     }
 }
 

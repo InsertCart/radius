@@ -32,9 +32,16 @@
     RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
 
     # Redirect Trailing Slashes If Not A Folder...
+    #
+    # Read from THE_REQUEST, for the same reason as the rule above. Laravel's
+    # stock version reads REQUEST_URI, which - once the folder above has
+    # rewritten the request into public/ - already contains /public, so
+    # /shop/ was sent to /public/shop and then redirected a second time. The
+    # original query string is carried over by mod_rewrite on its own; NE
+    # keeps an already-encoded path from being encoded twice.
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
+    RewriteCond %{THE_REQUEST} \s(/[^\s?]*[^\s?/])/+(?:\?\S*)?\s
+    RewriteRule ^ %1 [L,R=301,NE]
 
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d

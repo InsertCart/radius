@@ -3,6 +3,8 @@
 namespace App\Cms\Support;
 
 use App\Cms\Marketplace\CatalogClient;
+use App\Cms\Plugins\Hooks;
+use App\Cms\Plugins\PluginCatalogClient;
 use App\Cms\Updates\UpdateChecker;
 use App\Models\Comment;
 use App\Models\ContactSubmission;
@@ -38,7 +40,36 @@ class AdminNavigation
             'System' => $this->systemLinks($user),
         ];
 
-        return array_filter($sections, fn ($links) => $links !== []);
+        return array_filter($this->withPluginLinks($sections, $user), fn ($links) => $links !== []);
+    }
+
+    /**
+     * Entries plugins have asked for, merged into the section they named - or
+     * a new section of their own, placed before System.
+     */
+    private function withPluginLinks(array $sections, User $user): array
+    {
+        foreach (app(Hooks::class)->adminLinks() as $section => $links) {
+            foreach ($links as $link) {
+                if (($link['adminOnly'] && ! $user->isAdmin()) || ! \Illuminate\Support\Facades\Route::has($link['route'])) {
+                    continue;
+                }
+
+                if (! array_key_exists($section, $sections)) {
+                    $system = $sections['System'] ?? null;
+                    unset($sections['System']);
+                    $sections[$section] = [];
+
+                    if ($system !== null) {
+                        $sections['System'] = $system;
+                    }
+                }
+
+                $sections[$section][] = $this->link($link['label'], $link['route'], $link['activePattern'], null, $link['icon']);
+            }
+        }
+
+        return $sections;
     }
 
     private function contentLinks(): array
@@ -165,6 +196,16 @@ class AdminNavigation
             }
 
             $links[] = $this->link('Modules', 'admin.modules.index', 'admin.modules.*', null, 'modules');
+            // Badged with the number of directory plugins that have a newer
+            // version. Only plugins installed from the directory are looked
+            // up, so a site that never used it makes no request.
+            $links[] = $this->link('Plugins', 'admin.plugins.index', 'admin.plugins.index', $this->count(
+                fn () => count(app(PluginCatalogClient::class)->availableUpdates())
+            ), 'plugins');
+
+            if (app(PluginCatalogClient::class)->enabled()) {
+                $links[] = $this->link('Browse plugins', 'admin.plugins.marketplace.index', 'admin.plugins.marketplace.*', null, 'marketplace');
+            }
             $links[] = $this->link('Settings', 'admin.settings.edit', 'admin.settings.*', null, 'settings');
             $links[] = $this->link('System', 'admin.system.index', 'admin.system.*', null, 'system');
 

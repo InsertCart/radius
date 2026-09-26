@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
+use App\Http\Controllers\Admin\PluginController;
+use App\Http\Controllers\Admin\PluginMarketplaceController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SeoController;
@@ -224,6 +226,24 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             Route::middleware('staff:admin')->group(function () {
                 Route::get('modules', [ModuleController::class, 'index'])->name('modules.index');
                 Route::patch('modules/{slug}/toggle', [ModuleController::class, 'toggle'])->name('modules.toggle');
+
+                // Plugins are code from outside the release. Installing or
+                // switching one on is deploying it.
+                // The plugin directory. Declared before the {slug} routes so
+                // "marketplace" is never read as a plugin's folder name.
+                Route::get('plugins/marketplace', [PluginMarketplaceController::class, 'index'])->name('plugins.marketplace.index');
+                Route::post('plugins/marketplace/refresh', [PluginMarketplaceController::class, 'refresh'])->name('plugins.marketplace.refresh');
+                Route::get('plugins/marketplace/{slug}', [PluginMarketplaceController::class, 'show'])->name('plugins.marketplace.show');
+                Route::post('plugins/marketplace/{slug}/install', [PluginMarketplaceController::class, 'install'])
+                    ->middleware('throttle:10,1')
+                    ->name('plugins.marketplace.install');
+
+                Route::get('plugins', [PluginController::class, 'index'])->name('plugins.index');
+                Route::post('plugins/upload', [PluginController::class, 'upload'])
+                    ->middleware('throttle:10,1')
+                    ->name('plugins.upload');
+                Route::patch('plugins/{slug}/toggle', [PluginController::class, 'toggle'])->name('plugins.toggle');
+                Route::delete('plugins/{slug}', [PluginController::class, 'destroy'])->name('plugins.destroy');
             });
 
             // Mobile API. Registering an app issues a credential that opens

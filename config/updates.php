@@ -118,6 +118,10 @@ return [
         'protected' => [
             '.env',
             'bootstrap/cache',
+            // Installed separately and removed separately; a release has no
+            // say over which plugins a site runs.
+            'plugins',
+            'public/plugins',
             'public/storage',
             'public/themes',
             'storage',
@@ -226,6 +230,10 @@ return [
          */
         'empty' => [
             'bootstrap/cache',
+            // Plugins are sold and shipped on their own, never inside the
+            // CMS - including any being developed in this working tree.
+            'plugins',
+            'public/plugins',
             'public/themes',
             'storage/app/private',
             'storage/app/public',

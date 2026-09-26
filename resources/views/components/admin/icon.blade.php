@@ -57,6 +57,10 @@
         // Two arrows crossing: content going out and coming in.
         'transfer' => '<path d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>',
 
+        'plugins' => '<path d="M9 3.75v4.5m6-4.5v4.5M6.75 8.25h10.5v3a5.25 5.25 0 0 1-10.5 0v-3ZM12 16.5v3.75"/>',
+
+        'preview' => '<path d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>',
+
         // Fallback: a neutral marker, so an unmapped entry still lines up with
         // the rest of the menu instead of losing its indent.
         'default' => '<circle cx="12" cy="12" r="8.25"/><path d="M12 12h.008v.008H12V12Z"/>',

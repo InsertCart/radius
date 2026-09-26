@@ -1,0 +1,15 @@
+# ---------------------------------------------------------------------------
+# Installed plugins
+# ---------------------------------------------------------------------------
+# Plugin source code. Loaded by the CMS, never served: a plugin's public files
+# are published to public/plugins/<slug> when it is switched on. The project
+# root .htaccess already keeps this folder out of reach; this is the second
+# lock, for servers where that file is not read.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

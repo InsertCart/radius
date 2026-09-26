@@ -1,0 +1,29 @@
+# ---------------------------------------------------------------------------
+# Published plugin assets
+# ---------------------------------------------------------------------------
+# Only the static files in a plugin's assets/ folder are copied here.
+# This makes sure the web server agrees: only styles, scripts, fonts, images
+# and video are served from here, and nothing is ever executed.
+
+Require all denied
+
+<FilesMatch "\.(?i:css|js|map|json|svg|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|eot|otf|mp4|webm)$">
+    Require all granted
+</FilesMatch>
+
+Options -Indexes -ExecCGI -Includes
+
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<FilesMatch "\.(?i:php\d?|phtml|phar|pht|phps|cgi|pl|py|sh|asp|aspx|jsp|shtml)$">
+    SetHandler none
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
