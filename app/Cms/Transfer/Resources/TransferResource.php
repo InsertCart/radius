@@ -208,9 +208,11 @@ abstract class TransferResource
                 continue;
             }
 
-            $attributes[$field] = $field === 'og_image'
-                ? $context->mediaPath($seo[$field])
-                : $seo[$field];
+            $attributes[$field] = match ($field) {
+                'og_image' => $context->mediaPath($seo[$field]),
+                'canonical_url', 'schema_data' => $context->rewriteValue($seo[$field]),
+                default => $seo[$field],
+            };
         }
 
         return $attributes;
@@ -255,7 +257,10 @@ abstract class TransferResource
 
         // Addresses inside the tree are rewritten the same way body HTML is,
         // so an image widget points at this site's copy of the picture.
-        $tree = json_decode((string) $context->rewrite(json_encode($data['data'])), true) ?: $data['data'];
+        // Slashes unescaped, or "https:\/\/old.site" would never match the
+        // "https://old.site" the rewrites are keyed on.
+        $json = json_encode($data['data'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $tree = json_decode((string) $context->rewrite($json), true) ?: $data['data'];
 
         $layout = Layout::firstOrNew([
             'layoutable_type' => $model->getMorphClass(),

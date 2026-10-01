@@ -159,6 +159,14 @@
                         </button>
                         <p class="mt-1 text-xs text-slate-500">Needed for uploaded files to be reachable.</p>
                     </form>
+
+                    <div>
+                        <a href="{{ route('admin.system.site-address') }}"
+                           class="block w-full rounded-lg border border-slate-300 px-4 py-2 text-center text-sm font-medium hover:bg-slate-50">
+                            Change site address
+                        </a>
+                        <p class="mt-1 text-xs text-slate-500">After moving the database to a new domain, such as staging to live.</p>
+                    </div>
                 </div>
             </x-admin.card>
 

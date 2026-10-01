@@ -2,6 +2,7 @@
 
 namespace App\Cms\Transfer;
 
+use App\Cms\Support\SiteUrlRewriter;
 use App\Models\Media;
 use App\Models\User;
 use Illuminate\Support\Str;
@@ -44,6 +45,9 @@ class ImportContext
 
     /** The site an import came from, when the file says. Used to spot its own URLs. */
     public ?string $sourceUrl = null;
+
+    /** Points links at the old site to this one, once rehomeSite() has said which is which. */
+    private ?SiteUrlRewriter $site = null;
 
     private ?int $deadline = null;
 
@@ -263,14 +267,50 @@ class ImportContext
             $html = preg_replace_callback($pattern, fn () => $replacement, (string) $html) ?? $html;
         }
 
-        if ($this->rewrites === []) {
-            return $html;
+        if ($this->rewrites !== []) {
+            $from = array_keys($this->rewrites);
+            usort($from, fn ($a, $b) => strlen($b) <=> strlen($a));
+
+            $html = str_replace($from, array_map(fn ($key) => $this->rewrites[$key], $from), $html);
         }
 
-        $from = array_keys($this->rewrites);
-        usort($from, fn ($a, $b) => strlen($b) <=> strlen($a));
+        // Last, so every image already re-homed above keeps its exact new
+        // address; what is left are links to the old site's own pages.
+        return $this->site ? $this->site->replace($html) : $html;
+    }
 
-        return str_replace($from, array_map(fn ($key) => $this->rewrites[$key], $from), $html);
+    /**
+     * Rewrites links to the old site inside a value that is not HTML - a
+     * canonical address, a menu link, a schema block.
+     */
+    public function rewriteValue(mixed $value): mixed
+    {
+        if (! $this->site || ! $this->options->rewriteUrls) {
+            return $value;
+        }
+
+        return $this->site->replaceInArray($value);
+    }
+
+    /**
+     * Points links at the site the bundle came from to this one.
+     *
+     * What makes staging-to-live work: a post on staging.example.com linking
+     * to staging.example.com/pricing ends up linking to www.example.com/pricing.
+     * Skipped when the two are the same site, and when the bundle does not say
+     * where it came from.
+     */
+    public function rehomeSite(?string $from, ?string $to): void
+    {
+        $this->site = null;
+
+        if (SiteUrlRewriter::normalise($from) === null
+            || SiteUrlRewriter::normalise($to) === null
+            || SiteUrlRewriter::sameSite($from, $to)) {
+            return;
+        }
+
+        $this->site = new SiteUrlRewriter($from, $to);
     }
 
     /** @return array<string, string> */

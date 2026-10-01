@@ -67,6 +67,7 @@ class ImportService
         $context = new ImportContext($options, $report, $this->sideloader);
         $context->bundle = $reader;
         $context->sourceUrl = $reader->sourceUrl();
+        $context->rehomeSite($context->sourceUrl, url('/'));
 
         if ($timed) {
             $context->limitTo((int) config('transfer.web_time_limit', 600));

@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SeoController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SiteAddressController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\SystemController;
 use App\Http\Controllers\Admin\ThemeController;
@@ -273,6 +274,12 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::get('system/logs', [SystemController::class, 'logs'])->name('system.logs');
                 Route::delete('system/logs', [SystemController::class, 'clearLogs'])->name('system.logs.clear');
                 Route::post('system/security-check', [SystemController::class, 'checkExposure'])->name('system.security-check');
+
+                // Moving a copied database to a new domain. Admin-only: it
+                // rewrites content across the whole site in one go.
+                Route::get('system/site-address', [SiteAddressController::class, 'index'])->name('system.site-address');
+                Route::post('system/site-address/preview', [SiteAddressController::class, 'preview'])->name('system.site-address.preview');
+                Route::post('system/site-address', [SiteAddressController::class, 'apply'])->name('system.site-address.apply');
 
                 // Updates. Admin-only, and never reachable by an editor: this
                 // group rewrites the application's own code.

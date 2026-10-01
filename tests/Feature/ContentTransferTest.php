@@ -435,4 +435,105 @@ class ContentTransferTest extends TestCase
             ->post('/admin/import-export/upload', ['kind' => 'bundle', 'file' => $file])
             ->assertSessionHas('error');
     }
+
+    public function test_images_inside_a_builder_layout_point_at_the_imported_copy(): void
+    {
+        $site = $this->seedSite();
+        $old = $site['media']->url;
+
+        $site['post']->update(['content' => '<p><img src="'.$old.'"></p>']);
+        $site['post']->layout()->create([
+            'data' => ['blocks' => [['type' => 'image', 'src' => $old]]],
+            'is_enabled' => true,
+        ]);
+
+        $path = $this->export();
+        $copy = storage_path('framework/testing/bundle-'.uniqid().'.zip');
+        File::copy($path, $copy);
+
+        $this->wipe();
+        Storage::disk(config('cms.media.disk'))->deleteDirectory('2026');
+
+        app(ImportService::class)->run($copy, new ImportOptions, timed: false);
+
+        $post = Post::where('slug', 'the-first-post')->first();
+        $new = Media::where('path', $post->featured_image)->first()->url;
+
+        // The importer stores files under a fresh name, so the address really
+        // does change - and both the body and the layout must follow it.
+        $this->assertNotSame($old, $new);
+        $this->assertStringContainsString($new, $post->rawContent());
+        $this->assertSame($new, $post->layout->data['blocks'][0]['src']);
+
+        File::delete($copy);
+    }
+
+    public function test_links_to_the_old_site_are_pointed_at_this_one(): void
+    {
+        $this->admin();
+
+        $staging = 'https://staging.baztro.com';
+
+        $copy = storage_path('framework/testing/bundle-'.uniqid().'.json');
+        File::ensureDirectoryExists(dirname($copy));
+        File::put($copy, json_encode([
+            'manifest' => [
+                'format' => 1,
+                'site' => ['name' => 'Baztro', 'url' => $staging],
+                'types' => ['pages' => 1, 'posts' => 1, 'menus' => 1],
+            ],
+            'content' => [
+                'pages' => [['title' => 'Pricing', 'slug' => 'pricing', 'status' => 'published', 'content' => '<p>Plans.</p>']],
+                'posts' => [[
+                    'title' => 'Launch', 'slug' => 'launch', 'status' => 'published',
+                    'content' => '<p>See <a href="'.$staging.'/pricing">pricing</a>, '
+                        .'<a href="http://staging.baztro.com/about">about</a> and '
+                        .'<a href="https://staging.baztro.com.au/x">a different site</a>.</p>',
+                    'seo' => ['canonical_url' => $staging.'/blog/launch'],
+                    'layout' => ['data' => ['blocks' => [['type' => 'button', 'href' => $staging.'/pricing']]], 'is_enabled' => true],
+                ]],
+                'menus' => [[
+                    'name' => 'Header', 'slug' => 'header',
+                    'items' => [['label' => 'Contact', 'type' => 'custom', 'url' => $staging.'/contact']],
+                ]],
+            ],
+        ], JSON_UNESCAPED_SLASHES));
+
+        app(ImportService::class)->run($copy, new ImportOptions, timed: false);
+
+        $here = rtrim(url('/'), '/');
+        $post = Post::where('slug', 'launch')->first();
+
+        $this->assertStringContainsString('href="'.$here.'/pricing"', $post->rawContent());
+        $this->assertStringContainsString('href="'.$here.'/about"', $post->rawContent());
+        // Another site whose name merely starts the same way is left alone.
+        $this->assertStringContainsString('https://staging.baztro.com.au/x', $post->rawContent());
+
+        $this->assertSame($here.'/blog/launch', $post->canonical_url);
+        $this->assertSame($here.'/pricing', $post->layout->data['blocks'][0]['href']);
+        $this->assertSame($here.'/contact', Menu::where('slug', 'header')->first()->items()->first()->url);
+
+        File::delete($copy);
+    }
+
+    public function test_links_are_left_alone_when_rewriting_is_switched_off(): void
+    {
+        $this->admin();
+
+        $copy = storage_path('framework/testing/bundle-'.uniqid().'.json');
+        File::ensureDirectoryExists(dirname($copy));
+        File::put($copy, json_encode([
+            'manifest' => ['format' => 1, 'site' => ['url' => 'https://staging.baztro.com'], 'types' => ['posts' => 1]],
+            'content' => ['posts' => [[
+                'title' => 'Launch', 'slug' => 'launch', 'status' => 'published',
+                'content' => '<p><a href="https://staging.baztro.com/pricing">pricing</a></p>',
+            ]]],
+        ], JSON_UNESCAPED_SLASHES));
+
+        app(ImportService::class)->run($copy, ImportOptions::fromArray(['rewrite_urls' => false]), timed: false);
+
+        $this->assertStringContainsString('https://staging.baztro.com/pricing', Post::where('slug', 'launch')->first()->rawContent());
+
+        File::delete($copy);
+    }
 }

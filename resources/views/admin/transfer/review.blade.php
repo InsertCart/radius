@@ -144,8 +144,8 @@
                                 <input type="checkbox" name="rewrite_urls" value="1" checked
                                        class="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600">
                                 <span>
-                                    Repoint image addresses inside the content
-                                    <span class="mt-0.5 block text-xs text-slate-500">Rewrites old addresses in post bodies to this site's copies.</span>
+                                    Repoint addresses to this site
+                                    <span class="mt-0.5 block text-xs text-slate-500">Images in the content are pointed at this site's copies, and links to the old site (in content, layouts, menus and canonical URLs) are changed to this site's address.</span>
                                 </span>
                             </label>
 

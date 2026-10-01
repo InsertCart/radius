@@ -186,7 +186,7 @@ class MenuResource extends TransferResource
         $slug = $item['reference'] ?? null;
 
         if (blank($slug)) {
-            return [$type === 'route' ? 'route' : 'custom', null, $item['url'] ?? null];
+            return [$type === 'route' ? 'route' : 'custom', null, $context->rewriteValue($item['url'] ?? null)];
         }
 
         $model = match ($type) {
@@ -203,6 +203,6 @@ class MenuResource extends TransferResource
 
         $context->report->note('menus', 'Menu item "'.$item['label'].'" pointed at a '.$type.' this site has not got, so it was imported as a plain link.');
 
-        return ['custom', null, $item['url'] ?? null];
+        return ['custom', null, $context->rewriteValue($item['url'] ?? null)];
     }
 }
