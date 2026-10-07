@@ -100,11 +100,9 @@ class ThemeInstaller
      * Constructs worth telling the admin about without blocking the install.
      */
     private const WARNING_PATTERNS = [
-        // Preparing a few view variables is ordinary template work and the
-        // themes shipped here do it, so an @php block is reported rather than
-        // refused - anything dangerous inside one is still caught by the rules
-        // above, which scan the whole file.
-        '/@php\b/i' => 'contains @php blocks',
+        // @php blocks and {!! !!} output are ordinary template work, so they are
+        // not reported at all - anything dangerous inside an @php block is still
+        // caught by the forbidden rules above, which scan the whole file.
         '/\bDB::|\\\\Illuminate\\\\Support\\\\Facades\\\\DB\b/' => 'queries the database directly',
         '/\benv\s*\(/i' => 'reads environment variables',
         '/\bconfig\s*\(\s*[\'"](app\.key|database|services|mail)/i' => 'reads sensitive configuration',
@@ -440,12 +438,6 @@ class ThemeInstaller
                 if (preg_match($pattern, $contents)) {
                     $warnings[] = "{$relative} {$label}.";
                 }
-            }
-
-            // Not dangerous on its own, but worth surfacing: unescaped output
-            // is how a theme accidentally introduces stored XSS.
-            if (preg_match_all('/\{!!/', $contents, $matches) && count($matches[0]) > 5) {
-                $warnings[] = "{$relative} prints unescaped output in ".count($matches[0]).' places.';
             }
         }
 

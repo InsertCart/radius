@@ -332,14 +332,20 @@ class WxrReader
             while ($reader->nodeType !== XMLReader::NONE) {
                 if ($reader->nodeType === XMLReader::ELEMENT && in_array($reader->name, $names, true)) {
                     $name = $reader->name;
-                    $node = $reader->expand($document);
+                    libxml_clear_errors();
+                    $node = @$reader->expand($document);
 
-                    if ($node !== false) {
-                        $element = simplexml_import_dom($node);
+                    // A subtree that will not expand means the XML itself is
+                    // broken there. Skipping it would quietly lose a post, and
+                    // the reader can not be trusted past that point anyway.
+                    if ($node === false) {
+                        throw new TransferException($this->parseError($name));
+                    }
 
-                        if ($element instanceof SimpleXMLElement) {
-                            yield $name => $element;
-                        }
+                    $element = simplexml_import_dom($node);
+
+                    if ($element instanceof SimpleXMLElement) {
+                        yield $name => $element;
                     }
 
                     if (! $reader->next()) {
@@ -359,6 +365,22 @@ class WxrReader
     }
 
     /** @throws TransferException */
+    private function parseError(string $element): string
+    {
+        $error = libxml_get_last_error();
+        libxml_clear_errors();
+
+        if (! $error) {
+            return "That XML file is damaged and a <{$element}> in it could not be read. Re-export it from WordPress.";
+        }
+
+        return sprintf(
+            'That XML file is damaged near line %d (%s). Fix that spot in the file or re-export it from WordPress.',
+            $error->line,
+            trim(strtok($error->message, "\n")),
+        );
+    }
+
     private function open(): XMLReader
     {
         if ($this->namespaces === []) {
@@ -367,9 +389,14 @@ class WxrReader
 
         $reader = new XMLReader;
 
-        // LIBXML_NONET: the parser must never make a network request, whatever
-        // the document asks for.
-        if (! $reader->open($this->path, 'UTF-8', LIBXML_NONET)) {
+        XmlControlCharacterFilter::register();
+
+        // Read through a filter that drops control characters XML forbids but
+        // WordPress happily exports. LIBXML_NONET: the parser must never make a
+        // network request, whatever the document asks for.
+        $source = 'php://filter/read='.XmlControlCharacterFilter::NAME.'/resource='.$this->path;
+
+        if (! $reader->open($source, 'UTF-8', LIBXML_NONET)) {
             throw new TransferException('That XML file could not be opened.');
         }
 

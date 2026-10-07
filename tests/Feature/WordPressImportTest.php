@@ -323,6 +323,43 @@ class WordPressImportTest extends TestCase
         }
     }
 
+    public function test_control_characters_wordpress_exported_do_not_stop_the_import(): void
+    {
+        $path = storage_path('framework/testing/control-'.uniqid().'.xml');
+
+        // WordPress exports content byte for byte, so a stray ETX pasted into a
+        // post reaches the file - and XML 1.0 does not allow it anywhere.
+        File::put($path, str_replace('First line of the essay.', "First\x03 line\x0C of the essay.", File::get($this->fixture)));
+        $this->fixture = $path;
+
+        try {
+            $report = $this->import();
+        } finally {
+            File::delete($path);
+        }
+
+        $this->assertSame(0, $report->total('failed'), json_encode($report->notes()));
+        $this->assertStringContainsString('First line of the essay.', Post::where('slug', 'on-writing-slowly')->value('content'));
+    }
+
+    public function test_a_broken_file_is_refused_with_where_it_broke(): void
+    {
+        $path = storage_path('framework/testing/broken-'.uniqid().'.xml');
+
+        // Invalid UTF-8 inside an item: there is nothing safe to strip, so the
+        // admin is told where to look rather than shown a stack trace.
+        File::put($path, str_replace('First line of the essay.', "First \xC3\x28 line.", File::get($this->fixture)));
+
+        $this->expectException(TransferException::class);
+        $this->expectExceptionMessageMatches('/damaged near line \d+/');
+
+        try {
+            app(WordPressImporter::class)->inspect($path);
+        } finally {
+            File::delete($path);
+        }
+    }
+
     // The formatter on its own -------------------------------------------------
 
     public function test_wpautop_leaves_block_elements_alone(): void
