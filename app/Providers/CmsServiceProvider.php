@@ -210,13 +210,16 @@ class CmsServiceProvider extends ServiceProvider
         // @region('product', ['model' => $product]).
         Blade::directive('region', function (string $expression) use ($manager) {
             return "<?php \$__cbArgs = [{$expression}]; \$__cbRegion = \$__cbArgs[0];
-                app({$manager}::class)->markRendered(\$__cbRegion);
+                echo app({$manager}::class)->open(\$__cbRegion);
                 if (app({$manager}::class)->has(\$__cbRegion)):
                     echo app({$manager}::class)->render(\$__cbRegion, \$__cbArgs[1] ?? []);
                 else: ?>";
         });
 
-        Blade::directive('endregion', fn () => '<?php endif; unset($__cbRegion, $__cbArgs); ?>');
+        // open() and close() print nothing on the public site. In the editor's
+        // canvas they mark where the region sits, so the header and footer
+        // around the page being edited can be clicked through to.
+        Blade::directive('endregion', fn () => "<?php endif; echo app({$manager}::class)->close(); unset(\$__cbRegion, \$__cbArgs); ?>");
 
         // True when a region has been taken over by the builder, for themes
         // that want to adjust their own wrapper markup.

@@ -1,0 +1,105 @@
+{
+    "header": [
+        {
+            "key": "default",
+            "label": "Your theme's header",
+            "hint": "The logo, menu and cart your site shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "header"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "hero": [
+        {
+            "key": "default",
+            "label": "Your theme's hero",
+            "hint": "The homepage banner your site shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "hero"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "home": [
+        {
+            "key": "default",
+            "label": "Your theme's homepage",
+            "hint": "Every section of today's homepage, ready to edit, reorder or remove",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "hero"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "module": "shop",
+                    "widgets": [
+                        {
+                            "section": "featured_products"
+                        }
+                    ]
+                },
+                {
+                    "width": "edge",
+                    "module": "blog",
+                    "widgets": [
+                        {
+                            "section": "latest_posts"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "blog_index": [
+        {
+            "key": "default",
+            "label": "Your theme's blog page",
+            "hint": "The post list, search and sidebar your site shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "blog_list"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "footer": [
+        {
+            "key": "default",
+            "label": "Your theme's footer",
+            "hint": "The footer your site shows today",
+            "sections": [
+                {
+                    "width": "edge",
+                    "widgets": [
+                        {
+                            "section": "footer"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -10,13 +10,17 @@
  */
 
 export class Canvas {
-    constructor({ frame, overlay, state, onSelect, onDrop, onRequestRender }) {
+    constructor({ frame, overlay, state, onSelect, onDrop, onRequestRender, parts, onOpenPart }) {
         this.frame = frame;
         this.overlay = overlay;
         this.state = state;
         this.onSelect = onSelect;
         this.onDrop = onDrop;
         this.onRequestRender = onRequestRender;
+
+        // Other parts of the site with an editor of their own, keyed by region.
+        this.parts = parts || {};
+        this.onOpenPart = onOpenPart;
 
         this.outline = overlay.querySelector('#cb-outline');
         this.outlineLabel = overlay.querySelector('#cb-outline-label');
@@ -41,6 +45,7 @@ export class Canvas {
         if (!this.doc) return;
 
         this.injectStyles();
+        this.markParts();
 
         this.doc.addEventListener('click', (event) => this.handleClick(event), true);
         this.doc.addEventListener('mouseover', (event) => this.handleHover(event));
@@ -77,6 +82,48 @@ export class Canvas {
         if (this.styleTag) this.styleTag.textContent = css;
     }
 
+    /**
+     * Tag the header, footer and other regions drawn around the page.
+     *
+     * They belong to other layouts, so they cannot be edited here - but the
+     * server leaves a comment at each one's start and end, and tagging what
+     * lies between lets a click lead straight to that part's own editor.
+     */
+    markParts() {
+        if (!this.doc?.body) return;
+
+        const walker = this.doc.createTreeWalker(this.doc.body, NodeFilter.SHOW_COMMENT);
+        const markers = [];
+
+        while (walker.nextNode()) markers.push(walker.currentNode);
+
+        markers.forEach((marker) => {
+            const key = /^cb-region:([\w-]+)$/.exec(marker.data.trim())?.[1];
+            if (!key || !this.parts[key]) return;
+
+            let depth = 0;
+
+            for (let node = marker.nextSibling; node; node = node.nextSibling) {
+                if (node.nodeType === Node.COMMENT_NODE) {
+                    const text = node.data.trim();
+
+                    if (text.startsWith('cb-region:')) depth += 1;
+                    else if (text === '/cb-region' && depth-- === 0) break;
+
+                    continue;
+                }
+
+                if (node.nodeType !== Node.ELEMENT_NODE) continue;
+                if (['SCRIPT', 'STYLE', 'TEMPLATE'].includes(node.tagName)) continue;
+
+                // Never the layout being edited, nor anything wrapped around it.
+                if (node.id === 'cb-canvas-root' || node.querySelector('#cb-canvas-root')) continue;
+
+                node.dataset.cbPart = key;
+            }
+        });
+    }
+
     // Selection ------------------------------------------------------------
 
     handleClick(event) {
@@ -87,7 +134,17 @@ export class Canvas {
         const interactive = event.target.closest('a, button, form');
         if (interactive) event.preventDefault();
 
-        if (!element) return;
+        if (!element) {
+            const part = event.target.closest('[data-cb-part]');
+
+            if (part && this.onOpenPart) {
+                event.preventDefault();
+                event.stopPropagation();
+                this.onOpenPart(part.dataset.cbPart);
+            }
+
+            return;
+        }
 
         event.stopPropagation();
         this.select(element.dataset.cbId);
@@ -100,8 +157,15 @@ export class Canvas {
     }
 
     handleHover(event) {
-        const element = event.target.closest('[data-cb-id]');
-        if (!element || element === this.hovered) return;
+        const element = event.target.closest('[data-cb-id]') || event.target.closest('[data-cb-part]');
+
+        if (!element) {
+            // A part is only outlined while the pointer is actually on it.
+            if (this.hovered?.dataset.cbPart) this.clearHover();
+            return;
+        }
+
+        if (element === this.hovered) return;
 
         this.hovered = element;
         this.drawOutline(element, false);
@@ -152,7 +216,10 @@ export class Canvas {
 
         const type = element.dataset.cbType;
         const widget = element.dataset.cbWidget;
-        this.outlineLabel.textContent = widget || type || '';
+        const part = this.parts[element.dataset.cbPart];
+
+        this.outline.classList.toggle('is-part', Boolean(part));
+        this.outlineLabel.textContent = part ? `Edit ${part.label}` : (widget || type || '');
 
         if (selected) {
             // Above the element, unless it is near the top of the viewport.

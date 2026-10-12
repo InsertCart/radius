@@ -1,7 +1,7 @@
 {
     "name": "Default",
     "slug": "default",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "author": "Radius",
     "author_url": "https://www.insertcart.com",
     "description": "The bundled starter theme. Clean, fast and responsive, with every page a shop or blog needs. Copy this folder as the starting point for your own template.",
@@ -19,8 +19,291 @@
     },
     "regions": {
         "header": "Site header",
+        "home": "Homepage (whole page)",
+        "hero": "Homepage hero",
+        "home_bottom": "Homepage, below the sections",
         "footer": "Site footer",
         "before_content": "Before page content",
         "after_content": "After page content"
+    },
+    "sections": {
+        "header": {
+            "label": "Site header",
+            "icon": "menu",
+            "description": "Logo, main menu, cart and account link.",
+            "areas": ["header"],
+            "controls": [
+                {
+                    "type": "toggle",
+                    "key": "sticky",
+                    "label": "Stay at the top while scrolling",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_cart",
+                    "label": "Show the cart icon",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_account",
+                    "label": "Show the sign in / account link",
+                    "default": true
+                }
+            ]
+        },
+        "hero": {
+            "label": "Hero banner",
+            "icon": "image",
+            "description": "The large heading at the top of the homepage.",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "",
+                    "help": "Leave empty to use your site name."
+                },
+                {
+                    "type": "textarea",
+                    "key": "text",
+                    "label": "Text",
+                    "default": "",
+                    "help": "Leave empty to use your site tagline."
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_buttons",
+                    "label": "Show the buttons",
+                    "default": true
+                },
+                {
+                    "type": "text",
+                    "key": "primary_label",
+                    "label": "First button",
+                    "default": "Browse the shop"
+                },
+                {
+                    "type": "text",
+                    "key": "primary_url",
+                    "label": "First button link",
+                    "default": "",
+                    "help": "Leave empty to link to the shop."
+                },
+                {
+                    "type": "text",
+                    "key": "secondary_label",
+                    "label": "Second button",
+                    "default": "Read the blog"
+                },
+                {
+                    "type": "text",
+                    "key": "secondary_url",
+                    "label": "Second button link",
+                    "default": "",
+                    "help": "Leave empty to link to the blog."
+                }
+            ]
+        },
+        "featured_products": {
+            "label": "Featured products",
+            "icon": "cart",
+            "view": "sections.featured-products",
+            "description": "A grid of products, featured ones first.",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Featured products"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "A hand-picked selection"
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "How many products",
+                    "default": 8,
+                    "min": 1,
+                    "max": 24
+                },
+                {
+                    "type": "select",
+                    "key": "columns",
+                    "label": "Columns",
+                    "options": {
+                        "2": "2 columns",
+                        "3": "3 columns",
+                        "4": "4 columns"
+                    },
+                    "default": "4"
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_link",
+                    "label": "Show the \"View all\" link",
+                    "default": true
+                }
+            ]
+        },
+        "latest_posts": {
+            "label": "Latest blog posts",
+            "icon": "document",
+            "view": "sections.latest-posts",
+            "description": "The newest posts, featured ones first.",
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "From the blog"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "The latest writing"
+                },
+                {
+                    "type": "number",
+                    "key": "count",
+                    "label": "How many posts",
+                    "default": 3,
+                    "min": 1,
+                    "max": 12
+                },
+                {
+                    "type": "select",
+                    "key": "columns",
+                    "label": "Columns",
+                    "options": {
+                        "2": "2 columns",
+                        "3": "3 columns",
+                        "4": "4 columns"
+                    },
+                    "default": "3"
+                },
+                {
+                    "type": "toggle",
+                    "key": "tinted",
+                    "label": "Tinted background",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_link",
+                    "label": "Show the \"All posts\" link",
+                    "default": true
+                }
+            ]
+        },
+        "blog_list": {
+            "label": "Blog listing",
+            "icon": "grid",
+            "view": "sections.blog-list",
+            "description": "Every post, with search, the sidebar and page numbers.",
+            "areas": ["blog_index"],
+            "controls": [
+                {
+                    "type": "text",
+                    "key": "title",
+                    "label": "Heading",
+                    "default": "Blog"
+                },
+                {
+                    "type": "text",
+                    "key": "subtitle",
+                    "label": "Subheading",
+                    "default": "Thoughts, updates and announcements."
+                },
+                {
+                    "type": "number",
+                    "key": "per_page",
+                    "label": "Posts per page",
+                    "default": 12,
+                    "min": 1,
+                    "max": 48
+                },
+                {
+                    "type": "select",
+                    "key": "columns",
+                    "label": "Columns",
+                    "options": {
+                        "1": "1 column",
+                        "2": "2 columns",
+                        "3": "3 columns"
+                    },
+                    "default": "2"
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_search",
+                    "label": "Show the search box",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_sidebar",
+                    "label": "Show the sidebar",
+                    "default": true
+                }
+            ]
+        },
+        "footer": {
+            "label": "Site footer",
+            "icon": "menu",
+            "description": "Site details, footer menu, newsletter signup and copyright.",
+            "areas": ["footer"],
+            "controls": [
+                {
+                    "type": "toggle",
+                    "key": "show_contact",
+                    "label": "Show email, phone and address",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_social",
+                    "label": "Show social links",
+                    "default": true
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_menu",
+                    "label": "Show the footer menu",
+                    "default": true
+                },
+                {
+                    "type": "text",
+                    "key": "menu_title",
+                    "label": "Footer menu heading",
+                    "default": "Explore"
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_newsletter",
+                    "label": "Show the newsletter signup",
+                    "default": true
+                },
+                {
+                    "type": "text",
+                    "key": "copyright",
+                    "label": "Copyright line",
+                    "default": "",
+                    "help": "Leave empty for \"© year, your site name. All rights reserved.\""
+                },
+                {
+                    "type": "toggle",
+                    "key": "show_credit",
+                    "label": "Show \"Powered by\"",
+                    "default": true
+                }
+            ]
+        }
     }
 }

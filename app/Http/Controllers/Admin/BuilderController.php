@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 /**
@@ -160,12 +161,33 @@ class BuilderController extends Controller
             'tokens' => DesignToken::grouped(),
             'fonts' => config('builder.fonts'),
             'presets' => LayoutPreset::sections()->orderBy('sort_order')->get(['id', 'name', 'category', 'data']),
+            'parts' => $this->siteParts(),
             'region' => null,
             'area' => null,
             'starters' => [],
             'restoreUrl' => null,
             'canRestore' => false,
         ], $meta);
+    }
+
+    /**
+     * Every part of the site that has its own editor - the header, the
+     * footer, the homepage, the cart - so the editor can move between them
+     * without a trip back to the builder's landing page.
+     */
+    private function siteParts(): array
+    {
+        $parts = [];
+
+        foreach ($this->regions->allAreas() as $key => $area) {
+            $parts[$key] = [
+                'label' => $area['label'],
+                'kind' => $area['kind'],
+                'url' => route('admin.builder.region', $key),
+            ];
+        }
+
+        return $parts;
     }
 
     // Saving ---------------------------------------------------------------
@@ -256,12 +278,12 @@ class BuilderController extends Controller
      * It is rendered through the real theme, so what an admin arranges is what
      * a visitor will see - the same fonts, the same width, the same chrome.
      */
-    public function preview(Request $request, string $type, int $id): View
+    public function preview(Request $request, string $type, int $id): Response
     {
         $model = $this->resolveModel($type, $id);
         $layout = Layout::forModel($model);
 
-        return view('admin.builder.canvas', [
+        return $this->canvas([
             'content' => $this->renderer->editing()->render($layout->editableTree(), ['model' => $model]),
             'css' => $this->styles->compile($layout->editableTree()),
             'title' => $model->title ?? $model->name ?? '',
@@ -269,25 +291,46 @@ class BuilderController extends Controller
         ]);
     }
 
-    public function previewRegion(Request $request, string $region): View
+    public function previewRegion(Request $request, string $region): Response
     {
         $layout = Layout::forRegion($region);
         $context = $this->regionContext($region, $request->integer('product') ?: null);
 
-        return view('admin.builder.canvas', [
+        return $this->canvas([
             'content' => $this->renderer->editing()->render($layout->editableTree(), $context),
             'css' => $this->styles->compile($layout->editableTree()),
             'title' => ucfirst($region),
             // A theme region is a fragment, so it is previewed without the
-            // theme's own header and footer wrapped around it. A site page -
-            // the product page, the cart - is a whole page, and without the
-            // theme's stylesheet its preview would not look like the live site.
-            'chrome' => ($this->regions->area($region)['kind'] ?? 'region') === 'system',
+            // theme's own header and footer wrapped around it. A whole page -
+            // the homepage, the product page, the cart - is shown the way a
+            // visitor gets it, inside the theme's layout.
+            'chrome' => $this->regions->isWholePage($region),
             'region' => $region,
+            'regionLabel' => $this->regions->area($region)['label'] ?? null,
             // A fragment is previewed outside the theme's layout, so the theme
             // says which of its stylesheets the fragment needs.
             'themeAssets' => app(\App\Cms\Themes\ThemeSections::class)->canvasAssets(),
         ]);
+    }
+
+    /**
+     * Render the canvas document.
+     *
+     * Inside the theme's layout, the header and footer around the page are
+     * other layouts. They are marked while this renders, so the editor can
+     * offer a way straight into each - and the marking is switched off again
+     * before returning, so it can never outlive this response and reach a
+     * visitor's page in a long-running process.
+     */
+    private function canvas(array $data): Response
+    {
+        $this->regions->annotate((bool) $data['chrome']);
+
+        try {
+            return response(view('admin.builder.canvas', $data)->render());
+        } finally {
+            $this->regions->annotate(false);
+        }
     }
 
     // Supporting screens ---------------------------------------------------

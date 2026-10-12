@@ -37,11 +37,21 @@ class RegionManager
         'popup' => 'Popup',
     ];
 
+    /**
+     * Theme regions that are a whole page rather than a part of one. The
+     * editor previews these inside the theme's layout, header and footer
+     * included, the way it previews the cart or the blog index.
+     */
+    private const PAGE_REGIONS = ['home'];
+
     /** Published region layouts for the active theme, keyed by region. */
     private ?array $layouts = null;
 
     /** Regions whose markup the current theme actually wraps. */
     private array $declared = [];
+
+    /** True while the editor's canvas is being rendered. See annotate(). */
+    private bool $annotating = false;
 
     public function __construct(
         private LayoutRenderer $renderer,
@@ -55,8 +65,9 @@ class RegionManager
      */
     public function availableForTheme(): array
     {
-        $theme = $this->themes->active();
-        $declared = (array) ($theme?->meta['regions'] ?? []);
+        // From theme.json on disk, falling back to the synced copy, so a
+        // theme that gains a region can be edited without a re-sync.
+        $declared = app(\App\Cms\Themes\ThemeSections::class)->regions();
 
         $regions = [];
 
@@ -132,6 +143,16 @@ class RegionManager
     public function isDeclared(string $region): bool
     {
         return array_key_exists($region, $this->allAreas());
+    }
+
+    /**
+     * True when an area is a page in its own right - a site page, or the
+     * theme's homepage - rather than a fragment such as the header.
+     */
+    public function isWholePage(string $region): bool
+    {
+        return ($this->area($region)['kind'] ?? 'region') === 'system'
+            || in_array($region, self::PAGE_REGIONS, true);
     }
 
     /** True when an admin has built and published a layout for this region. */
@@ -219,6 +240,36 @@ class RegionManager
     public function markRendered(string $region): void
     {
         $this->declared[$region] = true;
+    }
+
+    /**
+     * Mark where each region starts and ends in the page being rendered.
+     *
+     * Switched on for the editor's canvas only. The header and footer around
+     * the page being edited belong to other layouts, and these markers are how
+     * the editor finds them to offer "Edit header" on the spot. Comments are
+     * used rather than a wrapping element, which would disturb a theme's
+     * sticky header or flex layout.
+     */
+    public function annotate(bool $annotating = true): void
+    {
+        $this->annotating = $annotating;
+    }
+
+    /** Called by @region. Emits the opening marker while annotating. */
+    public function open(string $region): string
+    {
+        $this->markRendered($region);
+
+        return $this->annotating && $this->isDeclared($region)
+            ? '<!--cb-region:'.preg_replace('/[^a-z0-9_\-]/i', '', $region).'-->'
+            : '';
+    }
+
+    /** Called by @endregion. */
+    public function close(): string
+    {
+        return $this->annotating ? '<!--/cb-region-->' : '';
     }
 
     public function renderedRegions(): array

@@ -1,4 +1,10 @@
-<header x-data="{ open: false }" class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+{{-- $headerOptions comes from the builder's "Site header" section (see
+     sections/header.blade.php). The layout includes this without it, and
+     everything is then shown. --}}
+@php $headerOptions = $headerOptions ?? []; @endphp
+
+<header x-data="{ open: false }"
+        class="{{ ($headerOptions['sticky'] ?? true) ? 'sticky top-0' : 'relative' }} z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
         <a href="{{ url('/') }}" class="flex shrink-0 items-center gap-2">
             {{-- on="light": this bar is bg-white/95 at every colour scheme, so
@@ -41,7 +47,7 @@
         </nav>
 
         <div class="ml-auto flex items-center gap-2">
-            @module('shop')
+            @if (modules()->enabled('shop') && ($headerOptions['show_cart'] ?? true))
                 @php $cartCount = app(\App\Cms\Shop\CartService::class)->itemCount(); @endphp
                 <a href="{{ route('cart.index') }}" class="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label="Cart">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -53,18 +59,20 @@
                         </span>
                     @endif
                 </a>
-            @endmodule
+            @endif
 
-            @auth
-                <a href="{{ auth()->user()->isStaff() ? route('admin.dashboard') : route('account.dashboard') }}"
-                   class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:block">
-                    {{ auth()->user()->isStaff() ? 'Admin' : 'Account' }}
-                </a>
-            @else
-                <a href="{{ route('login') }}" class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:block">
-                    Sign in
-                </a>
-            @endauth
+            @if ($headerOptions['show_account'] ?? true)
+                @auth
+                    <a href="{{ auth()->user()->isStaff() ? route('admin.dashboard') : route('account.dashboard') }}"
+                       class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:block">
+                        {{ auth()->user()->isStaff() ? 'Admin' : 'Account' }}
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 sm:block">
+                        Sign in
+                    </a>
+                @endauth
+            @endif
 
             <button @click="open = ! open" class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden" aria-label="Menu">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -88,10 +96,12 @@
                 @module('contact')<a href="{{ route('contact') }}" class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Contact</a>@endmodule
             @endforelse
 
-            <a href="{{ auth()->check() ? (auth()->user()->isStaff() ? route('admin.dashboard') : route('account.dashboard')) : route('login') }}"
-               class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                {{ auth()->check() ? 'My account' : 'Sign in' }}
-            </a>
+            @if ($headerOptions['show_account'] ?? true)
+                <a href="{{ auth()->check() ? (auth()->user()->isStaff() ? route('admin.dashboard') : route('account.dashboard')) : route('login') }}"
+                   class="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                    {{ auth()->check() ? 'My account' : 'Sign in' }}
+                </a>
+            @endif
         </div>
     </nav>
 </header>

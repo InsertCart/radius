@@ -275,11 +275,26 @@ class ThemeSections
     {
         foreach ($this->startersFor($region) as $starter) {
             if ('theme-'.$starter['key'] === $key) {
-                return array_map(fn ($section) => $this->expandSection($section), $starter['sections']);
+                // A section may name the module it depends on ("module":
+                // "shop"); it is left out while that module is switched off,
+                // so a blog-only site is not handed an empty product rail.
+                $sections = array_filter($starter['sections'], fn ($section) => is_array($section)
+                    && (empty($section['module']) || modules()->enabled((string) $section['module'])));
+
+                return array_map(fn ($section) => $this->expandSection($section), array_values($sections));
             }
         }
 
         return [];
+    }
+
+    /**
+     * Regions the theme declares, read from disk like the sections are, so a
+     * theme that gains a region needs no re-sync before it can be edited.
+     */
+    public function regions(): array
+    {
+        return (array) ($this->manifest()['regions'] ?? []);
     }
 
     private function startersFor(string $region): array
@@ -310,7 +325,8 @@ class ThemeSections
      *         {"type": "heading", "settings": {"text": "Hello"}}
      *     ]}]}
      *
-     * A section with no "columns" holds its "widgets" in a single column.
+     * A section with no "columns" holds its "widgets" in a single column. One
+     * with a "module" is only included while that module is switched on.
      */
     private function expandSection(array $section): array
     {

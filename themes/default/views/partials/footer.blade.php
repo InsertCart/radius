@@ -1,3 +1,8 @@
+{{-- $footerOptions comes from the builder's "Site footer" section (see
+     sections/footer.blade.php). The layout includes this without it, and
+     everything is then shown. --}}
+@php $footerOptions = $footerOptions ?? []; @endphp
+
 <footer class="mt-16 border-t border-slate-200 bg-slate-50">
     <div class="mx-auto max-w-6xl px-4 py-12">
         <div class="grid gap-8 md:grid-cols-4">
@@ -7,6 +12,7 @@
                     <p class="mt-2 max-w-sm text-sm text-slate-600">{{ setting('site_tagline') }}</p>
                 @endif
 
+                @if ($footerOptions['show_contact'] ?? true)
                 <div class="mt-4 space-y-1 text-sm text-slate-500">
                     @if (setting('site_email'))
                         <p><a href="mailto:{{ setting('site_email') }}" class="hover:text-slate-900">{{ setting('site_email') }}</a></p>
@@ -18,16 +24,17 @@
                         <p class="whitespace-pre-line">{{ setting('site_address') }}</p>
                     @endif
                 </div>
+                @endif
 
                 @php
-                    $socials = array_filter([
+                    $socials = ($footerOptions['show_social'] ?? true) ? array_filter([
                         'Facebook' => setting('social_facebook'),
                         'Instagram' => setting('social_instagram'),
                         'X' => setting('social_twitter'),
                         'LinkedIn' => setting('social_linkedin'),
                         'YouTube' => setting('social_youtube'),
                         'WhatsApp' => whatsapp_url(),
-                    ]);
+                    ]) : [];
                 @endphp
 
                 @if ($socials)
@@ -40,8 +47,9 @@
                 @endif
             </div>
 
+            @if ($footerOptions['show_menu'] ?? true)
             <div>
-                <p class="text-sm font-semibold text-slate-900">Explore</p>
+                <p class="text-sm font-semibold text-slate-900">{{ $footerOptions['menu_title'] ?? 'Explore' }}</p>
                 <ul class="mt-3 space-y-2 text-sm">
                     @forelse ($siteMenus['footer'] ?? [] as $item)
                         @continue(! $item->isVisible())
@@ -54,8 +62,9 @@
                     @endforelse
                 </ul>
             </div>
+            @endif
 
-            @module('newsletter')
+            @if (modules()->enabled('newsletter') && ($footerOptions['show_newsletter'] ?? true))
                 <div>
                     <p class="text-sm font-semibold text-slate-900">Newsletter</p>
                     <p class="mt-2 text-sm text-slate-600">Occasional updates. No spam.</p>
@@ -70,12 +79,18 @@
                         </button>
                     </form>
                 </div>
-            @endmodule
+            @endif
         </div>
 
         <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6 text-xs text-slate-500">
-            <p>&copy; {{ date('Y') }} {{ setting('site_name', config('app.name')) }}. All rights reserved.</p>
-            <p>Powered by <a href="https://www.insertcart.com" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-900">{{ config('cms.name') }}</a></p>
+            @if (filled($footerOptions['copyright'] ?? null))
+                <p>{{ $footerOptions['copyright'] }}</p>
+            @else
+                <p>&copy; {{ date('Y') }} {{ setting('site_name', config('app.name')) }}. All rights reserved.</p>
+            @endif
+            @if ($footerOptions['show_credit'] ?? true)
+                <p>Powered by <a href="https://www.insertcart.com" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-slate-900">{{ config('cms.name') }}</a></p>
+            @endif
         </div>
     </div>
 </footer>

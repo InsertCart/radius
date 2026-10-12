@@ -20,7 +20,7 @@
                      job. Saying so is the whole point of this message. --}}
                 <p class="cb-canvas-empty__title">Nothing built here yet</p>
                 <p>
-                    Your site is currently using the <strong>{{ $region }}</strong> that came with
+                    Your site is currently using the <strong>{{ Str::lower($regionLabel ?? str_replace('_', ' ', $region)) }}</strong> that came with
                     your theme &mdash; that is what you see on the live site.
                 </p>
                 <p>
@@ -60,6 +60,8 @@
         }
         [data-cb-id] { position: relative; }
         [data-cb-id]:hover { outline: 1px dashed rgba(37,99,235,.5); outline-offset: -1px; }
+        /* The header and footer around the page: another layout, one click away. */
+        [data-cb-part], [data-cb-part] * { cursor: pointer; }
         .cb-empty-column {
             min-height: 76px; display: grid; place-items: center;
             border: 2px dashed #cbd5e1; border-radius: .5rem;

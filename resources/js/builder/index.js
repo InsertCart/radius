@@ -56,6 +56,8 @@ class Editor {
             state: this.state,
             onSelect: (id) => this.selectNode(id),
             onDrop: (payload, target) => this.handleDrop(payload, target),
+            parts: boot.parts,
+            onOpenPart: (key) => this.openPart(key),
         });
 
         this.controls = new ControlRenderer({
@@ -137,6 +139,12 @@ class Editor {
             button.addEventListener('click', () => {
                 this.applyStarter(button.dataset.region, button.dataset.starter, button);
             });
+        });
+
+        document.getElementById('cb-part-switch')?.addEventListener('change', (event) => {
+            const key = event.target.value;
+            event.target.value = '';
+            this.openPart(key);
         });
 
         document.addEventListener('keydown', (event) => this.handleShortcut(event));
@@ -748,6 +756,31 @@ class Editor {
                 this.setStatus('Could not save the draft', 'error');
             }
         }, this.boot.config.autosaveDelay);
+    }
+
+    /**
+     * Leave for another part of the site's own editor - the header, the
+     * footer, a site page. Unsaved work is stored as a draft first, so it is
+     * there to come back to and the browser has nothing to warn about.
+     */
+    async openPart(key) {
+        const part = this.boot.parts?.[key];
+        if (!part || key === this.boot.region) return;
+
+        if (this.dirty) {
+            clearTimeout(this.autosaveTimer);
+            this.setStatus('Saving draft…');
+
+            try {
+                await this.api.saveDraft(this.state.serialize());
+                this.dirty = false;
+            } catch (error) {
+                this.setStatus('Could not save the draft', 'error');
+                return;
+            }
+        }
+
+        window.location.href = part.url;
     }
 
     async publish() {

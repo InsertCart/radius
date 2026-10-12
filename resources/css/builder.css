@@ -470,6 +470,20 @@ textarea.cb-input { resize: vertical; }
 .cb-toolbar__group { display: flex; align-items: center; gap: 4px; }
 .cb-toolbar__spacer { flex: 1; }
 
+/* Jumps to the editor of another part of the site: header, footer, a page. */
+.cb-part-switch {
+    max-width: 220px;
+    padding: 6px 10px;
+    border: 1px solid var(--cb-ui-line);
+    border-radius: 8px;
+    background-color: #fff;
+    color: inherit;
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+.cb-part-switch:hover { background-color: #f8fafc; }
+
 .cb-canvas-wrap {
     position: relative;
     flex: 1;
@@ -502,6 +516,15 @@ textarea.cb-input { resize: vertical; }
     pointer-events: none;
 }
 .cb-outline.is-selected { border-color: var(--cb-ui-accent); border-width: 2px; }
+/* The header or footer around the page: another layout, one click away. */
+.cb-outline.is-part { border: 2px dashed #7c3aed; }
+.cb-outline.is-part .cb-outline__label {
+    top: 0;
+    left: 0;
+    border-radius: 0 0 4px 0;
+    background: #7c3aed;
+    text-transform: none;
+}
 .cb-outline__label {
     position: absolute;
     top: -17px;

@@ -21,6 +21,8 @@
             'fonts' => $fonts,
             'presets' => $presets,
             'area' => $area,
+            'region' => $region,
+            'parts' => $parts,
             'meta' => [
                 'title' => $title,
                 'subtitle' => $subtitle,
@@ -62,11 +64,12 @@
                 {{-- Explains why a region opens empty while the live site
                      clearly has a header, and offers a way in. Hidden by the
                      editor as soon as anything is added. --}}
+                @php $partName = Str::lower($area['label'] ?? str_replace('_', ' ', $region)); @endphp
                 <div class="cb-region-note" id="cb-region-note" @if (! empty($tree)) hidden @endif>
-                    <p class="cb-region-note__title">Your theme's {{ $region }} is in use</p>
+                    <p class="cb-region-note__title">Your theme's {{ $partName }} is in use</p>
                     <p>
                         Nothing has been built here, so the live site is still showing the
-                        {{ $region }} that came with your theme. Anything you build replaces it;
+                        {{ $partName }} that came with your theme. Anything you build replaces it;
                         empty it again and the theme's version comes back.
                     </p>
 
@@ -163,6 +166,25 @@
                     </button>
                 @endforeach
             </div>
+
+            @if (! empty($parts))
+                {{-- The header, footer and site pages are separate layouts.
+                     This moves between their editors without a trip back to
+                     the builder's landing page; unsaved work is kept as a
+                     draft on the way out. --}}
+                <select class="cb-part-switch" id="cb-part-switch" aria-label="Edit another part of the site">
+                    <option value="">{{ $region && isset($parts[$region]) ? 'Editing: '.$parts[$region]['label'] : 'Edit another part…' }}</option>
+                    @foreach (['region' => 'Theme parts', 'system' => 'Site pages'] as $kind => $group)
+                        @php $inGroup = array_filter($parts, fn ($part) => $part['kind'] === $kind); @endphp
+                        @continue(empty($inGroup))
+                        <optgroup label="{{ $group }}">
+                            @foreach ($inGroup as $key => $part)
+                                <option value="{{ $key }}" @disabled($key === $region)>{{ $part['label'] }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+            @endif
 
             <div class="cb-toolbar__spacer"></div>
 
