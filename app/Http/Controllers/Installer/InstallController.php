@@ -60,9 +60,9 @@ class InstallController extends Controller
         $checks = [
             'php' => [
                 'label' => 'PHP version',
-                'required' => '8.2 or newer',
+                'required' => \App\Cms\Support\PhpRequirement::short(\App\Cms\Support\PhpRequirement::MINIMUM).' or newer',
                 'current' => PHP_VERSION,
-                'passed' => version_compare(PHP_VERSION, '8.2.0', '>='),
+                'passed' => \App\Cms\Support\PhpRequirement::meetsMinimum(),
             ],
         ];
 

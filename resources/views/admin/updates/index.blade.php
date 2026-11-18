@@ -57,6 +57,13 @@
         </div>
     @endif
 
+    @if ($phpNotice)
+        <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <h2 class="text-sm font-semibold text-amber-900">Plan your PHP upgrade</h2>
+            <p class="mt-1 text-sm text-amber-800">{{ $phpNotice }}</p>
+        </div>
+    @endif
+
     <div class="grid gap-5 lg:grid-cols-3">
         <div class="space-y-5 lg:col-span-2">
             <x-admin.card>

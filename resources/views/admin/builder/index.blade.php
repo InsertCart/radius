@@ -101,7 +101,7 @@
 
             <x-admin.card title="Recently built" description="Pages, posts and products with a visual layout" bodyClass="">
                 @if ($recent->isEmpty())
-                    <x-admin.empty message="Nothing has been built yet. Open any page and choose &quot;Edit with builder&quot;." />
+                    <x-admin.empty message='Nothing has been built yet. Open any page and choose "Edit with builder".' />
                 @else
                     <ul class="divide-y divide-slate-100">
                         @foreach ($recent as $layout)

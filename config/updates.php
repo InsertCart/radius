@@ -47,6 +47,13 @@ return [
     'http_timeout' => 900,
 
     /*
+    | How long visitors can be held on the "back in a few minutes" page while
+    | files are replaced. It normally comes down as soon as the update finishes;
+    | this is the limit that reopens a site whose update died half-way.
+    */
+    'holding_page_minutes' => 30,
+
+    /*
     |--------------------------------------------------------------------------
     | What an update is allowed to write
     |--------------------------------------------------------------------------
@@ -193,6 +200,14 @@ return [
     'package' => [
 
         /*
+         * The oldest installed version allowed to update straight to this
+         * release. Raise it when a release depends on something an earlier one
+         * put in place. Sites only ever see the latest release, so the version
+         * named here should have been the latest for a while first.
+         */
+        'min_version' => '1.0.0',
+
+        /*
          * Never included. Each of these is either specific to this machine, or
          * would actively break the buyer's install.
          *
@@ -213,6 +228,7 @@ return [
             'public/hot',
             'public/storage',
             'storage/installed',
+            'storage/framework/maintenance.php',
             'storage/app/shipped-checksums.json',
             'storage/app/update-pending.json',
             'storage/app/update-last.json',

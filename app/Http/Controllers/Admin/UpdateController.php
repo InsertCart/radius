@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Cms\Support\PhpRequirement;
 use App\Cms\Updates\BackupService;
 use App\Cms\Updates\UpdateApplier;
 use App\Cms\Updates\UpdateChecker;
@@ -56,6 +57,7 @@ class UpdateController extends Controller
             'manifestUrl' => $this->checker->url(),
             'lastChecked' => $this->checker->lastCheckedAt(),
             'error' => $error,
+            'phpNotice' => PhpRequirement::upcomingNotice(),
         ]);
     }
 

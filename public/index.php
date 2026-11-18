@@ -10,6 +10,27 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
     require $maintenance;
 }
 
+// Check the PHP version while a helpful answer is still possible. Composer's own
+// check stops the site with a technical message, usually on someone who can fix
+// this in a minute from their hosting control panel. The server's version is
+// deliberately left out, since anybody can load this page.
+if (is_file($requirement = __DIR__.'/../app/Cms/Support/PhpRequirement.php')) {
+    require_once $requirement;
+
+    if (! App\Cms\Support\PhpRequirement::meetsMinimum()) {
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+
+        exit('<!doctype html><meta charset="utf-8"><title>Newer PHP required</title>'
+            .'<div style="font:16px/1.6 system-ui,sans-serif;max-width:40rem;margin:4rem auto;padding:0 1.5rem;color:#0f172a">'
+            .'<h1 style="font-size:1.25rem">This site needs a newer version of PHP</h1>'
+            .'<p>It requires PHP '.App\Cms\Support\PhpRequirement::short(App\Cms\Support\PhpRequirement::MINIMUM).' or newer.</p>'
+            .'<p><strong>If this is your site</strong>, choose a newer PHP version in your hosting control panel, '
+            .'or ask your hosting company to change it. Your content is safe, and nothing else needs to change.</p>'
+            .'</div>');
+    }
+}
+
 // Register the Composer autoloader...
 //
 // A copy taken from version control has no vendor/ - it is build output, and

@@ -183,6 +183,10 @@ class SystemController extends Controller
             }
         }
 
+        if ($phpNotice = \App\Cms\Support\PhpRequirement::upcomingNotice()) {
+            $warnings[] = $phpNotice;
+        }
+
         if (config('app.debug')) {
             $warnings[] = 'APP_DEBUG is on. Set it to false before going live - it exposes stack traces and environment values to visitors.';
         }

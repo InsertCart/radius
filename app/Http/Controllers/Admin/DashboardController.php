@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Cms\Support\PhpRequirement;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Comment;
@@ -199,6 +200,15 @@ class DashboardController extends Controller
             $items[] = [
                 'label' => 'Your account has no two-factor authentication',
                 'url' => route('two-factor.setup'),
+            ];
+        }
+
+        // Said well ahead of time: moving PHP is often a request to a hosting
+        // company, and the site simply cannot take the update until it is done.
+        if (auth()->user()->isAdmin() && ! PhpRequirement::meetsUpcoming()) {
+            $items[] = [
+                'label' => 'Plan a move to PHP '.PhpRequirement::short(PhpRequirement::UPCOMING).' - a future update will need it',
+                'url' => route('admin.updates.index'),
             ];
         }
 

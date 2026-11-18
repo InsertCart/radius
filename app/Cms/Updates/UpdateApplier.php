@@ -29,10 +29,18 @@ use Illuminate\Support\Str;
  */
 class UpdateApplier
 {
+    /** Files copied into place by the swap in progress. */
+    private int $filesWritten = 0;
+
+    /**
+     * The holding page is injected, not resolved when needed: by the time it is
+     * closed the file holding its class may have been replaced or removed.
+     */
     public function __construct(
         private ReleaseDownloader $downloader,
         private ReleaseArchive $archive,
         private BackupService $backups,
+        private UpdateHoldingPage $holdingPage,
     ) {}
 
     // Preflight -----------------------------------------------------------
@@ -224,7 +232,22 @@ class UpdateApplier
                 .'files-'.$manifest->version.'-'.now()->format('Ymd-His');
 
             // ----- point of no return -----
-            $result = $this->swap($stage, $extracted['files'], $backupDir, $edited);
+            //
+            // Visitors are held back from here until finalize() is done, so
+            // nobody is served a mixture of the old files and the new ones.
+            $this->holdingPage->open();
+
+            try {
+                $result = $this->swap($stage, $extracted['files'], $backupDir, $edited);
+            } catch (\Throwable $e) {
+                // Stopped before changing anything: the site is still whole,
+                // so there is no reason to keep anybody out of it.
+                if ($this->filesWritten === 0) {
+                    $this->holdingPage->close();
+                }
+
+                throw $e;
+            }
 
             File::put($this->pendingPath(), json_encode([
                 'from' => cms_version(),
@@ -323,6 +346,7 @@ class UpdateApplier
             }
 
             $changed++;
+            $this->filesWritten++;
         }
 
         // Only for a full release. A partial stage - the bundled-themes refresh
@@ -536,6 +560,7 @@ class UpdateApplier
         @unlink($this->pendingPath());
         @unlink($this->lastUpdatePath());
 
+        $this->holdingPage->close();
         $this->resetOpcache();
 
         return ['restored' => $restored, 'removed' => $removed, 'version' => $pending['from'] ?? null];
@@ -664,6 +689,10 @@ class UpdateApplier
         $steps['Caches'] = 'Cleared.';
 
         $this->recordChecksums();
+
+        // Last, and only on success. If a step above throws, the new code is
+        // on an unfinished database and visitors are better off waiting.
+        $this->holdingPage->close();
         $this->resetOpcache();
 
         return $steps;

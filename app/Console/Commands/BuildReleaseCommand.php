@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Cms\Support\PhpRequirement;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
@@ -137,8 +138,8 @@ class BuildReleaseCommand extends Command
             'sha256: '.$hash,
             'tags:',
             'requires_backup: true',
-            'min_version: 1.0.0',
-            'min_php: 8.2.0',
+            'min_version: '.$this->minimumVersion(),
+            'min_php: '.PhpRequirement::MINIMUM,
             '-->',
             '',
         ];
@@ -242,6 +243,10 @@ class BuildReleaseCommand extends Command
             return false;
         }
 
+        if (! $this->phpRequirementIsConsistent()) {
+            return false;
+        }
+
         // Dev dependencies in a sold product are dead weight and extra attack
         // surface, but they are not fatal, so this only warns.
         if (is_dir(base_path('vendor/phpunit'))) {
@@ -252,6 +257,48 @@ class BuildReleaseCommand extends Command
         }
 
         return true;
+    }
+
+    /**
+     * Refuse a release whose stated PHP minimum is not what its packages need.
+     *
+     * The updater believes the minimum published with a release. If composer.json
+     * has moved on and that has not, sites on the older PHP pass every check,
+     * install the update, and then cannot boot - with no admin panel left to roll
+     * it back from.
+     */
+    private function phpRequirementIsConsistent(): bool
+    {
+        $composer = (array) json_decode((string) File::get(base_path('composer.json')), true);
+        $expected = PhpRequirement::short(PhpRequirement::MINIMUM);
+
+        $declared = [
+            'require.php' => (string) ($composer['require']['php'] ?? ''),
+            'config.platform.php' => (string) ($composer['config']['platform']['php'] ?? ''),
+        ];
+
+        $wrong = array_filter($declared, function (string $constraint) use ($expected) {
+            return ! preg_match('/\d+\.\d+/', $constraint, $match) || $match[0] !== $expected;
+        });
+
+        if ($wrong === []) {
+            return true;
+        }
+
+        $this->newLine();
+        $this->error("composer.json disagrees with the PHP minimum of {$expected} in App\\Cms\\Support\\PhpRequirement:");
+
+        foreach ($wrong as $key => $constraint) {
+            $this->line("  {$key} is \"{$constraint}\"");
+        }
+
+        return false;
+    }
+
+    /** The oldest installed version allowed to update straight to this release. */
+    private function minimumVersion(): string
+    {
+        return (string) config('updates.package.min_version', '1.0.0');
     }
 
     /**
@@ -373,8 +420,8 @@ class BuildReleaseCommand extends Command
             'released_at' => now()->toDateString(),
             'tags' => [],
             'requires_backup' => true,
-            'min_version' => '1.0.0',
-            'min_php' => '8.2.0',
+            'min_version' => $this->minimumVersion(),
+            'min_php' => PhpRequirement::MINIMUM,
             'requires_extensions' => ['gd', 'zip', 'fileinfo'],
             'download' => $this->option('url') ?: 'https://example.com/releases/'.basename($this->zipName($version)),
             'sha256' => $hash,

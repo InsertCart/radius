@@ -207,7 +207,7 @@
                 <input type="hidden" name="kind" value="wordpress">
 
                 <x-admin.card title="Import from WordPress"
-                              description="The .xml file WordPress gives you from Tools &rsaquo; Export.">
+                              description="The .xml file WordPress gives you from Tools › Export.">
                     <input type="file" name="file" accept=".xml" required
                            class="block w-full rounded-lg border border-slate-300 p-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium">
 

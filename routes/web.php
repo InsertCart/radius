@@ -10,6 +10,7 @@ use App\Http\Controllers\Front\PushController;
 use App\Http\Controllers\Front\SearchController;
 use App\Http\Controllers\Front\SeoController;
 use App\Http\Controllers\Front\ShopController;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
@@ -88,12 +89,18 @@ Route::middleware('installed')->group(function () {
 
             // The provider sends the customer back here. Both GET and POST are
             // accepted because PayU returns by form POST while the rest use GET.
+            //
+            // Both middleware names are excluded on these payment routes:
+            // ValidateCsrfToken is Laravel 12's, PreventRequestForgery is what
+            // replaces it in Laravel 13. Excluding only the old name there
+            // would turn every provider callback into a 419, and no test would
+            // notice, because Laravel skips this check while testing.
             Route::match(['get', 'post'], 'return/{gateway}/{order}', [CheckoutController::class, 'handleReturn'])
-                ->withoutMiddleware([ValidateCsrfToken::class])
+                ->withoutMiddleware([ValidateCsrfToken::class, PreventRequestForgery::class])
                 ->name('return');
 
             Route::match(['get', 'post'], 'cancel/{gateway}/{order}', [CheckoutController::class, 'cancel'])
-                ->withoutMiddleware([ValidateCsrfToken::class])
+                ->withoutMiddleware([ValidateCsrfToken::class, PreventRequestForgery::class])
                 ->name('cancel');
 
             Route::get('success/{order}', [CheckoutController::class, 'success'])->name('success');
@@ -110,7 +117,7 @@ Route::middleware('installed')->group(function () {
         // Server-to-server callbacks. No CSRF token exists for these, and the
         // driver verifies the provider's signature instead.
         Route::post('webhooks/payments/{gateway}', [CheckoutController::class, 'webhook'])
-            ->withoutMiddleware([ValidateCsrfToken::class])
+            ->withoutMiddleware([ValidateCsrfToken::class, PreventRequestForgery::class])
             ->name('checkout.webhook');
     }
 
