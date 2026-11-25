@@ -85,6 +85,7 @@ class InjectRecaptcha
     document.addEventListener('submit', function (event) {
         var form = event.target;
         if (!(form instanceof HTMLFormElement) || c.paths.indexOf(new URL(form.action, location.href).pathname) === -1 || form.dataset.recaptchaDone) return;
+        if (event.submitter && event.submitter.name === '_contact_copy') return;
         if (!window.grecaptcha) return;
         event.preventDefault();
         grecaptcha.ready(function () {

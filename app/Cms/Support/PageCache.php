@@ -68,14 +68,14 @@ class PageCache
             return null;
         }
 
-        if ($request->user() || $this->hasVisitorState($request)) {
+        if ($request->attributes->get('has_contact_challenge') || $request->user() || $this->hasVisitorState($request)) {
             return null;
         }
 
         $query = $request->query();
         ksort($query);
 
-        return 'page-cache:'.$this->generation().':'.sha1(implode('|', [
+        return 'page-cache:v2:'.$this->generation().':'.sha1(implode('|', [
             $request->getSchemeAndHttpHost(),
             $request->getBaseUrl().$request->getPathInfo(),
             http_build_query($query),

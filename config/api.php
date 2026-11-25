@@ -141,6 +141,7 @@ return [
             'auth' => 'none',
             'endpoints' => [
                 'GET /posts' => 'Published posts, newest first, paginated.',
+                'POST /posts' => 'Create a draft with a title and optional HTML content, slug and excerpt. Requires draft creation access for this app.',
                 'GET /posts/{slug}' => 'One post with its body, author and tags.',
                 'GET /post-categories' => 'Blog categories.',
                 'GET /post-tags' => 'Tags in use.',

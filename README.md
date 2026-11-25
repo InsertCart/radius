@@ -96,6 +96,7 @@ echo "{}" > storage/installed
 | Newsletter | Subscriber capture and CSV export | No |
 | Import & export | Content bundles in and out, plus a WordPress importer | No |
 | Mobile API | JSON API for a mobile app — **ships switched off** | No |
+| MCP server | AI client access to blog posts — **ships switched off** | No |
 
 Dependencies are handled for you (e.g. switching off Payments also switches off
 eCommerce), and nothing is ever deleted when a module is turned off.
@@ -120,10 +121,24 @@ talk to their providers over REST, so no vendor SDKs are pulled into `vendor/`.
 
 ---
 
+## MCP server
+
+Enable **MCP server** under **System → Modules**, then open **System → MCP server**.
+Issue a named token and copy the endpoint into an MCP client that supports
+Streamable HTTP. Set its Authorization header to `Bearer YOUR_TOKEN`. Use HTTPS
+for remote connections. On an existing source installation, run `php artisan migrate`
+and `php artisan cms:sync` to register the new module.
+
+Read-only tokens can search, read and analyse all blog posts, including drafts.
+The analysis tool returns post counts and lifetime views by status, or reading
+time, views and SEO metadata for an individual post. Write-enabled tokens can
+also create, edit and publish posts. New posts default to draft.
+Revoke individual tokens on the same admin screen.
+
 ## Mobile API
 
-A JSON API for a mobile app — content, shop and customer accounts. It's the
-only module that **ships switched off**. Every request must carry a
+A JSON API for a mobile app — content, shop and customer accounts. It
+**ships switched off**. Every request must carry a
 registered app's key/secret; there is no public or unauthenticated mode.
 
 ```

@@ -272,6 +272,8 @@ return [
             'cache_enabled' => ['type' => 'boolean', 'label' => 'Cache rendered pages', 'default' => false, 'help' => 'Caches public HTML for signed-out visitors. Leave off while developing.'],
             'cache_ttl' => ['type' => 'number', 'label' => 'Cache lifetime (seconds)', 'default' => 600],
             'recaptcha_enabled' => ['type' => 'boolean', 'label' => 'Enable reCAPTCHA v3', 'default' => false],
+            'contact_math_enabled' => ['type' => 'boolean', 'label' => 'Ask a simple math question on contact forms', 'default' => true,
+                'help' => 'Visitors answer a random addition question before sending a message.'],
             'recaptcha_site_key' => ['type' => 'text', 'label' => 'reCAPTCHA site key'],
             'recaptcha_secret_key' => ['type' => 'secret', 'label' => 'reCAPTCHA secret key'],
             'registration_enabled' => ['type' => 'boolean', 'label' => 'Allow public registration', 'default' => true],

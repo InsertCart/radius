@@ -125,7 +125,7 @@ Route::middleware('installed')->group(function () {
     if (modules()->enabled('contact')) {
         Route::get('contact', [ContactController::class, 'show'])->name('contact');
         Route::post('contact', [ContactController::class, 'submit'])
-            ->middleware(['throttle:5,1', 'recaptcha'])
+            ->middleware(['throttle:5,1', \App\Http\Middleware\DiscardContactSpam::class, 'recaptcha'])
             ->name('contact.submit');
     }
 

@@ -145,6 +145,15 @@
                         </div>
 
                         <div class="flex shrink-0 flex-wrap items-center gap-2">
+                            <form method="POST" action="{{ route('admin.api.apps.drafts', $client) }}">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="can_create_drafts" value="{{ $client->can_create_drafts ? 0 : 1 }}">
+                                <button type="submit" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-50">
+                                    {{ $client->can_create_drafts ? 'Revoke draft access' : 'Allow draft creation' }}
+                                </button>
+                            </form>
+
                             <form method="POST" action="{{ route('admin.api.apps.secret', $client) }}"
                                   onsubmit="return confirm('Generate a new secret? Every build still using the old one stops working immediately.')">
                                 @csrf

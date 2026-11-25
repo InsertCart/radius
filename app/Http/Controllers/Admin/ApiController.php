@@ -154,6 +154,20 @@ class ApiController extends Controller
             ]);
     }
 
+    public function updateDraftPermission(Request $request, ApiClient $client): RedirectResponse
+    {
+        $request->validate(['can_create_drafts' => ['required', 'boolean']]);
+        $client->can_create_drafts = $request->boolean('can_create_drafts');
+        $client->save();
+
+        $message = $client->can_create_drafts
+            ? "Allowed {$client->name} to create draft posts."
+            : "Removed draft creation access for {$client->name}.";
+        activity('api.client.drafts', $message, $client);
+
+        return back()->with('status', $message);
+    }
+
     public function toggleClient(Request $request, ApiClient $client): RedirectResponse
     {
         $client->forceFill(['enabled' => ! $client->enabled])->save();

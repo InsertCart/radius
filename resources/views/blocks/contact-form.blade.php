@@ -29,8 +29,6 @@
 
 <form class="cb-form" method="POST" action="{{ $action }}">
     @csrf
-    {{-- Honeypot: invisible to people, irresistible to bots. --}}
-    <input type="text" name="website" tabindex="-1" autocomplete="off" class="cb-hp" aria-hidden="true">
     <input type="hidden" name="_form" value="{{ $uid }}">
     <input type="hidden" name="{{ ContactFormSchema::TOKEN_INPUT }}" value="{{ $schemaToken }}">
 
@@ -95,9 +93,11 @@
         </div>
     @endforeach
 
-    <div class="cb-form__actions">
-        <button type="submit" class="cb-button cb-button--md">
-            {{ $settings['button_text'] ?? 'Send message' }}
-        </button>
-    </div>
+    <x-contact-submit :form-id="$uid">
+        <div class="cb-form__actions">
+            <button type="submit" class="cb-button cb-button--md">
+                {{ $settings['button_text'] ?? 'Send message' }}
+            </button>
+        </div>
+    </x-contact-submit>
 </form>

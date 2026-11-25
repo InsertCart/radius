@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Cms\Api\Resource;
+use App\Cms\Support\HtmlSanitizer;
 use App\Http\Controllers\Api\ApiController;
 use App\Models\Category;
 use App\Models\Comment;
@@ -10,6 +11,7 @@ use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -37,6 +39,34 @@ class PostController extends ApiController
             ->paginate($this->perPage($request));
 
         return $this->page(Resource::paginated($posts, fn (Post $post) => Resource::post($post)));
+    }
+
+    public function storeDraft(Request $request, HtmlSanitizer $sanitizer): JsonResponse
+    {
+        $client = $this->client($request);
+        if (! $client->can_create_drafts) {
+            return $this->fail('This app needs draft creation access.', 403, 'draft_access_required');
+        }
+
+        $fields = $request->validate([
+            'title' => ['required', 'string', 'max:190'],
+            'slug' => ['nullable', 'string', 'max:190'],
+            'excerpt' => ['nullable', 'string', 'max:1000'],
+            'content' => ['nullable', 'string', 'max:1000000'],
+            'status' => ['sometimes', Rule::in(['draft'])],
+            'published_at' => ['prohibited'],
+        ]);
+        $fields['status'] = 'draft';
+        $fields['content'] = $sanitizer->clean($fields['content'] ?? null);
+
+        $post = DB::transaction(function () use ($fields, $client) {
+            $post = Post::create($fields);
+            activity('post.created', "API app {$client->name} created a draft.", $post, ['api_client_id' => $client->id]);
+
+            return $post;
+        });
+
+        return $this->data($post->only(['id', 'title', 'slug', 'status', 'published_at']), status: 201);
     }
 
     public function show(Request $request, string $slug): JsonResponse

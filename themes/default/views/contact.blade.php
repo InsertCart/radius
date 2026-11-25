@@ -31,7 +31,6 @@
 
             <form method="POST" action="{{ route('contact.submit') }}" class="space-y-4 md:col-span-2">
                 @csrf
-                <input type="text" name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true">
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -62,7 +61,9 @@
                               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('message') }}</textarea>
                 </div>
 
-                <button class="rounded-lg px-6 py-2.5 text-sm font-semibold text-white btn-brand">Send message</button>
+                <x-contact-submit>
+                    <button class="rounded-lg px-6 py-2.5 text-sm font-semibold text-white btn-brand">Send message</button>
+                </x-contact-submit>
             </form>
         </div>
     </div>

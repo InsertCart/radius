@@ -189,6 +189,10 @@ class AdminNavigation
                 $links[] = $this->link('Mobile API', 'admin.api.index', 'admin.api.*', null, 'api');
             }
 
+            if (modules()->allEnabled('mcp', 'blog')) {
+                $links[] = $this->link('MCP server', 'admin.mcp.index', 'admin.mcp.*', null, 'api');
+            }
+
             // Moving content in and out, including from WordPress. Follows
             // the route: admin-only, and gone with the module.
             if (modules()->enabled('transfer')) {

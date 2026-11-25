@@ -18,14 +18,32 @@
         @endforeach
     </div>
 
-    <x-admin.card bodyClass="">
+    <x-admin.card bodyClass="" x-data="{ selected: [] }">
         @if ($comments->isEmpty())
             <x-admin.empty message="Nothing to moderate here." />
         @else
+            @php($pageIds = $comments->pluck('id')->map(fn ($id) => (string) $id)->values())
+            <form id="bulk-delete-comments" method="POST" action="{{ route('admin.comments.bulk-destroy') }}"
+                  onsubmit="return confirm('Permanently delete the selected comments and all their replies?')"
+                  class="flex flex-wrap items-center gap-4 border-b border-slate-100 p-4">
+                @csrf @method('DELETE')
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" :checked="selected.length === {{ $comments->count() }}"
+                           x-effect="$el.indeterminate = selected.length > 0 && selected.length < {{ $comments->count() }}"
+                           @change="selected = $el.checked ? @js($pageIds) : []">
+                    Select all on this page
+                </label>
+                <button type="submit" disabled :disabled="selected.length === 0"
+                        class="rounded-lg border border-rose-600 px-3 py-2 text-sm text-rose-600 disabled:opacity-50">
+                    Delete selected <span x-show="selected.length" x-cloak x-text="'(' + selected.length + ')'"></span>
+                </button>
+            </form>
             <ul class="divide-y divide-slate-100">
                 @foreach ($comments as $comment)
                     <li class="p-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
+                            <input type="checkbox" name="ids[]" value="{{ $comment->id }}" form="bulk-delete-comments"
+                                   x-model="selected" aria-label="Select comment {{ $comment->id }} by {{ $comment->displayName() }}">
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm">
                                     <span class="font-medium text-slate-900">{{ $comment->displayName() }}</span>
@@ -34,9 +52,29 @@
                                 </p>
                                 <p class="mt-1 text-sm text-slate-700">{{ $comment->body }}</p>
                                 <p class="mt-1 text-xs text-slate-400">
-                                    on <a href="{{ route('admin.posts.edit', $comment->post_id) }}" class="hover:text-indigo-600">{{ $comment->post?->title ?? 'a deleted post' }}</a>
+                                    @if ($comment->post)
+                                        on <a href="{{ route('admin.posts.edit', $comment->post) }}" class="hover:text-indigo-600">{{ $comment->post->title }}</a>
+                                    @else
+                                        on a deleted post
+                                    @endif
                                     @if ($comment->ip_address) &middot; {{ $comment->ip_address }} @endif
                                 </p>
+                                @if (auth()->user()->isAdmin())
+                                    @php($bodyError = $errors->getBag('comment'.$comment->id)->first('body'))
+                                    <details class="mt-2" @if ($bodyError) open @endif>
+                                        <summary class="cursor-pointer text-xs text-indigo-600">Edit comment</summary>
+                                        <form method="POST" action="{{ route('admin.comments.update-body', $comment) }}" class="mt-2">
+                                            @csrf @method('PATCH')
+                                            <label for="body-{{ $comment->id }}" class="text-sm font-medium">Comment text</label>
+                                            <textarea id="body-{{ $comment->id }}" name="body" rows="4" required minlength="3" maxlength="3000"
+                                                      class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ $bodyError ? (is_string(old('body')) ? old('body') : '') : $comment->body }}</textarea>
+                                            @if ($bodyError)
+                                                <p class="mt-1 text-sm text-rose-600">{{ $bodyError }}</p>
+                                            @endif
+                                            <button class="mt-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white">Save comment</button>
+                                        </form>
+                                    </details>
+                                @endif
                             </div>
 
                             <div class="flex shrink-0 items-center gap-2">
@@ -54,7 +92,7 @@
                                 @endforeach
 
                                 <form method="POST" action="{{ route('admin.comments.destroy', $comment) }}"
-                                      onsubmit="return confirm('Delete this comment permanently?')">
+                                      onsubmit="return confirm('Permanently delete this comment and all its replies?')">
                                     @csrf @method('DELETE')
                                     <button class="text-xs text-rose-600 hover:underline">Delete</button>
                                 </form>

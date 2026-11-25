@@ -245,6 +245,32 @@ class MobileApiEndpointsTest extends TestCase
 
     // Posts, categories, tags, comments ------------------------------------
 
+    public function test_only_an_authorized_app_can_create_an_unpublished_draft(): void
+    {
+        $url = '/api/v1/posts';
+        $draft = [
+            'title' => 'Hindi Scan API draft test',
+            'content' => '<p data-private="remove">Draft body</p>',
+        ];
+        $this->postJson($url, $draft)->assertUnauthorized();
+        $this->withHeaders($this->h())->postJson($url, $draft)->assertForbidden();
+        $this->client->forceFill(['can_create_drafts' => true])->save();
+
+        $this->postJson($url, $draft + ['status' => 'published'])
+            ->assertUnprocessable()->assertJsonValidationErrors('status');
+        $this->postJson($url, $draft + ['published_at' => now()->toISOString()])
+            ->assertUnprocessable()->assertJsonValidationErrors('published_at');
+        $this->assertDatabaseCount('posts', 0);
+
+        $response = $this->postJson($url, $draft)->assertCreated()->assertJsonPath('data.status', 'draft');
+        $this->assertDatabaseHas('posts', [
+            'id' => $response->json('data.id'), 'status' => 'draft',
+            'content' => '<p>Draft body</p>', 'published_at' => null,
+        ]);
+        $this->getJson($url)->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson($url.'/'.$response->json('data.slug'))->assertNotFound();
+    }
+
     public function test_posts_index_show_categories_tags(): void
     {
         $category = Category::create(['type' => 'blog', 'name' => 'News', 'slug' => 'news', 'is_active' => true]);

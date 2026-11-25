@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Front;
 
+use App\Cms\Forms\ContactChallenge;
 use App\Cms\Forms\ContactFormSchema;
 use App\Http\Controllers\Controller;
 use App\Models\ContactSubmission;
@@ -19,13 +20,12 @@ class ContactController extends Controller
         return view('theme::contact');
     }
 
-    public function submit(Request $request): RedirectResponse
+    public function submit(Request $request, ContactChallenge $challenge): RedirectResponse
     {
         // What the form asked for, as the form itself declared it. A request
         // carrying no token - a theme's own page - gets the built-in schema,
         // and so does one whose token will not decrypt.
-        $schema = ContactFormSchema::fromToken($request->input(ContactFormSchema::TOKEN_INPUT))
-            ?? ContactFormSchema::legacy();
+        $schema = ContactFormSchema::forRequest($request);
 
         $validated = $request->validate(
             ContactFormSchema::rules($schema),
@@ -35,7 +35,7 @@ class ContactController extends Controller
 
         $extra = ContactFormSchema::extraValues($schema, $validated);
 
-        $submission = ContactSubmission::create([
+        $attributes = [
             'name' => $validated['name'] ?? '',
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
@@ -44,15 +44,14 @@ class ContactController extends Controller
             'status' => 'new',
             'extra' => $extra ?: null,
             'ip_address' => $request->ip(),
-        ]);
+        ];
 
-        $this->notifyOwner($submission);
+        $submission = $challenge->submit($request, fn () => ContactSubmission::create($attributes));
+        if ($submission) {
+            $this->notifyOwner($submission);
+        }
 
-        return back()
-            ->with('status', $schema['success'])
-            // Which form on the page was posted, so a page carrying several
-            // of them shows the confirmation under the right one.
-            ->with('contact_form', $request->input('_form'));
+        return ContactFormSchema::receipt($request, $schema);
     }
 
     /** Best effort: a mail failure must not lose the submission itself. */

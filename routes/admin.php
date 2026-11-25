@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\LoginController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\ModuleController;
+use App\Http\Controllers\Admin\McpController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
@@ -68,6 +69,9 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
 
             Route::middleware('module:blog')->group(function () {
                 Route::resource('posts', PostController::class);
+                Route::delete('comments', [CommentController::class, 'bulkDestroy'])->name('comments.bulk-destroy');
+                Route::patch('comments/{comment}/body', [CommentController::class, 'updateBody'])
+                    ->middleware('staff:admin')->name('comments.update-body');
                 Route::resource('comments', CommentController::class)->only(['index', 'update', 'destroy']);
                 Route::patch('comments/{comment}/approve', [CommentController::class, 'approve'])->name('comments.approve');
             });
@@ -145,6 +149,7 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
             // Marketing -------------------------------------------------
             Route::middleware('module:contact')->group(function () {
                 Route::get('contact-submissions', [ContactController::class, 'index'])->name('contact.index');
+                Route::delete('contact-submissions', [ContactController::class, 'bulkDestroy'])->name('contact.bulk-destroy');
                 Route::get('contact-submissions/{submission}', [ContactController::class, 'show'])->name('contact.show');
                 Route::delete('contact-submissions/{submission}', [ContactController::class, 'destroy'])->name('contact.destroy');
             });
@@ -247,6 +252,12 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::delete('plugins/{slug}', [PluginController::class, 'destroy'])->name('plugins.destroy');
             });
 
+            Route::middleware(['module:mcp,blog', 'staff:admin'])->prefix('mcp')->name('mcp.')->group(function () {
+                Route::get('/', [McpController::class, 'index'])->name('index');
+                Route::post('tokens', [McpController::class, 'store'])->name('store');
+                Route::delete('tokens/{token}', [McpController::class, 'destroy'])->name('destroy');
+            });
+
             // Mobile API. Registering an app issues a credential that opens
             // the storefront to a program, so this is an owner's screen and
             // never an editor's.
@@ -258,6 +269,7 @@ Route::prefix(config('cms.admin_prefix', 'admin'))
                 Route::post('apps', [ApiController::class, 'storeClient'])->name('apps.store');
                 Route::post('apps/{client}/secret', [ApiController::class, 'regenerateSecret'])->name('apps.secret');
                 Route::patch('apps/{client}/toggle', [ApiController::class, 'toggleClient'])->name('apps.toggle');
+                Route::patch('apps/{client}/drafts', [ApiController::class, 'updateDraftPermission'])->name('apps.drafts');
                 Route::delete('apps/{client}', [ApiController::class, 'destroyClient'])->name('apps.destroy');
 
                 Route::delete('sessions', [ApiController::class, 'revokeAllTokens'])->name('sessions.revoke-all');

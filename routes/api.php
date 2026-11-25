@@ -87,6 +87,7 @@ Route::prefix(config('api.version', 'v1'))->name('api.v1.')->group(function () {
     // Blog ----------------------------------------------------------------
     Route::middleware('api.feature:posts')->group(function () {
         Route::get('posts', [PostController::class, 'index'])->name('posts.index');
+        Route::post('posts', [PostController::class, 'storeDraft'])->name('posts.store');
         Route::get('post-categories', [PostController::class, 'categories'])->name('posts.categories');
         Route::get('post-tags', [PostController::class, 'tags'])->name('posts.tags');
         Route::get('posts/{slug}', [PostController::class, 'show'])->name('posts.show');

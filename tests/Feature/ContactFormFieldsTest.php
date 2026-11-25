@@ -27,6 +27,7 @@ class ContactFormFieldsTest extends TestCase
         parent::setUp();
 
         $this->get('/');
+        settings()->set('contact_math_enabled', false);
     }
 
     /** The schema a set of widget settings describes, as a token would carry it. */

@@ -37,7 +37,6 @@
 
             <form method="POST" action="{{ route('contact.submit') }}" class="sf-panel">
                 @csrf
-                <input type="text" name="website" tabindex="-1" autocomplete="off" class="sf-hp" aria-hidden="true">
 
                 <div class="sf-fields sf-fields--2">
                     <div>
@@ -63,7 +62,9 @@
                     <textarea name="message" id="message" rows="6" required class="sf-textarea">{{ old('message') }}</textarea>
                 </div>
 
-                <button class="sf-btn sf-btn--primary sf-mt">Send message</button>
+                <x-contact-submit input-class="sf-input">
+                    <button class="sf-btn sf-btn--primary sf-mt">Send message</button>
+                </x-contact-submit>
             </form>
         </div>
     </div>

@@ -32,6 +32,7 @@ class ApiClient extends Model
     {
         return [
             'enabled' => 'boolean',
+            'can_create_drafts' => 'boolean',
             'last_used_at' => 'datetime',
             // Encrypted, not hashed: verifying a signed request means
             // recomputing its HMAC, which needs the secret itself.

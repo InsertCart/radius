@@ -2,6 +2,7 @@
 
 use App\Cms\Support\FirstRun;
 use App\Cms\Support\RootRewrite;
+use App\Http\Controllers\McpServerController;
 use App\Http\Middleware\Api\AuthenticateApiToken;
 use App\Http\Middleware\Api\EnsureApiFeature;
 use App\Http\Middleware\Api\ForceJsonResponse;
@@ -66,6 +67,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 ])
                     ->prefix(config('api.prefix', 'api'))
                     ->group(base_path('routes/api.php'));
+            }
+
+            if (modules()->allEnabled('mcp', 'blog')) {
+                Route::match(['get', 'post'], 'mcp', McpServerController::class)
+                    ->middleware(['installed', 'module:mcp,blog', 'throttle:120,1,mcp'])
+                    ->name('mcp.server');
             }
 
             // Last: its catch-all must not shadow any route above it.

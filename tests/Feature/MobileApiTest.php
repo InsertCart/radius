@@ -599,6 +599,21 @@ class MobileApiTest extends TestCase
             ->assertDontSee($credentials['secret']);
     }
 
+    public function test_only_an_admin_can_grant_and_revoke_an_apps_draft_permission(): void
+    {
+        $this->enableApi();
+        $url = route('admin.api.apps.drafts', $this->client);
+        $editor = $this->customer(['role' => User::ROLE_EDITOR]);
+        $admin = $this->customer(['email' => 'admin@example.test', 'role' => User::ROLE_ADMIN]);
+
+        $this->actingAs($editor)->patch($url, ['can_create_drafts' => 1])->assertForbidden();
+        $this->assertFalse($this->client->refresh()->can_create_drafts);
+        $this->actingAs($admin)->patch($url, ['can_create_drafts' => 1])->assertRedirect();
+        $this->assertTrue($this->client->refresh()->can_create_drafts);
+        $this->patch($url, ['can_create_drafts' => 0])->assertRedirect();
+        $this->assertFalse($this->client->refresh()->can_create_drafts);
+    }
+
     public function test_deleting_an_app_signs_its_devices_out(): void
     {
         $this->enableApi();

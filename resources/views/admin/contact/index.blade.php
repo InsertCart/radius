@@ -3,7 +3,7 @@
 @section('subtitle', $unreadCount.' unread')
 
 @section('content')
-    <x-admin.card bodyClass="">
+    <x-admin.card bodyClass="" x-data="{ selected: [] }">
         <form method="GET" class="flex flex-wrap gap-2 border-b border-slate-100 p-4">
             <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Search messages"
                    class="min-w-[12rem] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm">
@@ -13,16 +13,37 @@
                 Unread only
             </label>
             <button class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Filter</button>
+            @if (auth()->user()->isAdmin())
+                <a class="self-center px-2 text-sm text-indigo-600 hover:underline" href="{{ route('admin.settings.edit', 'advanced') }}#contact_math_enabled">Spam protection settings</a>
+            @endif
         </form>
 
         @if ($submissions->isEmpty())
             <x-admin.empty message="No messages yet." />
         @else
+            @php($pageIds = $submissions->pluck('id')->map(fn ($id) => (string) $id)->values())
+            <form id="bulk-delete-messages" method="POST" action="{{ route('admin.contact.bulk-destroy') }}"
+                  onsubmit="return confirm('Permanently delete the selected messages?')"
+                  class="flex flex-wrap items-center gap-4 border-b border-slate-100 p-4">
+                @csrf @method('DELETE')
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" :checked="selected.length === {{ $submissions->count() }}"
+                           x-effect="$el.indeterminate = selected.length > 0 && selected.length < {{ $submissions->count() }}"
+                           @change="selected = $el.checked ? @js($pageIds) : []">
+                    Select all on this page
+                </label>
+                <button type="submit" disabled :disabled="selected.length === 0"
+                        class="rounded-lg border border-rose-600 px-3 py-2 text-sm text-rose-600 disabled:opacity-50">
+                    Delete selected <span x-show="selected.length" x-cloak x-text="'(' + selected.length + ')'"></span>
+                </button>
+            </form>
             <ul class="divide-y divide-slate-100">
                 @foreach ($submissions as $submission)
-                    <li>
+                    <li class="flex items-start">
+                        <input type="checkbox" name="ids[]" value="{{ $submission->id }}" form="bulk-delete-messages"
+                               x-model="selected" class="ml-4 mt-5" aria-label="Select message {{ $submission->id }} from {{ $submission->email }}">
                         <a href="{{ route('admin.contact.show', $submission) }}"
-                           class="flex items-start gap-3 p-4 hover:bg-slate-50">
+                           class="flex min-w-0 flex-1 items-start gap-3 p-4 hover:bg-slate-50">
                             <span @class([
                                 'mt-1.5 h-2 w-2 shrink-0 rounded-full',
                                 'bg-indigo-500' => ! $submission->read_at,

@@ -2,6 +2,8 @@
 
 namespace App\Cms\Forms;
 
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
@@ -50,6 +52,16 @@ class ContactFormSchema
     private const MAX_EXTRA_FIELDS = 30;
 
     private const DEFAULT_SUCCESS = 'Thanks for getting in touch. We will reply shortly.';
+
+    public static function forRequest(Request $request): array
+    {
+        return self::fromToken($request->input(self::TOKEN_INPUT)) ?? self::legacy();
+    }
+
+    public static function receipt(Request $request, array $schema): RedirectResponse
+    {
+        return back()->with('status', $schema['success'])->with('contact_form', $request->input('_form'));
+    }
 
     /**
      * What every contact form did before any of this was configurable, and
@@ -288,8 +300,7 @@ class ContactFormSchema
     /** Validation rules for everything the form declared, and nothing else. */
     public static function rules(array $schema): array
     {
-        // Bots fill the honeypot; people never see it.
-        $rules = ['website' => ['nullable', 'size:0']];
+        $rules = [];
 
         foreach ($schema['fields'] as $field) {
             $rules[self::inputName($field)] = self::fieldRules($field);
